@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { Skeleton } from "@/components/skeleton";
+import { useToast } from "@/components/toast-provider";
 import { fetchRoles, updateRole, type RoleMeta } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +20,7 @@ const DEFAULT_ACTIONS = ["create", "read", "update", "delete"];
 function EditRole() {
   const { id } = useParams({ from: Route.id });
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [role, setRole] = useState<RoleMeta | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -74,15 +77,55 @@ function EditRole() {
     setSaving(true);
     try {
       await updateRole(id, { name, description, permissions });
+      toast("Role updated", "success");
       navigate({ to: "/roles" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update role");
+      const msg = err instanceof Error ? err.message : "Failed to update role";
+      setError(msg);
+      toast(msg, "error");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <p className="text-muted-foreground">Loading...</p>;
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-5 w-5" />
+          <div>
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="mt-1 h-5 w-24" />
+          </div>
+        </div>
+        <div className="space-y-6 rounded-lg border p-6">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-10 w-full rounded-md" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full rounded-md" />
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+            <div className="flex items-center gap-2 rounded-md border p-3">
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 flex-1 rounded-md" />
+              <Skeleton className="h-9 w-16 rounded-md" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 pt-4">
+            <Skeleton className="h-10 w-28 rounded-md" />
+            <Skeleton className="h-10 w-20 rounded-md" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (error)
     return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
   if (!role) return null;

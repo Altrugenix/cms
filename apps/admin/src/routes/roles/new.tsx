@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { useToast } from "@/components/toast-provider";
 import { createRole } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ const DEFAULT_ACTIONS = ["create", "read", "update", "delete"];
 
 function CreateRole() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [permissions, setPermissions] = useState<Array<{ action: string; resource: string }>>([
@@ -49,9 +51,12 @@ function CreateRole() {
     setSaving(true);
     try {
       await createRole({ name, description, permissions });
+      toast("Role created", "success");
       navigate({ to: "/roles" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create role");
+      const msg = err instanceof Error ? err.message : "Failed to create role";
+      setError(msg);
+      toast(msg, "error");
     } finally {
       setSaving(false);
     }

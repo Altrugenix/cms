@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Outlet, createRootRoute, useNavigate } from "@tanstack/react-router";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
+import { ToastProvider } from "@/components/toast-provider";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createRootRoute({
@@ -35,21 +37,32 @@ function RootLayout() {
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen">
-        <Outlet />
-      </main>
+      <ToastProvider>
+        <main className="min-h-screen">
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </main>
+      </ToastProvider>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
-        </main>
+    <ToastProvider>
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed((prev) => !prev)}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-6">
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

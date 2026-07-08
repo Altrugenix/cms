@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { Skeleton } from "@/components/skeleton";
 import { fetchCollections, type CollectionMeta } from "@/lib/api";
 import { FileText } from "lucide-react";
 
@@ -23,7 +24,29 @@ function CollectionsList() {
   }, []);
 
   if (loading) {
-    return <p className="text-muted-foreground">Loading collections...</p>;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="mt-1 h-5 w-32" />
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-lg border p-4">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-5 w-5 rounded" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (error) {

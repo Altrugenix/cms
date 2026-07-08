@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { Skeleton } from "@/components/skeleton";
 import { fetchGlobals, type GlobalMeta } from "@/lib/api";
 import { Settings, ArrowRight } from "lucide-react";
 
@@ -22,7 +23,29 @@ function GlobalsList() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-muted-foreground">Loading globals...</p>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-9 w-32" />
+          <Skeleton className="mt-1 h-5 w-48" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-lg border p-5">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-28" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <Skeleton className="h-4 w-4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { Skeleton } from "@/components/skeleton";
+import { useToast } from "@/components/toast-provider";
 import { fetchUsers, deleteUser, type UserMeta } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
@@ -12,6 +14,7 @@ export const Route = createRoute({
 });
 
 function UsersList() {
+  const { toast } = useToast();
   const [users, setUsers] = useState<UserMeta[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -42,12 +45,48 @@ function UsersList() {
       await deleteUser(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
       setTotal((prev) => prev - 1);
+      toast("User deleted", "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete user");
+      const msg = err instanceof Error ? err.message : "Failed to delete user";
+      setError(msg);
+      toast(msg, "error");
     }
   };
 
-  if (loading) return <p className="text-muted-foreground">Loading users...</p>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="mt-1 h-5 w-20" />
+        </div>
+        <div className="rounded-lg border">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <th key={i} className="px-4 py-3">
+                    <Skeleton className="h-4 w-16" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} className="border-b">
+                  {Array.from({ length: 4 }).map((_, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

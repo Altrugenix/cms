@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { useToast } from "@/components/toast-provider";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { toast } = useToast();
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -27,7 +29,9 @@ function LoginPage() {
       await login(email, password);
       navigate({ to: "/" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const msg = err instanceof Error ? err.message : "Login failed";
+      setError(msg);
+      toast(msg, "error");
     }
   };
 

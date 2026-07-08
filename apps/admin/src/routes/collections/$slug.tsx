@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { createRoute, Link, useParams } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { Skeleton } from "@/components/skeleton";
+import { useToast } from "@/components/toast-provider";
 import { fetchCollections, apiFetch, type CollectionMeta } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
@@ -15,6 +17,7 @@ type Entry = Record<string, unknown> & { id: string };
 
 function CollectionEntries() {
   const { slug } = useParams({ from: Route.id });
+  const { toast } = useToast();
   const [collection, setCollection] = useState<CollectionMeta | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [total, setTotal] = useState(0);
@@ -57,8 +60,9 @@ function CollectionEntries() {
       await apiFetch(`/api/${slug}/${id}`, { method: "DELETE" });
       setEntries((prev) => prev.filter((e) => e.id !== id));
       setTotal((prev) => prev - 1);
+      toast("Entry deleted", "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete entry");
+      toast(err instanceof Error ? err.message : "Failed to delete entry", "error");
     }
   };
 
@@ -75,8 +79,9 @@ function CollectionEntries() {
       setTotal((prev) => prev - ids.length);
       setSelected(new Set());
       setConfirmDelete(false);
+      toast(`Deleted ${ids.length} entr${ids.length === 1 ? "y" : "ies"}`, "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete entries");
+      toast(err instanceof Error ? err.message : "Failed to delete entries", "error");
     } finally {
       setDeleting(false);
     }
@@ -103,7 +108,44 @@ function CollectionEntries() {
   };
 
   if (loading) {
-    return <p className="text-muted-foreground">Loading entries...</p>;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-5 w-5" />
+            <div>
+              <Skeleton className="h-9 w-40" />
+              <Skeleton className="mt-1 h-5 w-20" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-36 rounded-md" />
+        </div>
+        <div className="rounded-lg border">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <th key={i} className="px-4 py-3">
+                    <Skeleton className="h-4 w-16" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-b">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <Skeleton className={`h-4 ${j === 0 ? "w-4" : "w-24"}`} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   }
 
   if (error) {

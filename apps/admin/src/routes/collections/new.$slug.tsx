@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { Skeleton } from "@/components/skeleton";
+import { useToast } from "@/components/toast-provider";
 import { fetchCollections, apiFetch, ApiError, type CollectionMeta } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { FieldInput } from "@/components/field-input";
@@ -15,6 +17,7 @@ export const Route = createRoute({
 function CreateEntry() {
   const { slug } = useParams({ from: Route.id });
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [collection, setCollection] = useState<CollectionMeta | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,6 +60,7 @@ function CreateEntry() {
         method: "POST",
         body: JSON.stringify(values),
       });
+      toast("Entry created", "success");
       navigate({ to: "/collections/$slug", params: { slug } });
     } catch (err) {
       if (err instanceof ApiError && err.details) {
@@ -67,14 +71,40 @@ function CreateEntry() {
         }
         setErrors((prev) => ({ ...prev, ...fieldErrors }));
       } else {
-        setError(err instanceof Error ? err.message : "Failed to create entry");
+        const msg = err instanceof Error ? err.message : "Failed to create entry";
+        setError(msg);
+        toast(msg, "error");
       }
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <p className="text-muted-foreground">Loading...</p>;
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-5 w-5" />
+          <div>
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="mt-1 h-5 w-32" />
+          </div>
+        </div>
+        <div className="space-y-4 rounded-lg border p-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+          ))}
+          <div className="flex items-center gap-2 pt-4">
+            <Skeleton className="h-10 w-24 rounded-md" />
+            <Skeleton className="h-10 w-20 rounded-md" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (error)
     return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
   if (!collection) return null;

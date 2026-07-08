@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { createRoute } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
+import { Skeleton } from "@/components/skeleton";
+import { useToast } from "@/components/toast-provider";
 import { fetchMedia, uploadMedia, deleteMedia, getMediaUrl, type MediaMeta } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Trash2, Upload } from "lucide-react";
@@ -12,6 +14,7 @@ export const Route = createRoute({
 });
 
 function MediaLibrary() {
+  const { toast } = useToast();
   const [media, setMedia] = useState<MediaMeta[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -47,8 +50,11 @@ function MediaLibrary() {
       const item = await uploadMedia(file);
       setMedia((prev) => [item, ...prev]);
       setTotal((prev) => prev + 1);
+      toast("File uploaded", "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      setError(msg);
+      toast(msg, "error");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -60,14 +66,40 @@ function MediaLibrary() {
       await deleteMedia(id);
       setMedia((prev) => prev.filter((m) => m.id !== id));
       setTotal((prev) => prev - 1);
+      toast("File deleted", "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
+      const msg = err instanceof Error ? err.message : "Failed to delete";
+      setError(msg);
+      toast(msg, "error");
     }
   };
 
   const isImage = (mime: string) => mime.startsWith("image/");
 
-  if (loading) return <p className="text-muted-foreground">Loading media...</p>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="mt-1 h-5 w-16" />
+          </div>
+          <Skeleton className="h-10 w-32 rounded-md" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="rounded-lg border bg-card overflow-hidden">
+              <Skeleton className="aspect-square w-full rounded-none" />
+              <div className="p-2 space-y-1.5">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
