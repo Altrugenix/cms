@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 4 mostly complete (JWT auth + RBAC permissions implemented). **257 tests** across all packages. Next: admin auth flow, forgot/reset password
+> Project status: Milestone 4 mostly complete (JWT auth + RBAC permissions + admin app scaffold). **257 tests** across all packages. Next: admin collection views, forgot/reset password
 
 ---
 
@@ -130,8 +130,8 @@
 
 ### Admin Auth Flow
 
-- [ ] Integrate auth with admin panel
-- [ ] Build login/register pages
+- [x] Integrate auth with admin panel (AuthProvider + login/register pages)
+- [x] Build login/register pages
 - [ ] Implement auth guard on admin routes
 - [ ] Build forgot/reset password pages
 
@@ -141,9 +141,10 @@
 
 ### Admin App Scaffold (`apps/admin`)
 
-- [ ] Scaffold Vite + React + TanStack Router + Tailwind v4 + shadcn/ui
-- [ ] Set up dark mode with ThemeProvider
-- [ ] Create layout (sidebar, header, content area)
+- [x] Scaffold Vite + React + TanStack Router + Tailwind v4 + shadcn/ui
+- [x] Set up dark mode with ThemeProvider
+- [x] Create layout (sidebar, header, content area)
+- [x] Add login/register pages with auth integration
 - [ ] Implement command palette (⌘K)
 - [ ] Add keyboard shortcut system
 
