@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
-import { uploadMedia, getMediaUrl } from "@/lib/api";
+import { uploadMedia, getMediaUrl, apiFetch } from "@/lib/api";
 
 type FieldDef = {
   name: string;
@@ -11,6 +11,7 @@ type FieldDef = {
   label: string;
   required: boolean;
   options?: string[];
+  to?: string;
 };
 
 type FieldInputProps = {
@@ -93,6 +94,10 @@ export function FieldInput({ field, value, onChange, error }: FieldInputProps) {
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
     );
+  }
+
+  if (field.type === "relation" && field.to) {
+    return <RelationPicker field={field} value={strVal} onChange={onChange} error={error} />;
   }
 
   if (field.type === "boolean") {
@@ -182,6 +187,75 @@ export function FieldInput({ field, value, onChange, error }: FieldInputProps) {
         placeholder={`Enter ${field.label.toLowerCase()}`}
         className={error ? "border-destructive" : ""}
       />
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function RelationPicker({
+  field,
+  value,
+  onChange,
+  error,
+}: {
+  field: FieldDef;
+  value: string;
+  onChange: (val: string) => void;
+  error?: string;
+}) {
+  const [entries, setEntries] = useState<Array<{ id: string; label: string }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const data = await apiFetch<{ data: Array<Record<string, unknown>> }>(`/api/${field.to}`);
+        if (cancelled) return;
+        setEntries(
+          data.data.map((e) => ({
+            id: String(e.id),
+            label: (e.title ?? e.name ?? e.id) as string,
+          })),
+        );
+      } catch {
+        // silently fail — dropdown will just be empty
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [field.to]);
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={field.name}>
+        {field.label}
+        {field.required && <span className="ml-1 text-destructive">*</span>}
+      </Label>
+      <div className="flex items-center gap-2">
+        <select
+          id={field.name}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${error ? "border-destructive" : "border-input"}`}
+        >
+          <option value="">{loading ? "Loading..." : "Select..."}</option>
+          {entries.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.label}
+            </option>
+          ))}
+        </select>
+        {value && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange("")}>
+            Clear
+          </Button>
+        )}
+      </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );

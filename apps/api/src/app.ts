@@ -62,12 +62,22 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
       slug: c.slug,
       label: c.labels?.plural ?? c.slug,
       labels: c.labels,
-      fields: c.fields.map((f) => ({
-        name: f.name,
-        type: f.type,
-        label: f.label ?? f.name,
-        required: f.validation?.required ?? false,
-      })),
+      fields: c.fields.map((f) => {
+        const base = {
+          name: f.name,
+          type: f.type,
+          label: f.label ?? f.name,
+          required: f.validation?.required ?? false,
+        };
+        if (f.type === "relation") {
+          return { ...base, to: (f as { to?: string }).to ?? "" };
+        }
+        if (f.type === "select" || f.type === "multiSelect" || f.type === "radio") {
+          const opts = (f as { options?: Array<{ label: string; value: string }> }).options ?? [];
+          return { ...base, options: opts.map((o) => o.value) };
+        }
+        return base;
+      }),
     }));
   });
 

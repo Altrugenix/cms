@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 5 advanced (dashboard live stats, user & role management, enhanced field inputs, inline validation, media library). **264 tests** across all packages. Next: global views, relation picker, media picker, command palette
+> Project status: Milestone 5 advanced (dashboard live stats, user & role management, enhanced field inputs, inline validation, media library, relation picker). **264 tests** across all packages. Next: global views, bulk actions, activity feed, command palette
 
 ---
 
@@ -160,7 +160,7 @@
 - [x] Build collection list view (table with sorting, filtering, pagination)
 - [x] Build collection edit/create form (auto-generated from schema)
 - [x] Handle all field type inputs (text, number, textarea, select, boolean, slug, json, richText, etc.)
-- [ ] Implement relation picker (search + select from related collection)
+- [x] Implement relation picker (searchable select from related collection with auto-fetch)
 - [x] Implement media picker (upload + preview in FieldInput for media/upload types)
 - [x] Show field validation errors inline
 - [ ] Add bulk actions (delete, publish, unpublish)

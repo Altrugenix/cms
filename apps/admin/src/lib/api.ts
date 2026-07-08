@@ -82,7 +82,14 @@ export type CollectionMeta = {
   slug: string;
   label: string;
   labels: { singular?: string; plural?: string };
-  fields: Array<{ name: string; type: string; label: string; required: boolean }>;
+  fields: Array<{
+    name: string;
+    type: string;
+    label: string;
+    required: boolean;
+    options?: string[];
+    to?: string;
+  }>;
 };
 
 export async function fetchCollections(): Promise<CollectionMeta[]> {
