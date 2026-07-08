@@ -36,3 +36,5 @@ export { validateCollection } from "./validator.js";
 export type { ValidationResult, ValidationIssue } from "./validator.js";
 export { SchemaLoader } from "./loader.js";
 export type { SchemaLoaderOptions } from "./loader.js";
+export { SchemaWatcher } from "./watcher.js";
+export type { SchemaChangeEvent } from "./watcher.js";

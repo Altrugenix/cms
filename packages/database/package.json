@@ -22,5 +22,18 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@altrugenix/types": "workspace:*",
+    "@libsql/client": "^0.17.0",
+    "drizzle-orm": "^0.45.2"
+  },
+  "peerDependencies": {
+    "pg": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pg": {
+      "optional": true
+    }
   }
 }

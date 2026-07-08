@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Pre-development
+> Project status: Foundation complete — Milestone 2 in progress
 
 ---
 
