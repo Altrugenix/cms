@@ -176,20 +176,20 @@ function CollectionEntries() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Link to="/collections" className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{collection.label}</h1>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{collection.label}</h1>
             <p className="text-muted-foreground">
               {total} entr{total === 1 ? "y" : "ies"}
             </p>
           </div>
         </div>
-        <Link to="/collections/$slug/new" params={{ slug }}>
-          <Button>
+        <Link to="/collections/$slug/new" params={{ slug }} className="self-start sm:self-auto">
+          <Button className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" /> Create New
           </Button>
         </Link>
@@ -215,8 +215,8 @@ function CollectionEntries() {
             </div>
           )}
 
-          <div className="rounded-lg border">
-            <table className="w-full">
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[500px]">
               <thead>
                 <tr className="border-b">
                   <th className="w-10 px-4 py-3">

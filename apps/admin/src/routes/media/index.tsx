@@ -219,14 +219,14 @@ function MediaLibrary() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Media Library</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Media Library</h1>
           <p className="text-muted-foreground">
             {total} file{total === 1 ? "" : "s"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <input
             ref={fileInputRef}
             type="file"
@@ -235,7 +235,11 @@ function MediaLibrary() {
             multiple
             onChange={handleUpload}
           />
-          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="w-full sm:w-auto"
+          >
             <Upload className="mr-2 h-4 w-4" />
             {uploading ? "Uploading..." : "Upload File"}
           </Button>

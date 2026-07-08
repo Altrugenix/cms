@@ -105,7 +105,10 @@ function CreateRole() {
             </Button>
           </div>
           {permissions.map((perm, i) => (
-            <div key={i} className="flex items-center gap-2 rounded-md border p-3">
+            <div
+              key={i}
+              className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center"
+            >
               <select
                 value={perm.action}
                 onChange={(e) => updatePermission(i, "action", e.target.value)}

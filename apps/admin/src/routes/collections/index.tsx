@@ -32,7 +32,7 @@ function CollectionsList() {
             <Skeleton className="mt-1 h-5 w-32" />
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="rounded-lg border p-4">
               <div className="flex items-start gap-3">
@@ -61,7 +61,7 @@ function CollectionsList() {
           <p className="text-muted-foreground">Manage your content types</p>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {collections.map((col) => (
           <Link
             key={col.slug}

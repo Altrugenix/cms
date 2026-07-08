@@ -13,6 +13,7 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarMobile, setSidebarMobile] = useState(false);
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const palette = useCommandPalette();
@@ -65,11 +66,16 @@ function RootLayout() {
       <div className="flex h-screen overflow-hidden">
         <Sidebar
           collapsed={sidebarCollapsed}
+          mobileOpen={sidebarMobile}
           onToggle={() => setSidebarCollapsed((prev) => !prev)}
+          onMobileClose={() => setSidebarMobile(false)}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <Header onOpenPalette={palette.openPalette} />
-          <main className="flex-1 overflow-y-auto p-6">
+          <Header
+            onOpenPalette={palette.openPalette}
+            onToggleSidebar={() => setSidebarMobile((prev) => !prev)}
+          />
+          <main className="flex-1 overflow-y-auto p-4 md:p-6">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

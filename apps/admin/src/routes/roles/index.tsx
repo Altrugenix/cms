@@ -101,15 +101,15 @@ function RolesList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Roles</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Roles</h1>
           <p className="text-muted-foreground">
             {total} role{total === 1 ? "" : "s"}
           </p>
         </div>
-        <Link to="/roles/new">
-          <Button>
+        <Link to="/roles/new" className="self-start sm:self-auto">
+          <Button className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" /> Create Role
           </Button>
         </Link>
@@ -127,8 +127,8 @@ function RolesList() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-lg border">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[500px]">
             <thead>
               <tr className="border-b">
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">

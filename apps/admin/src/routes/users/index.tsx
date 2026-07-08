@@ -68,8 +68,8 @@ function UsersList() {
           <Skeleton className="h-9 w-24" />
           <Skeleton className="mt-1 h-5 w-20" />
         </div>
-        <div className="rounded-lg border">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[500px]">
             <thead>
               <tr className="border-b">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -100,7 +100,7 @@ function UsersList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Users</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Users</h1>
           <p className="text-muted-foreground">
             {total} user{total === 1 ? "" : "s"}
           </p>
@@ -114,8 +114,8 @@ function UsersList() {
           <p className="text-lg text-muted-foreground">No users found</p>
         </div>
       ) : (
-        <div className="rounded-lg border">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[500px]">
             <thead>
               <tr className="border-b">
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
