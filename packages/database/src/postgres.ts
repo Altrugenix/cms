@@ -1,16 +1,26 @@
 import pg from "pg";
 import type { DatabaseAdapter, Migration, QueryOptions } from "./types.js";
 
+export interface PostgresAdapterOptions {
+  connectionString: string;
+  poolSize?: number;
+  idleTimeoutMs?: number;
+}
+
 export class PostgresAdapter implements DatabaseAdapter {
   private pool: pg.Pool | null = null;
-  private readonly connectionString: string;
+  private readonly options: PostgresAdapterOptions;
 
-  constructor(connectionString: string) {
-    this.connectionString = connectionString;
+  constructor(options: PostgresAdapterOptions) {
+    this.options = options;
   }
 
   async connect(): Promise<void> {
-    this.pool = new pg.Pool({ connectionString: this.connectionString });
+    this.pool = new pg.Pool({
+      connectionString: this.options.connectionString,
+      max: this.options.poolSize ?? 10,
+      idleTimeoutMillis: this.options.idleTimeoutMs ?? 30000,
+    });
     await this.ensureMigrationsTable();
   }
 

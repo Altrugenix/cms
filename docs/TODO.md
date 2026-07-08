@@ -55,9 +55,9 @@
 - [x] Build migration runner
 - [x] Implement repository pattern (generic CRUD with typing)
 - [x] Support query building (filtering, sorting, pagination)
-- [ ] Add connection pooling for PostgreSQL
+- [x] Add connection pooling for PostgreSQL (via `pg.Pool` with configurable size)
 - [x] Write tests for SQLite adapter (11 tests)
-- [ ] Write tests for PostgreSQL adapter
+- [x] Write tests for PostgreSQL adapter (10 tests, conditional on `PG_TEST_URL`)
 - [ ] Write tests for migration generation
 
 ---

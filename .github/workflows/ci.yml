@@ -9,6 +9,22 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: cms
+          POSTGRES_PASSWORD: cms
+          POSTGRES_DB: cms_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,4 +35,6 @@ jobs:
       - run: yarn typecheck
       - run: yarn lint
       - run: yarn test
+        env:
+          PG_TEST_URL: postgres://cms:cms@localhost:5432/cms_test
       - run: yarn build
