@@ -23,6 +23,11 @@ export interface ServerConfig {
     adapter: "sqlite" | "postgres";
     url: string;
   };
+  auth: {
+    secret: string;
+    accessTokenExpiresIn: string;
+    refreshTokenExpiresIn: string;
+  };
 }
 
 export function loadConfig(): ServerConfig {
@@ -50,6 +55,11 @@ export function loadConfig(): ServerConfig {
     database: {
       adapter: (process.env.DB_ADAPTER as ServerConfig["database"]["adapter"]) || "sqlite",
       url: process.env.DB_URL || "file:./cms.db",
+    },
+    auth: {
+      secret: process.env.AUTH_SECRET || "dev-secret-change-in-production-min-32-chars!!",
+      accessTokenExpiresIn: process.env.AUTH_ACCESS_EXPIRES || "15m",
+      refreshTokenExpiresIn: process.env.AUTH_REFRESH_EXPIRES || "7d",
     },
   };
 }

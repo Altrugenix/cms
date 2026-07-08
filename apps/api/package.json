@@ -14,6 +14,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@altrugenix/auth": "workspace:*",
     "@altrugenix/core": "workspace:*",
     "@altrugenix/database": "workspace:*",
     "@altrugenix/graphql": "workspace:*",

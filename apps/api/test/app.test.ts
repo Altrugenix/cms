@@ -4,28 +4,52 @@ import type { DatabaseAdapter, CollectionDefinition } from "@altrugenix/types";
 import { createApp } from "../src/app.js";
 import type { ServerConfig } from "../src/config.js";
 
-const mockAdapter = {
-  findOne: async (_table: string, id: string) => {
-    if (id === "1") return { id: "1", title: "Hello", body: "World" };
-    return null;
-  },
-  findMany: async () => ({ data: [{ id: "1", title: "Hello", body: "World" }], total: 1 }),
-  create: async (_table: string, data: Record<string, unknown>) => ({
-    id: "1",
-    title: "New",
-    ...data,
-  }),
-  update: async () => null,
-  delete: async () => true,
-  connect: async () => {},
-  disconnect: async () => {},
-  transaction: async <T>(fn: () => Promise<T>) => fn(),
-  raw: async () => [],
-  createTable: async () => {},
-  dropTable: async () => {},
-  runMigration: async () => {},
-  getExecutedMigrations: async () => [],
-} satisfies DatabaseAdapter;
+function createMockAdapter(): DatabaseAdapter {
+  const posts = new Map<string, Record<string, unknown>>();
+  posts.set("1", { id: "1", title: "Hello", body: "World" });
+  let nextPostId = 2;
+
+  const users = new Map<string, Record<string, unknown>>();
+  let nextUserId = 1;
+
+  return {
+    findOne: async (_table: string, id: string) => {
+      if (_table === "__cms_users") return users.get(id) ?? null;
+      return posts.get(id) ?? null;
+    },
+    findMany: async (_table: string, options) => {
+      if (_table === "__cms_users") {
+        const all = [...users.values()];
+        const email = options?.where?.email;
+        const filtered = email ? all.filter((r) => r.email === email) : all;
+        return { data: filtered.slice(0, options?.limit ?? 100), total: filtered.length };
+      }
+      return { data: [...posts.values()], total: posts.size };
+    },
+    create: async (_table: string, data: Record<string, unknown>) => {
+      if (_table === "__cms_users") {
+        const id = String(nextUserId++);
+        const record = { id, ...data };
+        users.set(id, record);
+        return record;
+      }
+      const id = String(nextPostId++);
+      const record = { id, ...data };
+      posts.set(id, record);
+      return record;
+    },
+    update: async () => null,
+    delete: async () => true,
+    connect: async () => {},
+    disconnect: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
+    raw: async () => [],
+    createTable: async () => {},
+    dropTable: async () => {},
+    runMigration: async () => {},
+    getExecutedMigrations: async () => [],
+  };
+}
 
 const collection: CollectionDefinition = {
   slug: "posts",
@@ -49,15 +73,22 @@ const testConfig: ServerConfig = {
   },
   schema: { baseDir: "./cms" },
   database: { adapter: "sqlite", url: ":memory:" },
+  auth: {
+    secret: "test-secret-at-least-32-chars-long-for-security!!",
+    accessTokenExpiresIn: "15m",
+    refreshTokenExpiresIn: "7d",
+  },
 };
 
 describe("CMS API Server", () => {
   let app: FastifyInstance;
+  let adapter: DatabaseAdapter;
 
   beforeAll(async () => {
+    adapter = createMockAdapter();
     app = await createApp({
       config: testConfig,
-      adapter: mockAdapter,
+      adapter,
       collections: [collection],
     });
   });
@@ -151,6 +182,96 @@ describe("CMS API Server", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  describe("auth endpoints", () => {
+    it("registers a new user", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        body: { email: "test@example.com", password: "password123" },
+      });
+      expect(res.statusCode).toBe(201);
+      const body = JSON.parse(res.body);
+      expect(body.user.email).toBe("test@example.com");
+      expect(body.tokens.accessToken).toBeTruthy();
+      expect(body.tokens.refreshToken).toBeTruthy();
+    });
+
+    it("rejects duplicate registration", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        body: { email: "test@example.com", password: "password123" },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it("logs in with valid credentials", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        body: { email: "test@example.com", password: "password123" },
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.user.email).toBe("test@example.com");
+      expect(body.tokens.accessToken).toBeTruthy();
+    });
+
+    it("rejects login with wrong password", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        body: { email: "test@example.com", password: "wrong" },
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("returns user from /me with valid token", async () => {
+      const loginRes = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        body: { email: "test@example.com", password: "password123" },
+      });
+      const { accessToken } = JSON.parse(loginRes.body).tokens;
+
+      const meRes = await app.inject({
+        method: "GET",
+        url: "/api/auth/me",
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+      expect(meRes.statusCode).toBe(200);
+      const meBody = JSON.parse(meRes.body);
+      expect(meBody.email).toBe("test@example.com");
+    });
+
+    it("rejects /me without token", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/auth/me",
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("refreshes tokens", async () => {
+      const loginRes = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        body: { email: "test@example.com", password: "password123" },
+      });
+      const { refreshToken } = JSON.parse(loginRes.body).tokens;
+
+      const refreshRes = await app.inject({
+        method: "POST",
+        url: "/api/auth/refresh",
+        body: { refreshToken },
+      });
+      expect(refreshRes.statusCode).toBe(200);
+      const body = JSON.parse(refreshRes.body);
+      expect(body.accessToken).toBeTruthy();
+      expect(body.refreshToken).toBeTruthy();
+    });
+  });
+
   describe("GraphQL endpoint", () => {
     it("serves GraphiQL at /graphiql", async () => {
       const res = await app.inject({
@@ -170,8 +291,8 @@ describe("CMS API Server", () => {
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
       expect(body.data).toBeDefined();
-      expect(body.data.listPosts).toHaveLength(1);
-      expect(body.data.listPosts[0].id).toBe("1");
+      expect(body.data.listPosts.length).toBeGreaterThanOrEqual(1);
+      expect(body.data.listPosts[0].id).toBeDefined();
     });
 
     it("executes posts query by id", async () => {

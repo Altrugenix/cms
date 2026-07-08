@@ -10,6 +10,7 @@ import { registerErrorHandler } from "./plugins/error-handler.js";
 import { registerRequestLogger } from "./plugins/request-logger.js";
 import { registerRateLimit } from "./plugins/rate-limit.js";
 import { registerGraphQL } from "./plugins/graphql.js";
+import { registerAuth } from "./plugins/auth.js";
 import { registerCollectionRoutes } from "./routes/collections.js";
 
 export interface AppOptions {
@@ -34,6 +35,8 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
   registerHealth(fastify);
   registerRequestLogger(fastify);
   registerErrorHandler(fastify);
+
+  await registerAuth(fastify, { adapter, config: config.auth });
 
   if (collections && collections.length > 0) {
     registerCollectionRoutes(fastify, collections, adapter);

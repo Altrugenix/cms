@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 6 complete (all CLI commands implemented). **222 tests** across all packages. Next: Auth & Permissions
+> Project status: Milestone 4 started (JWT auth, login/register/refresh/me, wired into API via Fastify plugin). **241 tests** across all packages. Next: permissions package & admin auth flow
 
 ---
 
@@ -111,14 +111,14 @@
 
 ### Auth Package (`packages/auth`)
 
-- [ ] Implement JWT token generation (access + refresh)
-- [ ] Implement login endpoint
-- [ ] Implement register endpoint
+- [x] Implement JWT token generation (access + refresh)
+- [x] Implement login endpoint
+- [x] Implement register endpoint
 - [ ] Implement forgot/reset password
-- [ ] Implement token refresh
+- [x] Implement token refresh
 - [ ] Implement email verification (optional)
-- [ ] Add session management
-- [ ] Write tests for auth flows
+- [x] Add session management (JWT-based, no server-side sessions)
+- [x] Write tests for auth flows (19 tests: JWT, password, auth service)
 
 ### Permissions Package (`packages/permissions`)
 

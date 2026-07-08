@@ -7,6 +7,7 @@
   "include": ["src"],
   "references": [
     { "path": "../../packages/types" },
+    { "path": "../../packages/auth" },
     { "path": "../../packages/core" },
     { "path": "../../packages/schema" },
     { "path": "../../packages/database" },
