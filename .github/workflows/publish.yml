@@ -15,8 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "yarn"
-      - run: corepack enable
+      - run: corepack enable && corepack prepare yarn@4.17.0 --activate
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn lint && yarn typecheck && yarn test

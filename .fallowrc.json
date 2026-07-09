@@ -5,7 +5,7 @@
     "**/dist/**",
     "**/.turbo/**",
     "**/coverage/**",
-    ".vitepress/cache/**"
+    "**/.vitepress/cache/**"
   ],
   "ignoreDependencies": [
     "@altrugenix/types",
