@@ -303,6 +303,9 @@
 ### Content Workflow
 
 - [ ] Draft / publish workflow
+- [ ] Scheduled publishing
+- [ ] Soft delete
+- [ ] Localization / i18n
 
 ### Release
 
@@ -320,9 +323,6 @@
 - [ ] Implement email verification (optional)
 - [ ] Version history and revisions
 - [ ] Autosave
-- [ ] Scheduled publishing
-- [ ] Localization / i18n
-- [ ] Soft delete
 - [ ] Visual page builder
 - [ ] Form builder
 - [ ] Workflow automation
