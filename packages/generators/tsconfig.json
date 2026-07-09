@@ -6,5 +6,11 @@
     "rootDir": "src"
   },
   "include": ["src"],
-  "references": [{ "path": "../types" }]
+  "references": [
+    { "path": "../types" },
+    { "path": "../database" },
+    { "path": "../rest-api" },
+    { "path": "../validation" },
+    { "path": "../schema" }
+  ]
 }

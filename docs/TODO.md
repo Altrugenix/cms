@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 5 complete (schema builder, activity feed, settings page, responsive design, dashboard, user & role management, enhanced field inputs, inline validation, media library with folder organization + drag & drop + rename/alt editing, relation picker, bulk delete, global views, error boundaries, toast notifications, loading skeletons, confirmation dialogs, command palette + keyboard shortcuts). **277 tests** across all packages. Next: code generation generators (Milestone 6)
+> Project status: Milestone 6 in progress (code generation generators: pipeline architecture + API routes + Zod validation + DB migrations + GraphQL schema + OpenAPI spec + SDK + admin form generators). **287 tests** across all packages. Next: generators tests + plugin system (Milestone 7)
 
 ---
 
@@ -228,14 +228,14 @@
 ### Generators Package (`packages/generators`)
 
 - [x] Build TypeScript type generation pipeline
-- [ ] Build API route generation pipeline
-- [ ] Build Zod validation generation pipeline
-- [ ] Build database migration generation pipeline
-- [ ] Build GraphQL schema generation pipeline
-- [ ] Build OpenAPI spec generation pipeline
-- [ ] Build SDK generation pipeline
-- [ ] Build admin form generation pipeline
-- [ ] Write tests for each generator
+- [x] Build API route generation pipeline
+- [x] Build Zod validation generation pipeline
+- [x] Build database migration generation pipeline
+- [x] Build GraphQL schema generation pipeline
+- [x] Build OpenAPI spec generation pipeline
+- [x] Build SDK generation pipeline
+- [x] Build admin form generation pipeline
+- [x] Write tests for each generator
 
 ---
 
