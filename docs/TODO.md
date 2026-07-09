@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 8 complete. **~420 tests** across all packages. Documentation site live at apps/docs. Ready for audits and launch.
+> Project status: Milestone 8 complete. **~420 tests** across all packages. Documentation site live at apps/docs. Audits complete (performance, security, accessibility). Ready for launch.
 
 ---
 
@@ -297,9 +297,9 @@
 - [x] Add input validation to auth routes (email format, password length)
 - [x] Handle edge cases (empty collections, deleted relations, etc.)
 - [x] Add comprehensive error messages
-- [ ] Performance audit and optimization
-- [ ] Security audit
-- [ ] Accessibility audit
+- [x] Performance audit and optimization
+- [x] Security audit
+- [x] Accessibility audit
 - [x] Test coverage to 80%+ (~420 tests, all packages covered)
 
 ### Release
