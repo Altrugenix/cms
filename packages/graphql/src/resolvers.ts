@@ -1,5 +1,6 @@
 import type { DatabaseAdapter, QueryOptions } from "@altrugenix/database";
 import type { CollectionDefinition, FieldDefinition, RelationField } from "@altrugenix/types";
+import { createMutationPayloadSchema, updateMutationPayloadSchema } from "@altrugenix/validation";
 import { pascalCase } from "./types.js";
 
 function collectionTableName(slug: string): string {
@@ -44,10 +45,10 @@ function generateTypeResolvers(
   return Object.keys(typeResolvers).length > 0 ? typeResolvers : undefined;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function generateResolvers(
   collections: CollectionDefinition[],
   adapter: DatabaseAdapter,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Record<string, Record<string, any>> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const queryFields: Record<string, any> = {};
@@ -96,16 +97,16 @@ export function generateResolvers(
     };
 
     mutationFields[`create${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
-      const row = await adapter.create(table, args.data as Record<string, unknown>);
+      const schema = createMutationPayloadSchema(collection);
+      const parsed = schema.parse(args.data);
+      const row = await adapter.create(table, parsed as Record<string, unknown>);
       return { ...row, id: String(row.id) };
     };
 
     mutationFields[`update${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
-      const row = await adapter.update(
-        table,
-        args.id as string,
-        args.data as Record<string, unknown>,
-      );
+      const schema = updateMutationPayloadSchema(collection);
+      const parsed = schema.parse(args.data);
+      const row = await adapter.update(table, args.id as string, parsed as Record<string, unknown>);
       if (!row) throw new Error(`Not found: ${collection.slug} with id ${args.id}`);
       return { ...row, id: String(row.id) };
     };

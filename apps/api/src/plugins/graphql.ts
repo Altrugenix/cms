@@ -12,6 +12,17 @@ export async function registerGraphQL(
   const typeDefs = generateTypeDefs(collections);
   const resolvers = generateResolvers(collections, adapter);
 
+  if (fastify.hasDecorator("authenticate")) {
+    fastify.addHook("onRoute", (routeOptions) => {
+      if (routeOptions.url === "/graphql" || routeOptions.url === "/graphiql") {
+        if (!routeOptions.preHandler) routeOptions.preHandler = [];
+        if (Array.isArray(routeOptions.preHandler)) {
+          routeOptions.preHandler.push(fastify.authenticate);
+        }
+      }
+    });
+  }
+
   await fastify.register(mercurius, {
     schema: typeDefs,
     resolvers,

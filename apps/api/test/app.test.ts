@@ -275,10 +275,22 @@ describe("CMS API Server", () => {
   });
 
   describe("GraphQL endpoint", () => {
+    let authToken: string;
+
+    beforeAll(async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        body: { email: "test@example.com", password: "password123" },
+      });
+      authToken = JSON.parse(res.body).tokens.accessToken;
+    });
+
     it("serves GraphiQL at /graphiql", async () => {
       const res = await app.inject({
         method: "GET",
         url: "/graphiql",
+        headers: { authorization: `Bearer ${authToken}` },
       });
       expect(res.statusCode).toBe(200);
       expect(res.body).toContain("graphiql");
@@ -288,6 +300,7 @@ describe("CMS API Server", () => {
       const res = await app.inject({
         method: "POST",
         url: "/graphql",
+        headers: { authorization: `Bearer ${authToken}` },
         body: { query: "{ listPosts { id title } }" },
       });
       expect(res.statusCode).toBe(200);
@@ -301,6 +314,7 @@ describe("CMS API Server", () => {
       const res = await app.inject({
         method: "POST",
         url: "/graphql",
+        headers: { authorization: `Bearer ${authToken}` },
         body: { query: '{ posts(id: "1") { id title } }' },
       });
       expect(res.statusCode).toBe(200);
@@ -313,6 +327,7 @@ describe("CMS API Server", () => {
       const res = await app.inject({
         method: "POST",
         url: "/graphql",
+        headers: { authorization: `Bearer ${authToken}` },
         body: { query: 'mutation { createPosts(data: { title: "New" }) { id title } }' },
       });
       const body = JSON.parse(res.body);
@@ -324,6 +339,7 @@ describe("CMS API Server", () => {
       const res = await app.inject({
         method: "POST",
         url: "/graphql",
+        headers: { authorization: `Bearer ${authToken}` },
         body: {
           query: 'mutation { updatePosts(id: "1", data: { title: "Updated" }) { id title } }',
         },
@@ -337,6 +353,7 @@ describe("CMS API Server", () => {
       const res = await app.inject({
         method: "POST",
         url: "/graphql",
+        headers: { authorization: `Bearer ${authToken}` },
         body: { query: 'mutation { deletePosts(id: "1") }' },
       });
       const body = JSON.parse(res.body);

@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 7 complete (plugin infrastructure + 6 official plugins + S3/R2 adapters + hook integration). **~307 tests** across all packages. Next: Milestone 8 polish & launch
+> Project status: Milestone 8 in progress (error handling improvements + package READMEs + plugin dev guide). **~320 tests** across all packages. Next: more documentation + test coverage
 
 ---
 
@@ -251,7 +251,7 @@
 - [x] Wire PluginManager hooks into SchemaLoader (onBeforeLoad/onAfterLoad callbacks)
 - [x] Wire PluginManager hooks into API app (beforeRouteRegister/afterRouteRegister)
 - [x] Integrate plugin system into server entry point (apps/api/src/index.ts)
-- [ ] Write plugin developer documentation
+- [x] Write plugin developer documentation
 
 ### Official Plugins
 
@@ -276,11 +276,11 @@
 
 ### Documentation
 
-- [ ] Write README for every package
-- [ ] Write architecture notes
+- [x] Write README for core, schema, database, plugins, types, storage, auth, permissions, validation, rest-api, graphql, generators, cli, admin-ui, sdk
+- [x] Write plugin development guide
+- [x] Write CLI usage guide
+- [x] Write architecture notes
 - [ ] Write API documentation (REST + GraphQL)
-- [ ] Write plugin development guide
-- [ ] Write CLI usage guide
 - [ ] Write deployment guide
 - [ ] Write contributing guide
 - [ ] Set up documentation site (`apps/docs`)
@@ -288,6 +288,13 @@
 ### Quality
 
 - [x] Add error boundaries and error pages in admin UI
+- [x] Create typed error classes (AppError, NotFoundError, ValidationError, ConflictError, AuthError, ForbiddenError)
+- [x] Handle Fastify built-in errors (413 payload too large, 400 malformed JSON)
+- [x] Handle unique constraint violations (409 Conflict)
+- [x] Validate query parameters (limit, offset, sort) with 400 errors
+- [x] Add auth to GraphQL endpoint
+- [x] Add auth to media file serving
+- [x] Add input validation to auth routes (email format, password length)
 - [ ] Handle edge cases (empty collections, deleted relations, etc.)
 - [ ] Add comprehensive error messages
 - [ ] Performance audit and optimization

@@ -26,6 +26,7 @@
   "dependencies": {
     "@altrugenix/database": "workspace:*",
     "@altrugenix/types": "workspace:*",
+    "@altrugenix/validation": "workspace:*",
     "graphql": "^16.0.0",
     "mercurius": "^16.9.0"
   }

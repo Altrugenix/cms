@@ -12,6 +12,10 @@ function collectionTableName(slug: string): string {
   return `__cms_${slug.replace(/-/g, "_")}`;
 }
 
+function isUniqueConstraintError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes("UNIQUE constraint failed");
+}
+
 function parseLimit(raw: unknown, max = 100, def = 10): number {
   const n = Number(raw);
   return Number.isFinite(n) && n > 0 ? Math.min(n, max) : def;
@@ -37,6 +41,25 @@ function parseSort(raw: unknown): Record<string, "asc" | "desc"> | undefined {
     }
   }
   return Object.keys(sort).length > 0 ? sort : undefined;
+}
+
+function validateQueryParams(query: Record<string, string | string[] | undefined>): string | null {
+  if (query.limit !== undefined) {
+    const n = Number(query.limit);
+    if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
+      return "limit must be a positive integer";
+    }
+  }
+  if (query.offset !== undefined) {
+    const n = Number(query.offset);
+    if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
+      return "offset must be a non-negative integer";
+    }
+  }
+  if (query.sort !== undefined && typeof query.sort === "string" && query.sort.trim() === "") {
+    return "sort must be a non-empty string";
+  }
+  return null;
 }
 
 function parseSelect(raw: unknown): string[] | undefined {
@@ -143,6 +166,8 @@ export function createListHandler(
 ): RouteHandler {
   return async (ctx) => {
     try {
+      const validationError = validateQueryParams(ctx.query);
+      if (validationError) return errorResult(400, validationError);
       const options = queryOptions(ctx, maxPageSize, defaultPageSize);
       const tableName = collectionTableName(collection.slug);
       const result = await adapter.findMany(tableName, options);
@@ -201,6 +226,12 @@ export function createCreateHandler(
       const record = await adapter.create(tableName, parsed.data as Record<string, unknown>);
       return { statusCode: 201, body: record };
     } catch (e) {
+      if (isUniqueConstraintError(e)) {
+        return {
+          statusCode: 409,
+          body: { error: "A record with this value already exists", code: "CONFLICT" },
+        };
+      }
       return errorResult(500, e instanceof Error ? e.message : "Internal server error");
     }
   };
@@ -230,6 +261,12 @@ export function createUpdateHandler(
       if (!record) return errorResult(404, "Not found");
       return { statusCode: 200, body: record };
     } catch (e) {
+      if (isUniqueConstraintError(e)) {
+        return {
+          statusCode: 409,
+          body: { error: "A record with this value already exists", code: "CONFLICT" },
+        };
+      }
       return errorResult(500, e instanceof Error ? e.message : "Internal server error");
     }
   };
@@ -272,6 +309,12 @@ export function createGlobalUpsertHandler(
       }
       return { statusCode: 200, body: record };
     } catch (e) {
+      if (isUniqueConstraintError(e)) {
+        return {
+          statusCode: 409,
+          body: { error: "A record with this value already exists", code: "CONFLICT" },
+        };
+      }
       return errorResult(500, e instanceof Error ? e.message : "Internal server error");
     }
   };

@@ -43,6 +43,21 @@ export async function registerAuth(
       reply: FastifyReply,
     ) => {
       try {
+        const { email, password } = request.body;
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return reply
+            .status(400)
+            .send({ error: "Invalid email format", code: "VALIDATION_ERROR" });
+        }
+
+        if (password && password.length < 8) {
+          return reply
+            .status(400)
+            .send({ error: "Password must be at least 8 characters", code: "VALIDATION_ERROR" });
+        }
+
         const result = await authService.register(request.body);
         return reply.status(201).send(result);
       } catch (error) {
