@@ -81,7 +81,6 @@
 - [x] Generate CRUD queries and mutations (list/get/create/update/delete)
 - [x] Support filtering, sorting, pagination (filter input, sort enum, limit/offset)
 - [x] Handle relation resolution (type-level field resolvers via `findOne`/`findMany` on relation fields)
-- [ ] Support subscriptions (future)
 - [x] Write tests for GraphQL schema and resolvers (31 tests: SDL, resolvers, relation resolution)
 
 ### Validation Generation (`packages/validation`)
@@ -116,7 +115,6 @@
 - [x] Implement register endpoint
 - [x] Implement forgot/reset password
 - [x] Implement token refresh
-- [ ] Implement email verification (optional)
 - [x] Add session management (JWT-based, no server-side sessions)
 - [x] Write tests for auth flows (19 tests: JWT, password, auth service)
 
@@ -302,6 +300,10 @@
 - [x] Accessibility audit
 - [x] Test coverage to 80%+ (~420 tests, all packages covered)
 
+### Content Workflow
+
+- [ ] Draft / publish workflow
+
 ### Release
 
 - [x] Configure npm package publishing for all packages
@@ -314,7 +316,8 @@
 
 ## Backlog (Future Milestones)
 
-- [ ] Draft / publish workflow
+- [ ] Support subscriptions (future)
+- [ ] Implement email verification (optional)
 - [ ] Version history and revisions
 - [ ] Autosave
 - [ ] Scheduled publishing
