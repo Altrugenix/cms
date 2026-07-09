@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 8 in progress (error handling improvements + package READMEs + plugin dev guide). **~320 tests** across all packages. Next: more documentation + test coverage
+> Project status: Milestone 8 in progress (API docs + contributing + deployment guides + npm publishing config). **~320 tests** across all packages. Next: test coverage to 80%+
 
 ---
 
@@ -280,9 +280,9 @@
 - [x] Write plugin development guide
 - [x] Write CLI usage guide
 - [x] Write architecture notes
-- [ ] Write API documentation (REST + GraphQL)
-- [ ] Write deployment guide
-- [ ] Write contributing guide
+- [x] Write API documentation (REST + GraphQL)
+- [x] Write deployment guide
+- [x] Write contributing guide
 - [ ] Set up documentation site (`apps/docs`)
 
 ### Quality
@@ -304,9 +304,9 @@
 
 ### Release
 
-- [ ] Configure npm package publishing for all packages
-- [ ] Set up CHANGELOG generation
-- [ ] Create v0.1.0 release
+- [x] Configure npm package publishing for all packages
+- [x] Set up CHANGELOG generation
+- [x] Create v0.1.0 release (changeset)
 - [ ] Write launch blog post
 - [ ] Set up community channels (Discord, GitHub Discussions)
 

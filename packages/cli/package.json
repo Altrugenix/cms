@@ -1,7 +1,6 @@
 {
   "name": "@altrugenix/cli",
   "version": "0.0.1",
-  "private": true,
   "type": "module",
   "bin": {
     "cms": "./bin/cms.js"
@@ -18,6 +17,9 @@
     "dist",
     "bin"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
