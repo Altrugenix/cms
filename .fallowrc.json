@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/.turbo/**", "**/coverage/**"],
+  "audit": {
+    "gate": "new-only"
+  },
+  "health": {
+    "maxCyclomatic": 15,
+    "maxCognitive": 25,
+    "maxUnitSize": 80
+  },
+  "duplicates": {
+    "mode": "mild",
+    "minTokens": 50,
+    "skipLocal": true
+  },
+  "entry": ["apps/api/src/index.ts", "apps/admin/src/main.tsx", "packages/*/src/index.ts"]
+}

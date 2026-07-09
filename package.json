@@ -18,6 +18,9 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "prepare": "husky",
     "clean": "turbo clean && rm -rf node_modules",
+    "fallow": "fallow",
+    "fallow:audit": "fallow audit",
+    "fallow:health": "fallow health --score",
     "changeset": "changeset",
     "version-packages": "changeset version"
   },
@@ -29,6 +32,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
+    "fallow": "^3.2.0",
     "globals": "^17.7.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
