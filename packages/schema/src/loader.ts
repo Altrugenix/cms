@@ -9,6 +9,12 @@ import type {
 export interface SchemaLoaderOptions {
   baseDir: string;
   watch?: boolean;
+  onBeforeLoad?: () => Promise<void>;
+  onAfterLoad?: (schema: {
+    collections: Map<string, CollectionDefinition>;
+    globals: Map<string, GlobalDefinition>;
+    components: Map<string, ComponentDefinition>;
+  }) => Promise<void>;
 }
 
 export interface LoadedSchema {
@@ -19,17 +25,25 @@ export interface LoadedSchema {
 
 export class SchemaLoader {
   private readonly baseDir: string;
+  private readonly options: SchemaLoaderOptions;
 
   constructor(options: SchemaLoaderOptions) {
     this.baseDir = resolve(options.baseDir);
+    this.options = options;
   }
 
   async load(): Promise<LoadedSchema> {
+    if (this.options.onBeforeLoad) await this.options.onBeforeLoad();
+
     const collections = await this.loadCollections();
     const globals = await this.loadGlobals();
     const components = await this.loadComponents();
 
-    return { collections, globals, components };
+    const result = { collections, globals, components };
+
+    if (this.options.onAfterLoad) await this.options.onAfterLoad(result);
+
+    return result;
   }
 
   private async loadCollections(): Promise<Map<string, CollectionDefinition>> {

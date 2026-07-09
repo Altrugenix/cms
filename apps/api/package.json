@@ -19,6 +19,7 @@
     "@altrugenix/database": "workspace:*",
     "@altrugenix/graphql": "workspace:*",
     "@altrugenix/permissions": "workspace:*",
+    "@altrugenix/plugins": "workspace:*",
     "@altrugenix/rest-api": "workspace:*",
     "@altrugenix/schema": "workspace:*",
     "@altrugenix/storage": "workspace:*",

@@ -27,6 +27,17 @@ export interface AppOptions {
   storageAdapter?: StorageAdapter;
   collections?: CollectionDefinition[];
   globals?: GlobalDefinition[];
+  pluginManager?: {
+    runHook(hookName: "beforeRouteRegister" | "afterRouteRegister"): Promise<void>;
+    getCustomFields(): Record<string, unknown[]>;
+    getAdminPanels(): Array<{
+      slug: string;
+      label: string;
+      icon?: string;
+      component: string;
+      plugin: string;
+    }>;
+  };
 }
 
 export async function createApp(options: AppOptions): Promise<FastifyInstance> {
@@ -57,6 +68,8 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
     registerMediaRoutes(fastify, adapter, options.storageAdapter);
   }
 
+  await options.pluginManager?.runHook("beforeRouteRegister");
+
   if (collections && collections.length > 0) {
     registerCollectionRoutes(fastify, collections, adapter);
     await registerGraphQL(fastify, collections, adapter);
@@ -65,6 +78,8 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
   if (globals && globals.length > 0) {
     registerGlobalRoutes(fastify, globals, adapter);
   }
+
+  await options.pluginManager?.runHook("afterRouteRegister");
 
   registerSchemaRoutes(fastify, config);
 

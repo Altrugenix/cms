@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 7 in progress (plugin system: PluginManager, auto-discovery, hook system, extension points). **301 tests** across all packages. Next: official plugins + S3 adapter
+> Project status: Milestone 7 complete (plugin infrastructure + 6 official plugins + S3/R2 adapters + hook integration). **~307 tests** across all packages. Next: Milestone 8 polish & launch
 
 ---
 
@@ -248,24 +248,27 @@
 - [x] Implement plugin loader (auto-discover from `node_modules`)
 - [x] Implement hook system (beforeSchemaLoad, afterSchemaLoad, beforeRouteRegister, afterRouteRegister, beforeRequest, afterRequest)
 - [x] Implement extension points (custom fields via `getCustomFields()`, custom admin panels via `getAdminPanels()`, custom routes via `runRouteHook()`)
+- [x] Wire PluginManager hooks into SchemaLoader (onBeforeLoad/onAfterLoad callbacks)
+- [x] Wire PluginManager hooks into API app (beforeRouteRegister/afterRouteRegister)
+- [x] Integrate plugin system into server entry point (apps/api/src/index.ts)
 - [ ] Write plugin developer documentation
 
 ### Official Plugins
 
-- [ ] SEO plugin (meta fields, sitemap generation)
-- [ ] Audit Log plugin (track all mutations)
-- [ ] Webhooks plugin (trigger HTTP calls on events)
-- [ ] Search plugin (full-text search integration)
-- [ ] Comments plugin
-- [ ] Analytics plugin (basic page view tracking)
+- [x] SEO plugin (meta fields, sitemap generation)
+- [x] Audit Log plugin (track all mutations)
+- [x] Webhooks plugin (trigger HTTP calls on events)
+- [x] Search plugin (full-text search integration)
+- [x] Comments plugin (basic comment fields with moderation)
+- [x] Analytics plugin (basic page view tracking dashboard)
 
 ### Storage Package (`packages/storage`)
 
 - [x] Define `StorageAdapter` interface (save, delete, getStream, exists)
 - [x] Implement local filesystem adapter
-- [ ] Implement S3-compatible adapter
-- [ ] Implement Cloudflare R2 adapter
-- [x] Write tests for storage adapters (7 tests)
+- [x] Implement S3-compatible adapter
+- [x] Implement Cloudflare R2 adapter
+- [x] Write tests for storage adapters (14 tests)
 
 ---
 

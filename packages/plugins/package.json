@@ -15,8 +15,8 @@
     "dist"
   ],
   "dependencies": {
-    "@altrugenix/types": "workspace:*",
-    "@altrugenix/core": "workspace:*"
+    "@altrugenix/core": "workspace:*",
+    "@altrugenix/types": "workspace:*"
   },
   "scripts": {
     "build": "tsc",

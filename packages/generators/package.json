@@ -15,11 +15,11 @@
     "dist"
   ],
   "dependencies": {
-    "@altrugenix/types": "workspace:*",
     "@altrugenix/database": "workspace:*",
     "@altrugenix/rest-api": "workspace:*",
-    "@altrugenix/validation": "workspace:*",
-    "@altrugenix/schema": "workspace:*"
+    "@altrugenix/schema": "workspace:*",
+    "@altrugenix/types": "workspace:*",
+    "@altrugenix/validation": "workspace:*"
   },
   "scripts": {
     "build": "tsc",
