@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 8 complete. **~420 tests** across all packages. Documentation site live at apps/docs. Audits complete (performance, security, accessibility). Draft/publish workflow implemented.
+> Project status: Milestone 8 complete. **~420 tests** across all packages. Documentation site live at apps/docs. Audits complete (performance, security, accessibility). Draft/publish, onboarding, DB health check, and Docker setup done.
 
 ---
 
@@ -310,12 +310,12 @@
 
 ### Setup & Onboarding
 
-- [ ] Add onboarding form to register initial admin user
-- [ ] Check if database is working on startup and return error
+- [x] Add onboarding form to register initial admin user
+- [x] Check if database is working on startup and return error
 
 ### DevOps
 
-- [ ] Add Docker setup to run API locally
+- [x] Add Docker setup to run API locally
 - [ ] Add CI/CD to build docs site (`apps/docs`) and deploy build output to `docs/` folder
 
 ### Release

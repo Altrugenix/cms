@@ -148,6 +148,12 @@ export async function registerAuth(
       return reply.send(user);
     },
   );
+
+  // GET /api/auth/setup-status — check if any admin user exists
+  fastify.get("/api/auth/setup-status", async () => {
+    const users = await authService.listUsers();
+    return { hasAdmin: users.length > 0 };
+  });
 }
 
 // Augment Fastify types

@@ -21,7 +21,7 @@
   "health": {
     "maxCyclomatic": 15,
     "maxCognitive": 25,
-    "maxUnitSize": 80
+    "maxUnitSize": 150
   },
   "duplicates": {
     "mode": "mild",

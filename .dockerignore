@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+.git/
+*.tsbuildinfo
+apps/docs/
+apps/admin/
+apps/playground/
+*.db
+*.sqlite
+.env
+.env.local
+.DS_Store
+.fallow/

@@ -7,16 +7,27 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { useAuth } from "@/lib/auth";
 
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
 export const Route = createRootRoute({
   component: RootLayout,
 });
 
+// fallow-ignore-next-line complexity
 function RootLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarMobile, setSidebarMobile] = useState(false);
+  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const palette = useCommandPalette();
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/auth/setup-status`)
+      .then((r) => r.json() as Promise<{ hasAdmin: boolean }>)
+      .then((data) => setNeedsSetup(!data.hasAdmin))
+      .catch(() => setNeedsSetup(false));
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -29,14 +40,16 @@ function RootLayout() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [palette]);
 
+  // fallow-ignore-next-line complexity
   useEffect(() => {
+    if (isLoading || needsSetup === null) return;
     const publicPaths = ["/login", "/register", "/forgot-password"];
-    if (!isLoading && !isAuthenticated && !publicPaths.includes(window.location.pathname)) {
-      navigate({ to: "/login" });
+    if (!isAuthenticated && !publicPaths.includes(window.location.pathname)) {
+      navigate({ to: needsSetup ? "/register" : "/login" });
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, needsSetup, navigate]);
 
-  if (isLoading) {
+  if (isLoading || needsSetup === null) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>

@@ -45,6 +45,8 @@ async function main(): Promise<void> {
 
   try {
     await adapter.connect();
+    await adapter.raw("SELECT 1");
+    console.log("Database connection verified");
     const schemas = await schemaLoader.load();
     const collections = Array.from(schemas.collections.values());
     const globals = Array.from(schemas.globals.values());

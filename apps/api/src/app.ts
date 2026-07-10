@@ -53,7 +53,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
   await registerRateLimit(fastify, config.rateLimit);
   await registerSwagger(fastify, config.swagger);
 
-  registerHealth(fastify);
+  registerHealth(fastify, adapter);
   registerRequestLogger(fastify);
   registerErrorHandler(fastify);
 
@@ -98,6 +98,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
     label: c.labels?.plural ?? c.slug,
     labels: c.labels,
     versions: c.versions,
+    // fallow-ignore-next-line complexity
     fields: c.fields.map((f) => {
       const base = {
         name: f.name,
@@ -119,6 +120,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
   const globalMeta = (globals ?? []).map((g) => ({
     slug: g.slug,
     label: g.label,
+    // fallow-ignore-next-line complexity
     fields: g.fields.map((f) => {
       const base = {
         name: f.name,

@@ -1,0 +1,21 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - AUTH_SECRET=${AUTH_SECRET:-dev-secret-change-in-production}
+      - DB_ADAPTER=${DB_ADAPTER:-sqlite}
+      - DB_URL=${DB_URL:-file:./data/cms.db}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173}
+      - STORAGE_DIR=${STORAGE_DIR:-./data/uploads}
+      - SCHEMA_DIR=${SCHEMA_DIR:-./cms}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - api_data:/app/apps/api/data
+      - ./cms:/app/apps/api/cms:ro
+
+volumes:
+  api_data:
