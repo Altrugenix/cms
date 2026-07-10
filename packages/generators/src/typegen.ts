@@ -40,29 +40,43 @@ const fieldTypeMap: Record<string, string> = {
 
 function fieldToType(field: FieldDefinition): string {
   const mapped = fieldTypeMap[field.type];
-  if (mapped) return mapped;
+  if (mapped) {
+    if (field.localized) return `Record<string, ${mapped}>`;
+    return mapped;
+  }
 
+  let type: string;
   switch (field.type) {
     case "relation":
-      return field.kind === "oneToMany" || field.kind === "manyToMany"
-        ? `${toPascal(field.to)}[]`
-        : `${toPascal(field.to)} | string`;
+      type =
+        field.kind === "oneToMany" || field.kind === "manyToMany"
+          ? `${toPascal(field.to)}[]`
+          : `${toPascal(field.to)} | string`;
+      break;
     case "component":
-      return field.repeatable ? `${toPascal(field.component)}[]` : toPascal(field.component);
+      type = field.repeatable ? `${toPascal(field.component)}[]` : toPascal(field.component);
+      break;
     case "dynamicZone":
-      return field.components.map((c) => toPascal(c)).join(" | ");
+      type = field.components.map((c) => toPascal(c)).join(" | ");
+      break;
     case "array":
-      return `Array<{${field.fields.map((f) => `${f.name}: ${fieldToType(f)}`).join("; ")}}>`;
+      type = `Array<{${field.fields.map((f) => `${f.name}: ${fieldToType(f)}`).join("; ")}}>`;
+      break;
     case "object":
     case "group":
-      return `{${field.fields.map((f) => `${f.name}: ${fieldToType(f)}`).join("; ")}}`;
+      type = `{${field.fields.map((f) => `${f.name}: ${fieldToType(f)}`).join("; ")}}`;
+      break;
     case "repeater":
-      return `Array<{${field.fields.map((f) => `${f.name}: ${fieldToType(f)}`).join("; ")}}>`;
+      type = `Array<{${field.fields.map((f) => `${f.name}: ${fieldToType(f)}`).join("; ")}}>`;
+      break;
     case "tabs":
-      return `{${field.tabs.flatMap((t) => t.fields.map((f) => `${f.name}: ${fieldToType(f)}`)).join("; ")}}`;
+      type = `{${field.tabs.flatMap((t) => t.fields.map((f) => `${f.name}: ${fieldToType(f)}`)).join("; ")}}`;
+      break;
     default:
-      return "unknown";
+      type = "unknown";
   }
+  if (field.localized) return `Record<string, ${type}>`;
+  return type;
 }
 
 function toPascal(s: string): string {

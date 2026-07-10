@@ -11,6 +11,54 @@ function isRelationField(field: FieldDefinition): field is RelationField {
   return field.type === "relation";
 }
 
+function defaultLocale(collection: CollectionDefinition): string {
+  return collection.localization?.defaultLocale ?? "en";
+}
+
+function localizedFields(collection: CollectionDefinition): FieldDefinition[] {
+  return collection.fields.filter((f) => f.localized);
+}
+
+function filterLocale(data: unknown, locale: string | undefined, fallback: string): unknown {
+  if (data === null || data === undefined) return data;
+  if (typeof data === "object" && !Array.isArray(data)) {
+    const record = data as Record<string, unknown>;
+    if (locale && record[String(locale)] !== undefined) return record[String(locale)];
+    if (record[fallback] !== undefined) return record[fallback];
+    const keys = Object.keys(record);
+    if (keys.length > 0) return record[String(keys[0])];
+  }
+  return data;
+}
+
+function applyLocaleToRecord(
+  record: Record<string, unknown>,
+  locale: string | undefined,
+  fallback: string,
+  lFields: FieldDefinition[],
+): Record<string, unknown> {
+  if (!locale) return record;
+  const result = { ...record };
+  for (const field of lFields) {
+    result[field.name] = filterLocale(result[field.name], locale, fallback);
+  }
+  return result;
+}
+
+function normalizeLocaleData(
+  data: Record<string, unknown>,
+  collection: CollectionDefinition,
+): Record<string, unknown> {
+  const def = defaultLocale(collection);
+  for (const field of localizedFields(collection)) {
+    const val = data[field.name];
+    if (val !== undefined && val !== null && (typeof val !== "object" || Array.isArray(val))) {
+      data[field.name] = { [def]: val };
+    }
+  }
+  return data;
+}
+
 function generateTypeResolvers(
   collection: CollectionDefinition,
   collections: CollectionDefinition[],
@@ -86,27 +134,49 @@ export function generateResolvers(
         options.where = args.filter as Record<string, unknown>;
       }
 
+      const locale = typeof args.locale === "string" ? args.locale : undefined;
+      const lFields = localizedFields(collection);
       const result = await adapter.findMany(table, options);
-      return result.data.map((row) => ({ ...row, id: String(row.id) }));
+      return result.data.map((row) => {
+        const r = { ...row, id: String(row.id) };
+        if (lFields.length > 0) {
+          Object.assign(r, applyLocaleToRecord(r, locale, defaultLocale(collection), lFields));
+        }
+        return r;
+      });
     };
 
     queryFields[collection.slug] = async (_parent: unknown, args: Record<string, unknown>) => {
       const row = await adapter.findOne(table, args.id as string);
       if (!row) return null;
-      return { ...row, id: String(row.id) };
+      const r = { ...row, id: String(row.id) };
+      const locale = typeof args.locale === "string" ? args.locale : undefined;
+      if (locale) {
+        const lFields = localizedFields(collection);
+        if (lFields.length > 0) {
+          Object.assign(r, applyLocaleToRecord(r, locale, defaultLocale(collection), lFields));
+        }
+      }
+      return r;
     };
 
     mutationFields[`create${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
       const schema = createMutationPayloadSchema(collection);
-      const parsed = schema.parse(args.data);
-      const row = await adapter.create(table, parsed as Record<string, unknown>);
+      const data = normalizeLocaleData(
+        (schema.parse(args.data) ?? {}) as Record<string, unknown>,
+        collection,
+      );
+      const row = await adapter.create(table, data);
       return { ...row, id: String(row.id) };
     };
 
     mutationFields[`update${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
       const schema = updateMutationPayloadSchema(collection);
-      const parsed = schema.parse(args.data);
-      const row = await adapter.update(table, args.id as string, parsed as Record<string, unknown>);
+      const data = normalizeLocaleData(
+        (schema.parse(args.data) ?? {}) as Record<string, unknown>,
+        collection,
+      );
+      const row = await adapter.update(table, args.id as string, data);
       if (!row) throw new Error(`Not found: ${collection.slug} with id ${args.id}`);
       return { ...row, id: String(row.id) };
     };

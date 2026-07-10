@@ -105,8 +105,9 @@ export function generateTypeDefs(collections: CollectionDefinition[]): string {
   const queryFields = collections
     .map((c) => {
       const name = pascalCase(c.slug);
-      return `  list${name}(filter: ${name}Filter, sort: ${name}Sort, limit: Int, offset: Int): [${name}!]!
-  ${c.slug}(id: ID!): ${name}`;
+      const localeArg = c.localization ? ", locale: String" : "";
+      return `  list${name}(filter: ${name}Filter, sort: ${name}Sort, limit: Int, offset: Int${localeArg}): [${name}!]!
+  ${c.slug}(id: ID!${localeArg}): ${name}`;
     })
     .join("\n");
 

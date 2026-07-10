@@ -249,6 +249,56 @@ function hasScheduledPublishing(collection: CollectionDefinition): boolean {
   return collection.versions?.scheduledPublishing === true;
 }
 
+function defaultLocale(collection: CollectionDefinition): string {
+  return collection.localization?.defaultLocale ?? "en";
+}
+
+function localizedFields(collection: CollectionDefinition): FieldDefinition[] {
+  return collection.fields.filter((f) => f.localized);
+}
+
+function normalizeLocaleData(
+  data: Record<string, unknown>,
+  collection: CollectionDefinition,
+): Record<string, unknown> {
+  const def = defaultLocale(collection);
+  for (const field of localizedFields(collection)) {
+    const val = data[field.name];
+    if (val !== undefined && val !== null && (typeof val !== "object" || Array.isArray(val))) {
+      data[field.name] = { [def]: val };
+    }
+  }
+  return data;
+}
+
+function filterLocale(data: unknown, locale: string | undefined, fallback: string): unknown {
+  if (data === null || data === undefined) return data;
+  if (typeof data === "object" && !Array.isArray(data)) {
+    const record = data as Record<string, unknown>;
+    if (locale && record[String(locale)] !== undefined) return record[String(locale)];
+    if (record[fallback] !== undefined) return record[fallback];
+    const keys = Object.keys(record);
+    if (keys.length > 0) return record[String(keys[0])];
+  }
+  return data;
+}
+
+function applyLocaleToRecord(
+  record: Record<string, unknown>,
+  locale: string | undefined,
+  fallback: string,
+  fields: FieldDefinition[],
+): Record<string, unknown> {
+  if (!locale) return record;
+  const result = { ...record };
+  for (const field of fields) {
+    if (field.localized) {
+      result[field.name] = filterLocale(result[field.name], locale, fallback);
+    }
+  }
+  return result;
+}
+
 export function createPublishHandler(
   collection: CollectionDefinition,
   adapter: DatabaseAdapter,
@@ -312,8 +362,16 @@ export function createListHandler(
       if (hasDrafts(collection) && !options.where?._status) {
         options.where = { ...options.where, _status: "published" };
       }
+      const locale = typeof ctx.query.locale === "string" ? ctx.query.locale : undefined;
+      const lFields = localizedFields(collection);
       const tableName = collectionTableName(collection.slug);
       const result = await adapter.findMany(tableName, options);
+      if (lFields.length > 0) {
+        const fallback = defaultLocale(collection);
+        result.data = result.data.map((r) =>
+          applyLocaleToRecord(r as Record<string, unknown>, locale, fallback, lFields),
+        ) as typeof result.data;
+      }
       if (options.populate && result.data.length > 0) {
         await populateRelations(result.data, options.populate, collection, adapter);
       }
@@ -337,6 +395,21 @@ export function createGetHandler(
         select: parseSelect(ctx.query.select),
       });
       if (!record) return errorResult(404, "Not found");
+      const locale = typeof ctx.query.locale === "string" ? ctx.query.locale : undefined;
+      if (locale) {
+        const lFields = localizedFields(collection);
+        if (lFields.length > 0) {
+          Object.assign(
+            record,
+            applyLocaleToRecord(
+              record as Record<string, unknown>,
+              locale,
+              defaultLocale(collection),
+              lFields,
+            ),
+          );
+        }
+      }
       const populate = parsePopulate(ctx.query.populate);
       if (populate) {
         await populateRelations([record], populate, collection, adapter);
@@ -365,7 +438,7 @@ export function createCreateHandler(
           body: { error: "Validation failed", details: parsed.error.issues },
         };
       }
-      const data = parsed.data as Record<string, unknown>;
+      const data = normalizeLocaleData(parsed.data as Record<string, unknown>, collection);
       if (hasDrafts(collection)) {
         data._status = data._status ?? "draft";
         if (data._status === "published") {
@@ -417,7 +490,7 @@ export function createUpdateHandler(
           body: { error: "Validation failed", details: parsed.error.issues },
         };
       }
-      const data = parsed.data as Record<string, unknown>;
+      const data = normalizeLocaleData(parsed.data as Record<string, unknown>, collection);
       let record: Record<string, unknown> | null;
       if (hasDrafts(collection)) {
         const { _status, _publishedAt, _publishedBy, ...rest } = data;

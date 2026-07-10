@@ -154,11 +154,13 @@ export type CollectionMeta = {
   label: string;
   labels: { singular?: string; plural?: string };
   versions?: { drafts?: boolean; softDelete?: boolean };
+  localization?: { locales: string[]; defaultLocale: string };
   fields: Array<{
     name: string;
     type: string;
     label: string;
     required: boolean;
+    localized?: boolean;
     options?: string[];
     to?: string;
   }>;

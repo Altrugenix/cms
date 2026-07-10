@@ -37,7 +37,7 @@ function applyValidation<T extends z.ZodType>(
   return result as T;
 }
 
-export function fieldToZodSchema(field: FieldDefinition): z.ZodType {
+export function fieldToZodSchema(field: FieldDefinition, localize = false): z.ZodType {
   let schema: z.ZodType;
 
   switch (field.type) {
@@ -150,6 +150,10 @@ export function fieldToZodSchema(field: FieldDefinition): z.ZodType {
 
   schema = applyValidation(schema, field.validation);
 
+  if (field.localized && localize) {
+    schema = z.record(z.string(), schema);
+  }
+
   if (!field.validation?.required) {
     return schema.optional();
   }
@@ -167,7 +171,7 @@ export function collectionToCreateSchema(
       entries[field.name] = z.string().optional();
       continue;
     }
-    entries[field.name] = fieldToZodSchema(field);
+    entries[field.name] = fieldToZodSchema(field, true);
   }
 
   if (collection.versions?.drafts) {
@@ -190,7 +194,7 @@ export function collectionToUpdateSchema(
       entries[field.name] = z.string().optional();
       continue;
     }
-    entries[field.name] = fieldToZodSchema(field).optional();
+    entries[field.name] = fieldToZodSchema(field, true).optional();
   }
 
   if (collection.versions?.drafts) {

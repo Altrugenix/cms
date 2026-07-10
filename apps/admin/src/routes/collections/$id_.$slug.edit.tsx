@@ -26,6 +26,7 @@ function EditEntry() {
   const [error, setError] = useState<string | null>(null);
   const [entryStatus, setEntryStatus] = useState<string>("");
   const [publishing, setPublishing] = useState(false);
+  const [locale, setLocale] = useState("en");
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +38,9 @@ function EditEntry() {
         if (cancelled) return;
         setCollection(col);
 
-        const entry = await apiFetch<Record<string, unknown>>(`/api/${slug}/${id}`);
+        const entry = await apiFetch<Record<string, unknown>>(
+          `/api/${slug}/${id}?locale=${locale}`,
+        );
         if (cancelled) return;
         const initial: Record<string, string> = {};
         for (const f of col.fields) {
@@ -56,7 +59,7 @@ function EditEntry() {
     return () => {
       cancelled = true;
     };
-  }, [slug, id]);
+  }, [slug, id, locale]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -73,9 +76,15 @@ function EditEntry() {
 
     setSaving(true);
     try {
+      const payload: Record<string, unknown> = {};
+      for (const f of collection.fields) {
+        const v = values[f.name];
+        if (v === "" || v === undefined) continue;
+        payload[f.name] = f.localized ? { [locale]: v } : v;
+      }
       await apiFetch(`/api/${slug}/${id}`, {
         method: "PATCH",
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       toast("Entry saved", "success");
       navigate({ to: "/collections/$slug", params: { slug } });
@@ -166,9 +175,22 @@ function EditEntry() {
           <h1 className="text-2xl font-bold tracking-tight">Edit {collection.label}</h1>
           <p className="text-muted-foreground">Editing entry {id}</p>
         </div>
-        {collection.versions?.drafts && entryStatus && (
-          <div className="ml-auto">
-            {entryStatus === "published" ? (
+        <div className="ml-auto flex items-center gap-2">
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value)}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="en">EN</option>
+            <option value="fr">FR</option>
+            <option value="de">DE</option>
+            <option value="es">ES</option>
+            <option value="ja">JA</option>
+            <option value="zh">ZH</option>
+          </select>
+          {collection.versions?.drafts &&
+            entryStatus &&
+            (entryStatus === "published" ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                 <CheckCircle className="h-4 w-4" /> Published
               </span>
@@ -176,9 +198,8 @@ function EditEntry() {
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                 Draft
               </span>
-            )}
-          </div>
-        )}
+            ))}
+        </div>
       </div>
 
       {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}

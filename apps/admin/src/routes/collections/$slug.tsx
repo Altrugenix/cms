@@ -30,6 +30,7 @@ function CollectionEntries() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [locale, setLocale] = useState("en");
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +42,10 @@ function CollectionEntries() {
         if (cancelled) return;
         setCollection(col);
 
-        const url = showDeleted ? `/api/${slug}?deleted=true` : `/api/${slug}`;
+        const params = new URLSearchParams();
+        if (showDeleted) params.set("deleted", "true");
+        params.set("locale", locale);
+        const url = `/api/${slug}?${params}`;
         const data = await apiFetch<{ data: Entry[]; total: number }>(url);
         if (cancelled) return;
         setEntries(data.data);
@@ -58,7 +62,7 @@ function CollectionEntries() {
     return () => {
       cancelled = true;
     };
-  }, [slug, showDeleted]);
+  }, [slug, showDeleted, locale]);
 
   const handleDelete = (id: string) => {
     setConfirmDeleteId(id);
@@ -182,7 +186,9 @@ function CollectionEntries() {
   const handlePublish = async (id: string) => {
     try {
       await apiFetch(`/api/${slug}/${id}/publish`, { method: "POST" });
-      const data = await apiFetch<{ data: Entry[]; total: number }>(`/api/${slug}`);
+      const data = await apiFetch<{ data: Entry[]; total: number }>(
+        `/api/${slug}?locale=${locale}`,
+      );
       setEntries(data.data);
       setTotal(data.total);
       toast("Entry published", "success");
@@ -207,7 +213,9 @@ function CollectionEntries() {
   const handleUnpublish = async (id: string) => {
     try {
       await apiFetch(`/api/${slug}/${id}/unpublish`, { method: "POST" });
-      const data = await apiFetch<{ data: Entry[]; total: number }>(`/api/${slug}`);
+      const data = await apiFetch<{ data: Entry[]; total: number }>(
+        `/api/${slug}?locale=${locale}`,
+      );
       setEntries(data.data);
       setTotal(data.total);
       toast("Entry unpublished", "success");
@@ -231,6 +239,18 @@ function CollectionEntries() {
           </div>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value)}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="en">EN</option>
+            <option value="fr">FR</option>
+            <option value="de">DE</option>
+            <option value="es">ES</option>
+            <option value="ja">JA</option>
+            <option value="zh">ZH</option>
+          </select>
           {hasSoftDelete && (
             <Button
               variant={showDeleted ? "secondary" : "outline"}

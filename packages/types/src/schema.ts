@@ -34,6 +34,10 @@ export interface CollectionDefinition {
     source?: string;
     unique?: boolean;
   };
+  localization?: {
+    locales: string[];
+    defaultLocale: string;
+  };
 }
 
 export interface GlobalDefinition {

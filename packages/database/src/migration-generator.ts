@@ -35,8 +35,9 @@ const fieldToSqlType: Record<string, string> = {
 
 function sqlTypeForField(field: FieldDefinition): string {
   const baseType = fieldToSqlType[field.type] ?? "TEXT";
+  const type = field.localized ? "TEXT" : baseType;
   const nullable = field.validation?.required ? " NOT NULL" : "";
-  return `${baseType}${nullable}`;
+  return `${type}${nullable}`;
 }
 
 function collectionTableName(slug: string): string {

@@ -39,6 +39,11 @@ export function fieldToGraphQLType(
   field: FieldDefinition,
   collections: CollectionDefinition[],
 ): string {
+  const base = baseGraphQLType(field, collections);
+  return field.localized ? "JSON" : base;
+}
+
+function baseGraphQLType(field: FieldDefinition, collections: CollectionDefinition[]): string {
   const mapped = SCALAR_MAP[field.type];
   if (mapped) return mapped;
 

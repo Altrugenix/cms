@@ -24,6 +24,7 @@ function CreateEntry() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [locale, setLocale] = useState("en");
 
   useEffect(() => {
     fetchCollections()
@@ -56,9 +57,15 @@ function CreateEntry() {
 
     setSaving(true);
     try {
+      const payload: Record<string, unknown> = {};
+      for (const f of collection.fields) {
+        const v = values[f.name];
+        if (v === "" || v === undefined) continue;
+        payload[f.name] = f.localized ? { [locale]: v } : v;
+      }
       await apiFetch(`/api/${slug}`, {
         method: "POST",
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       toast("Entry created", "success");
       navigate({ to: "/collections/$slug", params: { slug } });
@@ -122,6 +129,20 @@ function CreateEntry() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">New {collection.label}</h1>
           <p className="text-muted-foreground">Create a new entry</p>
+        </div>
+        <div className="ml-auto">
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value)}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="en">EN</option>
+            <option value="fr">FR</option>
+            <option value="de">DE</option>
+            <option value="es">ES</option>
+            <option value="ja">JA</option>
+            <option value="zh">ZH</option>
+          </select>
         </div>
       </div>
 
