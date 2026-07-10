@@ -55,6 +55,14 @@ function draftColumns(): string[] {
   return ["_status", "_publishedAt", "_publishedBy"];
 }
 
+function hasScheduledPublishing(collection: CollectionDefinition): boolean {
+  return collection.versions?.scheduledPublishing === true;
+}
+
+function scheduledPublishColumns(): string[] {
+  return ["_publishAt"];
+}
+
 function hasSoftDelete(collection: CollectionDefinition): boolean {
   return collection.versions?.softDelete === true;
 }
@@ -84,10 +92,14 @@ export class MigrationGenerator {
         const missingSoftDeleteColumns = hasSoftDelete(collection)
           ? softDeleteColumns().filter((c) => !existingColumns.includes(c))
           : [];
+        const missingScheduledPublishColumns = hasScheduledPublishing(collection)
+          ? scheduledPublishColumns().filter((c) => !existingColumns.includes(c))
+          : [];
         if (
           newColumns.length > 0 ||
           missingDraftColumns.length > 0 ||
-          missingSoftDeleteColumns.length > 0
+          missingSoftDeleteColumns.length > 0 ||
+          missingScheduledPublishColumns.length > 0
         ) {
           migrations.push(
             this.addColumnsMigration(
@@ -95,6 +107,7 @@ export class MigrationGenerator {
               newColumns,
               missingDraftColumns,
               missingSoftDeleteColumns,
+              missingScheduledPublishColumns,
               tableName,
               now,
             ),
@@ -119,6 +132,9 @@ export class MigrationGenerator {
       columns.push("  _publishedAt TEXT");
       columns.push("  _publishedBy TEXT");
     }
+    if (hasScheduledPublishing(collection)) {
+      columns.push("  _publishAt TEXT");
+    }
     if (hasSoftDelete(collection)) {
       columns.push("  _deletedAt TEXT");
       columns.push("  _deletedBy TEXT");
@@ -139,6 +155,7 @@ export class MigrationGenerator {
     newFields: FieldDefinition[],
     draftCols: string[],
     softDeleteCols: string[],
+    scheduledPublishCols: string[],
     tableName: string,
     timestamp: string,
   ): Migration {
@@ -153,12 +170,18 @@ export class MigrationGenerator {
     for (const col of softDeleteCols) {
       upLines.push(`ALTER TABLE "${tableName}" ADD COLUMN ${col} TEXT;`);
     }
+    for (const col of scheduledPublishCols) {
+      upLines.push(`ALTER TABLE "${tableName}" ADD COLUMN ${col} TEXT;`);
+    }
     const downLines = [
       ...newFields.map(
         (f) => `-- WARNING: Cannot automatically revert ADD COLUMN for ${fieldColumnName(f.name)}`,
       ),
       ...draftCols.map((col) => `-- WARNING: Cannot automatically revert ADD COLUMN for ${col}`),
       ...softDeleteCols.map(
+        (col) => `-- WARNING: Cannot automatically revert ADD COLUMN for ${col}`,
+      ),
+      ...scheduledPublishCols.map(
         (col) => `-- WARNING: Cannot automatically revert ADD COLUMN for ${col}`,
       ),
     ];

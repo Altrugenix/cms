@@ -215,6 +215,43 @@ describe("MigrationGenerator", () => {
     expect(m.up).toContain("_deletedBy TEXT");
   });
 
+  it("adds _publishAt column when scheduledPublishing is true", () => {
+    const generator = new MigrationGenerator();
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "posts",
+        labels: { singular: "Post", plural: "Posts" },
+        fields: [{ name: "title", type: "text" }],
+        versions: { drafts: true, scheduledPublishing: true },
+      },
+    ];
+
+    const [m] = generator.generate(collections, emptySchema);
+    expect(m.up).toContain("_publishAt TEXT");
+  });
+
+  it("adds _publishAt column when enabling scheduled publishing on existing table", () => {
+    const generator = new MigrationGenerator();
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "posts",
+        labels: { singular: "Post", plural: "Posts" },
+        fields: [{ name: "title", type: "text" }],
+        versions: { drafts: true, scheduledPublishing: true },
+      },
+    ];
+
+    const existing: ExistingSchema = {
+      tables: new Map([
+        ["__cms_posts", ["id", "title", "_status", "_publishedAt", "_publishedBy"]],
+      ]),
+    };
+
+    const [m] = generator.generate(collections, existing);
+    expect(m.name).toBe("add_fields_posts");
+    expect(m.up).toContain("ADD COLUMN _publishAt");
+  });
+
   it("adds draft columns when enabling drafts on existing table", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [

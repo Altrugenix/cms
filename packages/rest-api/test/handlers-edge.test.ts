@@ -681,3 +681,62 @@ describe("soft delete handlers", () => {
     expect(result.statusCode).toBe(404);
   });
 });
+
+const scheduledCollection: CollectionDefinition = {
+  slug: "posts",
+  labels: { singular: "Post", plural: "Posts" },
+  fields: [{ name: "title", type: "text", validation: { required: true } }],
+  versions: { drafts: true, scheduledPublishing: true },
+};
+
+describe("scheduled publishing handlers", () => {
+  it("createHandler keeps status as draft when _publishAt is set", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createCreateHandler(scheduledCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: { title: "Scheduled", _publishAt: "2099-01-01T00:00:00.000Z" },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(201);
+    const body = result.body as Record<string, unknown>;
+    expect(body._status).toBe("draft");
+    expect(body._publishAt).toBe("2099-01-01T00:00:00.000Z");
+  });
+
+  it("createHandler publishes immediately when _status is explicitly published", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createCreateHandler(scheduledCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: { title: "Publish Now", _status: "published", _publishAt: "2099-01-01T00:00:00.000Z" },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(201);
+    const body = result.body as Record<string, unknown>;
+    expect(body._status).toBe("published");
+    expect(body._publishedAt).toBeDefined();
+  });
+
+  it("updateHandler preserves _publishAt in update", async () => {
+    const adapter = createDraftAdapter();
+    const created = await adapter.create("__cms_posts", {
+      title: "Test",
+      _status: "draft",
+      _publishAt: "2099-01-01T00:00:00.000Z",
+    });
+    const handler = createUpdateHandler(scheduledCollection, adapter);
+    const result = await handler({
+      params: { id: String(created.id) },
+      query: {},
+      body: { title: "Updated" },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.title).toBe("Updated");
+    expect(body._publishAt).toBe("2099-01-01T00:00:00.000Z");
+  });
+});

@@ -1,6 +1,6 @@
 # TODO — Altrugenix CMS
 
-> Project status: Milestone 8 complete. **~420 tests** across all packages. Documentation site live at apps/docs. Audits complete (performance, security, accessibility). Draft/publish, onboarding, DB health check, Docker setup, and docs CI/CD done.
+> Project status: Milestone 8 complete. **~430 tests** across all packages. Documentation site live at apps/docs. Audits complete (performance, security, accessibility). Soft delete and scheduled publishing done.
 
 ---
 
@@ -303,7 +303,7 @@
 ### Content Workflow
 
 - [x] Draft / publish workflow
-- [ ] Scheduled publishing
+- [x] Scheduled publishing
 - [x] Soft delete
 - [ ] Localization / i18n
 - [ ] Version history and revisions

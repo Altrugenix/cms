@@ -173,6 +173,9 @@ export function collectionToCreateSchema(
   if (collection.versions?.drafts) {
     entries._status = z.enum(["draft", "published", "archived"]).optional();
   }
+  if (collection.versions?.scheduledPublishing) {
+    entries._publishAt = z.string().optional();
+  }
 
   return z.object(entries);
 }
@@ -192,6 +195,9 @@ export function collectionToUpdateSchema(
 
   if (collection.versions?.drafts) {
     entries._status = z.enum(["draft", "published", "archived"]).optional();
+  }
+  if (collection.versions?.scheduledPublishing) {
+    entries._publishAt = z.string().optional();
   }
 
   return z.object(entries);

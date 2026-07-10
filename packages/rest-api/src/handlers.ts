@@ -200,6 +200,10 @@ function hasSoftDelete(collection: CollectionDefinition): boolean {
   return collection.versions?.softDelete === true;
 }
 
+function hasScheduledPublishing(collection: CollectionDefinition): boolean {
+  return collection.versions?.scheduledPublishing === true;
+}
+
 export function createPublishHandler(
   collection: CollectionDefinition,
   adapter: DatabaseAdapter,
@@ -321,6 +325,9 @@ export function createCreateHandler(
         data._status = data._status ?? "draft";
         if (data._status === "published") {
           data._publishedAt = new Date().toISOString();
+        }
+        if (hasScheduledPublishing(collection) && data._publishAt && data._status !== "published") {
+          data._status = "draft";
         }
       }
       const tableName = collectionTableName(collection.slug);

@@ -317,7 +317,10 @@ function CollectionEntries() {
                     ))}
                     {hasDrafts && (
                       <td className="px-4 py-3 text-sm">
-                        {renderStatus(entry._status as string | undefined)}
+                        {renderStatus(
+                          entry._status as string | undefined,
+                          entry._publishAt as string | undefined,
+                        )}
                       </td>
                     )}
                     <td className="px-4 py-3 text-right">
@@ -425,12 +428,19 @@ function formatValue(val: unknown): string {
   return String(val);
 }
 
-function renderStatus(status: string | undefined) {
+function renderStatus(status: string | undefined, publishAt?: string) {
   if (!status) return <span className="text-muted-foreground">—</span>;
   if (status === "published") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
         <CheckCircle className="h-3 w-3" /> Published
+      </span>
+    );
+  }
+  if (status === "draft" && publishAt) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+        Scheduled
       </span>
     );
   }
@@ -442,7 +452,7 @@ function renderStatus(status: string | undefined) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-400">
+    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:dark:bg-gray-800 dark:text-gray-400">
       {status}
     </span>
   );

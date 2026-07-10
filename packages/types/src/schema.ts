@@ -28,6 +28,7 @@ export interface CollectionDefinition {
     drafts: boolean;
     maxPerDoc?: number;
     softDelete?: boolean;
+    scheduledPublishing?: boolean;
   };
   slugField?: {
     source?: string;

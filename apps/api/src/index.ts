@@ -8,6 +8,7 @@ import { LocalStorageAdapter } from "@altrugenix/storage";
 import { PluginManager, seoPlugin } from "@altrugenix/plugins";
 import { discoverPlugins } from "@altrugenix/plugins";
 import { EventBus, Lifecycle, createLogger } from "@altrugenix/core";
+import { createScheduledPublisher } from "./services/scheduled-publisher.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -63,6 +64,9 @@ async function main(): Promise<void> {
         getAdminPanels: () => pluginManager.getAdminPanels(),
       },
     });
+
+    const publisher = createScheduledPublisher(adapter, collections);
+    fastify.addHook("onClose", () => publisher.stop());
 
     await fastify.listen({ port: config.port, host: config.host });
     console.log(`Server listening on http://${config.host}:${config.port}`);
