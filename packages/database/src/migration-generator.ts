@@ -71,10 +71,16 @@ function softDeleteColumns(): string[] {
   return ["_deletedAt", "_deletedBy"];
 }
 
+const VERSIONS_TABLE = "__cms_versions";
+
 export class MigrationGenerator {
   generate(collections: CollectionDefinition[], existing: ExistingSchema): Migration[] {
     const migrations: Migration[] = [];
     const now = new Date().toISOString().replace(/[:.]/g, "-");
+
+    if (!existing.tables.has(VERSIONS_TABLE)) {
+      migrations.push(this.createVersionsTableMigration(now));
+    }
 
     for (const collection of collections) {
       const tableName = collectionTableName(collection.slug);
@@ -147,6 +153,15 @@ export class MigrationGenerator {
       name: `create_${collection.slug}`,
       up,
       down,
+    };
+  }
+
+  private createVersionsTableMigration(timestamp: string): Migration {
+    return {
+      id: `mig_${timestamp}_create_versions`,
+      name: "create_versions",
+      up: `CREATE TABLE IF NOT EXISTS "${VERSIONS_TABLE}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  collection TEXT NOT NULL,\n  entryId TEXT NOT NULL,\n  version INTEGER NOT NULL,\n  data TEXT NOT NULL,\n  createdAt TEXT NOT NULL\n);`,
+      down: `DROP TABLE IF EXISTS "${VERSIONS_TABLE}";`,
     };
   }
 

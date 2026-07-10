@@ -2,7 +2,11 @@ import { describe, it, expect } from "vitest";
 import { MigrationGenerator } from "../src/migration-generator.js";
 import type { CollectionDefinition, ExistingSchema } from "../src/index.js";
 
-const emptySchema: ExistingSchema = { tables: new Map() };
+const emptySchema: ExistingSchema = {
+  tables: new Map([
+    ["__cms_versions", ["id", "collection", "entryId", "version", "data", "createdAt"]],
+  ]),
+};
 
 describe("MigrationGenerator", () => {
   it("generates CREATE TABLE for a new collection", () => {
@@ -46,7 +50,10 @@ describe("MigrationGenerator", () => {
     ];
 
     const existing: ExistingSchema = {
-      tables: new Map([["__cms_posts", ["id", "title"]]]),
+      tables: new Map([
+        ["__cms_versions", ["id", "collection", "entryId", "version", "data", "createdAt"]],
+        ["__cms_posts", ["id", "title"]],
+      ]),
     };
 
     const migrations = generator.generate(collections, existing);
@@ -69,7 +76,10 @@ describe("MigrationGenerator", () => {
     ];
 
     const existing: ExistingSchema = {
-      tables: new Map([["__cms_posts", ["id", "title"]]]),
+      tables: new Map([
+        ["__cms_versions", ["id", "collection", "entryId", "version", "data", "createdAt"]],
+        ["__cms_posts", ["id", "title"]],
+      ]),
     };
 
     const migrations = generator.generate(collections, existing);
@@ -188,7 +198,10 @@ describe("MigrationGenerator", () => {
     ];
 
     const existing: ExistingSchema = {
-      tables: new Map([["__cms_posts", ["id", "title"]]]),
+      tables: new Map([
+        ["__cms_versions", ["id", "collection", "entryId", "version", "data", "createdAt"]],
+        ["__cms_posts", ["id", "title"]],
+      ]),
     };
 
     const [m] = generator.generate(collections, existing);
@@ -243,6 +256,7 @@ describe("MigrationGenerator", () => {
 
     const existing: ExistingSchema = {
       tables: new Map([
+        ["__cms_versions", ["id", "collection", "entryId", "version", "data", "createdAt"]],
         ["__cms_posts", ["id", "title", "_status", "_publishedAt", "_publishedBy"]],
       ]),
     };
@@ -264,7 +278,10 @@ describe("MigrationGenerator", () => {
     ];
 
     const existing: ExistingSchema = {
-      tables: new Map([["__cms_posts", ["id", "title"]]]),
+      tables: new Map([
+        ["__cms_versions", ["id", "collection", "entryId", "version", "data", "createdAt"]],
+        ["__cms_posts", ["id", "title"]],
+      ]),
     };
 
     const [m] = generator.generate(collections, existing);
@@ -272,5 +289,25 @@ describe("MigrationGenerator", () => {
     expect(m.up).toContain("ADD COLUMN _status");
     expect(m.up).toContain("ADD COLUMN _publishedAt");
     expect(m.up).toContain("ADD COLUMN _publishedBy");
+  });
+
+  it("generates versions table migration when __cms_versions does not exist", () => {
+    const generator = new MigrationGenerator();
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "posts",
+        labels: { singular: "Post", plural: "Posts" },
+        fields: [{ name: "title", type: "text" }],
+      },
+    ];
+
+    const existing: ExistingSchema = { tables: new Map() };
+    const migrations = generator.generate(collections, existing);
+    expect(migrations[0].name).toBe("create_versions");
+    expect(migrations[0].up).toContain("__cms_versions");
+    expect(migrations[0].up).toContain("collection TEXT");
+    expect(migrations[0].up).toContain("entryId TEXT");
+    expect(migrations[0].up).toContain("version INTEGER");
+    expect(migrations[0].up).toContain("data TEXT");
   });
 });

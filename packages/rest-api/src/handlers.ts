@@ -196,6 +196,51 @@ function hasDrafts(collection: CollectionDefinition): boolean {
   return collection.versions?.drafts === true;
 }
 
+const VERSIONS_TABLE = "__cms_versions";
+
+async function saveVersion(
+  adapter: DatabaseAdapter,
+  collection: CollectionDefinition,
+  entryId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const existing = await adapter.findMany(VERSIONS_TABLE, {
+      where: { collection: collection.slug, entryId },
+      sort: { version: "desc" },
+      limit: 1,
+    });
+    const nextVersion =
+      existing.total > 0
+        ? ((existing.data[0] as Record<string, unknown>).version as number) + 1
+        : 1;
+    await adapter.create(VERSIONS_TABLE, {
+      collection: collection.slug,
+      entryId,
+      version: nextVersion,
+      data: JSON.stringify(data),
+      createdAt: new Date().toISOString(),
+    });
+    const maxPerDoc = collection.versions?.maxPerDoc;
+    if (maxPerDoc) {
+      const allVersions = await adapter.findMany(VERSIONS_TABLE, {
+        where: { collection: collection.slug, entryId },
+        sort: { version: "desc" },
+      });
+      if (allVersions.total > maxPerDoc) {
+        const toDelete = allVersions.data
+          .slice(maxPerDoc)
+          .map((r) => String((r as Record<string, unknown>).id));
+        if (toDelete.length > 0) {
+          await adapter.deleteMany(VERSIONS_TABLE, toDelete);
+        }
+      }
+    }
+  } catch {
+    // Silently fail — version storage should not block the main operation
+  }
+}
+
 function hasSoftDelete(collection: CollectionDefinition): boolean {
   return collection.versions?.softDelete === true;
 }
@@ -332,6 +377,14 @@ export function createCreateHandler(
       }
       const tableName = collectionTableName(collection.slug);
       const record = await adapter.create(tableName, data);
+      if (record) {
+        await saveVersion(
+          adapter,
+          collection,
+          String(record.id),
+          record as Record<string, unknown>,
+        );
+      }
       return { statusCode: 201, body: record };
     } catch (e) {
       if (isUniqueConstraintError(e)) {
@@ -365,16 +418,19 @@ export function createUpdateHandler(
         };
       }
       const data = parsed.data as Record<string, unknown>;
+      let record: Record<string, unknown> | null;
       if (hasDrafts(collection)) {
         const { _status, _publishedAt, _publishedBy, ...rest } = data;
         const tableName = collectionTableName(collection.slug);
-        const record = await adapter.update(tableName, id, rest);
+        record = await adapter.update(tableName, id, rest);
         if (!record) return errorResult(404, "Not found");
+        await saveVersion(adapter, collection, id, record);
         return { statusCode: 200, body: record };
       }
       const tableName = collectionTableName(collection.slug);
-      const record = await adapter.update(tableName, id, data);
+      record = await adapter.update(tableName, id, data);
       if (!record) return errorResult(404, "Not found");
+      await saveVersion(adapter, collection, id, record);
       return { statusCode: 200, body: record };
     } catch (e) {
       if (isUniqueConstraintError(e)) {
@@ -508,6 +564,61 @@ export function createRestoreHandler(
         _deletedAt: null,
       } as Record<string, unknown>);
       if (!record) return errorResult(404, "Not found");
+      return { statusCode: 200, body: record };
+    } catch {
+      return errorResult(500, "Internal server error");
+    }
+  };
+}
+
+export function createListVersionsHandler(
+  collection: CollectionDefinition,
+  adapter: DatabaseAdapter,
+): RouteHandler {
+  return async (ctx) => {
+    try {
+      const { id } = ctx.params;
+      if (!id) return errorResult(400, "Missing id parameter");
+      const result = await adapter.findMany(VERSIONS_TABLE, {
+        where: { collection: collection.slug, entryId: id },
+        sort: { version: "desc" },
+      });
+      return { statusCode: 200, body: result };
+    } catch {
+      return errorResult(500, "Internal server error");
+    }
+  };
+}
+
+export function createRestoreVersionHandler(
+  collection: CollectionDefinition,
+  adapter: DatabaseAdapter,
+): RouteHandler {
+  return async (ctx) => {
+    try {
+      const { id, versionId } = ctx.params;
+      if (!id || !versionId) return errorResult(400, "Missing id or versionId parameter");
+      const tableName = collectionTableName(collection.slug);
+
+      const records = await adapter.findMany(VERSIONS_TABLE, {
+        where: { collection: collection.slug, entryId: id, id: Number(versionId) },
+        limit: 1,
+      });
+      if (records.total === 0) return errorResult(404, "Version not found");
+
+      const versionData = JSON.parse(
+        (records.data[0] as Record<string, unknown>).data as string,
+      ) as Record<string, unknown>;
+
+      delete versionData.id;
+      delete versionData._status;
+      delete versionData._deletedAt;
+      delete versionData._deletedBy;
+      delete versionData._publishAt;
+
+      const record = await adapter.update(tableName, id, versionData);
+      if (!record) return errorResult(404, "Not found");
+      await saveVersion(adapter, collection, id, record);
       return { statusCode: 200, body: record };
     } catch {
       return errorResult(500, "Internal server error");

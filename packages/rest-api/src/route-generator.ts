@@ -12,6 +12,8 @@ import {
   createPublishHandler,
   createUnpublishHandler,
   createRestoreHandler,
+  createListVersionsHandler,
+  createRestoreVersionHandler,
   createGlobalGetHandler,
   createGlobalUpsertHandler,
 } from "./handlers.js";
@@ -121,6 +123,31 @@ export function createCollectionRouter(
       tags: [tag],
       handler: applyMiddleware(createRestoreHandler(collection, adapter), hooks, collection),
     });
+  }
+
+  if (collection.versions) {
+    routes.push(
+      {
+        method: "GET",
+        path: `${basePath}/${slug}/:id/versions`,
+        operationId: `list${pascalCase(slug)}Versions`,
+        summary: `List versions for a ${tag}`,
+        tags: [tag],
+        handler: applyMiddleware(createListVersionsHandler(collection, adapter), hooks, collection),
+      },
+      {
+        method: "POST",
+        path: `${basePath}/${slug}/:id/versions/:versionId/restore`,
+        operationId: `restore${pascalCase(slug)}Version`,
+        summary: `Restore a ${tag} to a previous version`,
+        tags: [tag],
+        handler: applyMiddleware(
+          createRestoreVersionHandler(collection, adapter),
+          hooks,
+          collection,
+        ),
+      },
+    );
   }
 
   return { routes };
