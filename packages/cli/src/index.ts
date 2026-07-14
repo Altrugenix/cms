@@ -5,6 +5,7 @@
 import { collectionCreate, printCollectionCreateHelp } from "./commands/collection.js";
 import { pluginCreate, printPluginCreateHelp } from "./commands/plugin.js";
 import { dev, printDevHelp } from "./commands/dev.js";
+import { start, printStartHelp } from "./commands/start.js";
 import { build, printBuildHelp } from "./commands/build.js";
 import { migrate, printMigrateHelp } from "./commands/migrate.js";
 import { generate, printGenerateHelp } from "./commands/generate.js";
@@ -17,7 +18,8 @@ function printMainHelp(): void {
 Usage: cms <command> [options]
 
 Commands:
-  dev                  Start the CMS dev server with file watching
+  dev                  Start the CMS dev server with file watching (hot-reload)
+  start                Start the CMS production server (no file watching)
   build                Build CMS for production
   migrate              Run database migrations
   generate             Run code generation pipeline
@@ -47,17 +49,42 @@ function parseArgs(): void {
 
   const hasHelp = args.includes("--help");
 
+  function parseDevFlags(): {
+    port?: number;
+    host?: string;
+    dir?: string;
+    dbUrl?: string;
+    dbAdapter?: string;
+  } {
+    const portIdx = args.indexOf("--port");
+    const hostIdx = args.indexOf("--host");
+    const dirIdx = args.indexOf("--dir");
+    const dbUrlIdx = args.indexOf("--db-url");
+    const dbAdapterIdx = args.indexOf("--db-adapter");
+    return {
+      port: portIdx !== -1 ? Number(args[portIdx + 1]) : undefined,
+      host: hostIdx !== -1 ? args[hostIdx + 1] : undefined,
+      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+      dbUrl: dbUrlIdx !== -1 ? args[dbUrlIdx + 1] : undefined,
+      dbAdapter: dbAdapterIdx !== -1 ? args[dbAdapterIdx + 1] : undefined,
+    };
+  }
+
   if (cmd === "dev") {
     if (hasHelp) {
       printDevHelp();
       return;
     }
-    const portIdx = args.indexOf("--port");
-    const dirIdx = args.indexOf("--dir");
-    dev({
-      port: portIdx !== -1 ? Number(args[portIdx + 1]) : undefined,
-      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
-    }).catch((err: Error) => {
+    dev(parseDevFlags()).catch((err: Error) => {
+      console.error("Error:", err.message);
+      process.exit(1);
+    });
+  } else if (cmd === "start") {
+    if (hasHelp) {
+      printStartHelp();
+      return;
+    }
+    start(parseDevFlags()).catch((err: Error) => {
       console.error("Error:", err.message);
       process.exit(1);
     });

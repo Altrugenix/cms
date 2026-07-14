@@ -347,9 +347,10 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [x] Auto-detect and create SQLite database file on first run (`cms.db`)
 - [x] Add all server dependencies to CLI package.json (fastify, mercurius, auth, permissions, etc.)
 - [x] Copy all API server code (plugins, routes, services) into `packages/cli/src/server/`
+- [x] Wire schema watcher into server hot-reload (debounced close + re-create Fastify on schema change)
+- [x] Add `cms start` command for production (no file watching, no hot-reload)
+- [x] Extract shared bootstrap logic into `packages/cli/src/server/bootstrap.ts`
 - [ ] Run schema migrations automatically on startup
-- [ ] Wire schema watcher into server hot-reload (reload schemas without restart)
-- [ ] Add `cms start` command for production (no file watching, optimized)
 
 ### Admin Panel Bundling (`apps/admin`)
 
