@@ -215,7 +215,7 @@ so that team members only access what they need.
 
 ### Milestone 1: Foundation (Weeks 1–3)
 
-- Monorepo setup (Turborepo, Yarn, TypeScript)
+- Monorepo setup (Turborepo, pnpm, TypeScript)
 - Core DI container and event bus
 - Schema definition API (`defineCollection`, field helpers)
 - Schema loader (discover, parse, validate)

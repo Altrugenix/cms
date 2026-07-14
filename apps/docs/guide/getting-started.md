@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 20+
-- Yarn 4
+- pnpm
 - SQLite (default) or PostgreSQL
 
 ## Installation
@@ -14,10 +14,10 @@ git clone https://github.com/Arche-CMS/arche-cms.git
 cd cms
 
 # Install dependencies
-yarn install
+pnpm install
 
 # Start development servers
-yarn dev
+pnpm dev
 ```
 
 This starts:

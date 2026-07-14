@@ -49,7 +49,7 @@ Priority order: 1) Developer Experience, 2) Type Safety, 3) Performance, 4) Exte
 
 ### Package Manager
 
-- Yarn
+- pnpm
 
 ### Repository
 
@@ -157,13 +157,13 @@ Do not skip steps. Do not implement features until the architecture has been rev
 
 ## Commands
 
-- `yarn dev` — start dev servers
-- `yarn build` — build all packages
-- `yarn lint` — lint all packages
-- `yarn typecheck` — TypeScript type checking
-- `yarn test` — run all tests
-- `yarn test:watch` — test watch mode
-- `yarn format` — format with Prettier
+- `pnpm dev` — start dev servers
+- `pnpm build` — build all packages
+- `pnpm lint` — lint all packages
+- `pnpm typecheck` — TypeScript type checking
+- `pnpm test` — run all tests
+- `pnpm test:watch` — test watch mode
+- `pnpm format` — format with Prettier
 - `cms dev` — start CMS dev mode (CLI)
 - `cms build` — build CMS for production
 - `cms generate` — run code generation

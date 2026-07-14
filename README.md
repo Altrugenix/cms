@@ -56,8 +56,8 @@ cms dev
 ```bash
 git clone https://github.com/Arche-CMS/arche-cms.git
 cd cms
-yarn install
-yarn dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:5173` for the admin panel and `http://localhost:3000/docs` for API docs.
@@ -103,10 +103,10 @@ text, textarea, number, boolean, date, datetime, email, password, url, json, ric
 
 | Command        | Description                  |
 | -------------- | ---------------------------- |
-| `yarn dev`     | Start dev servers            |
-| `yarn build`   | Build all packages           |
-| `yarn test`    | Run all tests                |
-| `yarn lint`    | Lint all packages            |
+| `pnpm dev`     | Start dev servers            |
+| `pnpm build`   | Build all packages           |
+| `pnpm test`    | Run all tests                |
+| `pnpm lint`    | Lint all packages            |
 | `cms dev`      | Start CMS dev mode           |
 | `cms build`    | Build CMS for production     |
 | `cms generate` | Run code generation pipeline |

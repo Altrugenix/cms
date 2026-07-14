@@ -25,11 +25,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: corepack enable && corepack prepare yarn@4.17.0 --activate
-      - run: yarn install --immutable
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - run: yarn workspace @arche-cms/docs build
+      - run: pnpm --filter @arche-cms/docs build
         env:
           DOCS_BASE: /arche-cms/
       - name: Upload Pages Artifact
@@ -56,9 +56,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: corepack enable && corepack prepare yarn@4.17.0 --activate
-      - run: yarn install --immutable
-      - run: yarn workspace @arche-cms/docs build
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @arche-cms/docs build
         env:
           DOCS_BASE: /
       - uses: actions/checkout@v4

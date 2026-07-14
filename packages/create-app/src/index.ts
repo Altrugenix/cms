@@ -128,8 +128,8 @@ function scaffold(
   console.log(`\nScaffolded CMS project at ${projectDir}`);
   console.log("\nNext steps:");
   console.log(`  cd ${projectDir.split("/").pop()}`);
-  console.log("  npm install");
-  console.log("  npm run dev");
+  console.log("  pnpm install");
+  console.log("  pnpm run dev");
   console.log();
 }
 

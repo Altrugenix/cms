@@ -5,7 +5,7 @@
 ### Prerequisites
 
 - Node.js >= 20
-- Yarn 4 (`corepack enable`)
+- pnpm (`corepack enable`)
 - Git
 
 ### Clone and Install

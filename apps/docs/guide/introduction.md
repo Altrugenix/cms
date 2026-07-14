@@ -36,5 +36,5 @@ Arche CMS is a **file-based, developer-first, open-source headless CMS**. Schema
 - **Admin UI**: React 19, Vite, TanStack Router, Tailwind CSS v4, shadcn/ui
 - **Validation**: Zod
 - **Auth**: JWT (jose)
-- **Package Manager**: Yarn 4
+- **Package Manager**: pnpm
 - **Repository**: Turborepo monorepo

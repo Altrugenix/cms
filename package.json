@@ -2,11 +2,12 @@
   "name": "arche-cms",
   "type": "module",
   "private": true,
-  "packageManager": "yarn@4.17.0",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "packageManager": "pnpm@10.10.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",

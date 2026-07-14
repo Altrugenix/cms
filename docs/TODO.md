@@ -8,7 +8,7 @@
 
 ### Monorepo Setup
 
-- [x] Initialize Turborepo with Yarn workspaces
+- [x] Initialize Turborepo with pnpm workspaces
 - [x] Configure TypeScript strict mode across all packages
 - [x] Set up ESLint, Prettier, and lint-staged
 - [x] Configure Vitest with coverage
