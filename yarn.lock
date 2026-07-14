@@ -3973,6 +3973,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"create-altrugenix-app@workspace:packages/create-app":
+  version: 0.0.0-use.local
+  resolution: "create-altrugenix-app@workspace:packages/create-app"
+  bin:
+    create-altrugenix-app: ./bin/create-altrugenix-app.js
+  languageName: unknown
+  linkType: soft
+
 "cross-spawn@npm:^7.0.5, cross-spawn@npm:^7.0.6":
   version: 7.0.6
   resolution: "cross-spawn@npm:7.0.6"

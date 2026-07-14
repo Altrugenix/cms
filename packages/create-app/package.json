@@ -1,0 +1,22 @@
+{
+  "name": "create-altrugenix-app",
+  "version": "0.0.1",
+  "type": "module",
+  "bin": "./bin/create-altrugenix-app.js",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "bin",
+    "template"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  }
+}

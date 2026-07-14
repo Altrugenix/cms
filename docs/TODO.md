@@ -347,38 +347,39 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [x] Auto-detect and create SQLite database file on first run (`cms.db`)
 - [x] Add all server dependencies to CLI package.json (fastify, mercurius, auth, permissions, etc.)
 - [x] Copy all API server code (plugins, routes, services) into `packages/cli/src/server/`
+- [x] Extract shared bootstrap logic into `packages/cli/src/server/bootstrap.ts`
 - [x] Wire schema watcher into server hot-reload (debounced close + re-create Fastify on schema change)
 - [x] Add `cms start` command for production (no file watching, no hot-reload)
-- [x] Extract shared bootstrap logic into `packages/cli/src/server/bootstrap.ts`
 - [ ] Run schema migrations automatically on startup
 
 ### Admin Panel Bundling (`apps/admin`)
 
-- [ ] Make the admin panel build to a static directory that the API server serves
-- [ ] Configure Vite build to output to `apps/api/public/`
-- [ ] Serve static admin panel from Fastify with fallback to `index.html` for SPA routing
-- [ ] Add environment-aware admin URL: dev uses Vite dev server (port 5173), production uses bundled static
+- [x] Make the admin panel build to a static directory that the API server serves
+- [x] Configure Vite build output — production mode sets `VITE_API_URL` to empty string (relative API paths)
+- [x] Serve static admin panel from Fastify with SPA `index.html` fallback via `@fastify/static`
+- [x] Add environment-aware admin URL: dev uses Vite dev server (port 5173, `VITE_API_URL=http://localhost:3000`), production uses bundled static (relative URLs)
+- [ ] Auto-build admin panel as part of `cms build` pipeline before server build
 
 ### Package Restructuring
 
 - [ ] Rename `@altrugenix/cli` → `@altrugenix/cms` as the main package
-- [ ] Add all server dependencies to the CLI package (fastify, database adapters, auth, etc.)
+- [x] Add all server dependencies to the CLI package (fastify, database adapters, auth, etc.)
 - [ ] Create `packages/cms/bin/cms.js` entry point with proper shebang
 - [ ] Ensure `cms dev` works via `npx @altrugenix/cms` without cloning the monorepo
 - [ ] Verify published package is <10MB (exclude dev files, tests, source maps)
 
 ### Scaffolding (`create-altrugenix-app`)
 
-- [ ] Create `packages/create-app/` with `create-altrugenix-app` CLI
-- [ ] Prompt for project name, database choice (SQLite/PostgreSQL), default locale
-- [ ] Scaffold a minimal project: `package.json`, `cms/collections/`, `cms/globals/`, `cms/components/`, `.env`, `altrugenix.config.ts`
-- [ ] Add `"dev": "cms dev"` and `"build": "cms build"` scripts to scaffolded `package.json`
+- [x] Create `packages/create-app/` with `create-altrugenix-app` CLI
+- [x] Prompt for project name, database choice (SQLite/PostgreSQL), default locale
+- [x] Scaffold a minimal project: `package.json`, `cms/collections/`, `cms/globals/`, `cms/components/`, `.env`, `.gitignore`, example collection + global
+- [x] Add `"dev": "cms dev"`, `"build": "cms build"`, and `"start": "cms start"` scripts to scaffolded `package.json`
 - [ ] Publish `create-altrugenix-app` to npm
 
 ### Production Build (`cms build`)
 
-- [ ] Update `cms build` to compile the API server + admin panel into a production bundle
-- [ ] Support `--out-dir` flag for output directory
+- [x] Update `cms build` to also build the admin panel (`yarn workspace @altrugenix/admin build`)
+- [x] Support `--out-dir` flag for output directory
 - [ ] Generate `package.json`, `Dockerfile`, and `.dockerignore` in output
 
 ### Documentation & Release

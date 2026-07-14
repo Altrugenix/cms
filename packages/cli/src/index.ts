@@ -93,7 +93,11 @@ function parseArgs(): void {
       printBuildHelp();
       return;
     }
-    build({ clean: args.includes("--clean") }).catch((err: Error) => {
+    const outDirIdx = args.indexOf("--out-dir");
+    build({
+      clean: args.includes("--clean"),
+      outDir: outDirIdx !== -1 ? args[outDirIdx + 1] : undefined,
+    }).catch((err: Error) => {
       console.error("Error:", err.message);
       process.exit(1);
     });
