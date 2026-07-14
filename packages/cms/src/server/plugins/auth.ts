@@ -62,7 +62,7 @@ export async function registerAuth(
         }
 
         const result = await authService.register({ ...request.body, role: undefined });
-        return reply.status(201).send(result);
+        return reply.status(201).send({ user: result.user, ...result.tokens });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Registration failed";
         return reply.status(400).send({ error: message });
@@ -78,7 +78,7 @@ export async function registerAuth(
     ) => {
       try {
         const result = await authService.login(request.body);
-        return reply.send(result);
+        return reply.send({ user: result.user, ...result.tokens });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Login failed";
         return reply.status(401).send({ error: message });

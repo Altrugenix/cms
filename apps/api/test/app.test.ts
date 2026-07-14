@@ -112,7 +112,7 @@ describe("CMS API Server", () => {
       url: "/api/auth/register",
       body: { email: "crud@example.com", password: "password123" },
     });
-    authToken = JSON.parse(regRes.body).tokens.accessToken;
+    authToken = JSON.parse(regRes.body).accessToken;
   });
 
   afterAll(async () => {
@@ -220,8 +220,8 @@ describe("CMS API Server", () => {
       expect(res.statusCode).toBe(201);
       const body = JSON.parse(res.body);
       expect(body.user.email).toBe("test@example.com");
-      expect(body.tokens.accessToken).toBeTruthy();
-      expect(body.tokens.refreshToken).toBeTruthy();
+      expect(body.accessToken).toBeTruthy();
+      expect(body.refreshToken).toBeTruthy();
     });
 
     it("rejects duplicate registration", async () => {
@@ -242,7 +242,7 @@ describe("CMS API Server", () => {
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
       expect(body.user.email).toBe("test@example.com");
-      expect(body.tokens.accessToken).toBeTruthy();
+      expect(body.accessToken).toBeTruthy();
     });
 
     it("rejects login with wrong password", async () => {
@@ -260,7 +260,7 @@ describe("CMS API Server", () => {
         url: "/api/auth/login",
         body: { email: "test@example.com", password: "password123" },
       });
-      const { accessToken } = JSON.parse(loginRes.body).tokens;
+      const { accessToken } = JSON.parse(loginRes.body);
 
       const meRes = await app.inject({
         method: "GET",
@@ -286,7 +286,7 @@ describe("CMS API Server", () => {
         url: "/api/auth/login",
         body: { email: "test@example.com", password: "password123" },
       });
-      const { refreshToken } = JSON.parse(loginRes.body).tokens;
+      const { refreshToken } = JSON.parse(loginRes.body);
 
       const refreshRes = await app.inject({
         method: "POST",
@@ -309,7 +309,7 @@ describe("CMS API Server", () => {
         url: "/api/auth/login",
         body: { email: "test@example.com", password: "password123" },
       });
-      authToken = JSON.parse(res.body).tokens.accessToken;
+      authToken = JSON.parse(res.body).accessToken;
     });
 
     it("serves GraphiQL at /graphiql", async () => {
