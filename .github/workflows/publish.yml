@@ -30,6 +30,15 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: pnpm build
+      - name: Bundle admin panel with cms package
+        run: |
+          if [ -d "apps/admin/dist" ]; then
+            mkdir -p packages/cms/admin
+            cp -r apps/admin/dist/* packages/cms/admin/
+            echo "Admin panel build copied to packages/cms/admin/"
+          else
+            echo "Warning: apps/admin/dist not found — skipping admin bundle"
+          fi
       - run: pnpm lint && pnpm typecheck && pnpm test
       - name: Create Release Pull Request or Publish
         id: changesets
