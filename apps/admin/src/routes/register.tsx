@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { useToast } from "@/components/toast-provider";
@@ -8,30 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "@tanstack/react-router";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
   path: "/register",
   component: RegisterPage,
 });
 
-// fallow-ignore-next-line complexity
 function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [needsSetup, setNeedsSetup] = useState(false);
   const { toast } = useToast();
   const { register, isLoading } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/auth/setup-status`)
-      .then((r) => r.json() as Promise<{ hasAdmin: boolean }>)
-      .then((data) => setNeedsSetup(!data.hasAdmin))
-      .catch(() => setNeedsSetup(false));
-  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -50,14 +39,8 @@ function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">
-            {needsSetup ? "Welcome — Set Up Your CMS" : "Create Account"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {needsSetup
-              ? "Register the first admin account to get started"
-              : "Register to start using the CMS"}
-          </p>
+          <h1 className="text-2xl font-bold">Create Account</h1>
+          <p className="text-sm text-muted-foreground">Register to start using the CMS</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -85,21 +68,15 @@ function RegisterPage() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading
-              ? "Creating account..."
-              : needsSetup
-                ? "Create Admin Account"
-                : "Create Account"}
+            {isLoading ? "Creating account..." : "Create Account"}
           </Button>
         </form>
-        {!needsSetup && (
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline">
-              Sign In
-            </Link>
-          </p>
-        )}
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link to="/login" className="text-primary hover:underline">
+            Sign In
+          </Link>
+        </p>
       </div>
     </div>
   );
