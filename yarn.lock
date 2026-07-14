@@ -308,6 +308,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@arche-cms/create-app@workspace:packages/create-app":
+  version: 0.0.0-use.local
+  resolution: "@arche-cms/create-app@workspace:packages/create-app"
+  bin:
+    create-app: bin/create-arche-cms-app.js
+  languageName: unknown
+  linkType: soft
+
 "@arche-cms/database@workspace:*, @arche-cms/database@workspace:packages/database":
   version: 0.0.0-use.local
   resolution: "@arche-cms/database@workspace:packages/database"
@@ -3972,14 +3980,6 @@ __metadata:
   checksum: 10/1ee7e6f55c1016a47871ecd09aa765ca825c1ec89c46e6f58686016c80c6fe3d36452a6010d8498c766ea5d60bc5d892d9511b41310a7355b48ac10b39c90c9a
   languageName: node
   linkType: hard
-
-"create-arche-cms-app@workspace:packages/create-app":
-  version: 0.0.0-use.local
-  resolution: "create-arche-cms-app@workspace:packages/create-app"
-  bin:
-    create-arche-cms-app: bin/create-arche-cms-app.js
-  languageName: unknown
-  linkType: soft
 
 "cross-spawn@npm:^7.0.5, cross-spawn@npm:^7.0.6":
   version: 7.0.6

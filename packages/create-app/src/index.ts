@@ -138,7 +138,7 @@ async function main(): Promise<void> {
 
   if (arg === "--help" || arg === "-h") {
     console.log(`
-Usage: npm create arche-cms-app [project-name]
+Usage: npm create @arche-cms/create-app [project-name]
 
 Creates a new Arche CMS project in the specified directory.
 `);

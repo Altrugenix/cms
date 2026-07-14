@@ -377,9 +377,9 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [ ] **Manual:** Ensure `@arche-cms` org exists on npm with publish-capable token
 - [ ] **Manual:** Create a changeset (`yarn changeset`), push to `main`, merge the auto-generated version PR, and publishing happens automatically
 
-### Scaffolding (`create-arche-cms-app`)
+### Scaffolding (`@arche-cms/create-app`)
 
-- [x] Create `packages/create-app/` with `create-arche-cms-app` CLI
+- [x] Create `packages/create-app/` with `@arche-cms/create-app` CLI
 - [x] Prompt for project name, database choice, default locale
 - [x] Scaffold example project with `cms/collections/`, `cms/globals/`, `.env`, config
 - [x] Add `"dev": "cms dev"`, `"build": "cms build"`, `"start": "cms start"` scripts
