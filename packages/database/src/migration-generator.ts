@@ -146,7 +146,8 @@ export class MigrationGenerator {
       columns.push("  _deletedAt TEXT");
       columns.push("  _deletedBy TEXT");
     }
-    const up = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n${columns.join(",\n")}\n);`;
+    const columnsStr = columns.length > 0 ? `,\n${columns.join(",\n")}` : "";
+    const up = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT${columnsStr}\n);`;
     const down = `DROP TABLE IF EXISTS "${tableName}";`;
 
     return {

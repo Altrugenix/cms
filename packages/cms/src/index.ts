@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /* eslint-disable no-console */
 
 import { collectionCreate, printCollectionCreateHelp } from "./commands/collection.js";
@@ -12,6 +10,27 @@ import { generate, printGenerateHelp } from "./commands/generate.js";
 import { typegen, printTypegenHelp } from "./commands/typegen.js";
 import { lint, printLintHelp } from "./commands/lint.js";
 import { doctor, printDoctorHelp } from "./commands/doctor.js";
+
+export interface CmsUserConfig {
+  database: {
+    adapter: "sqlite" | "postgres";
+    url: string;
+  };
+  localization?: {
+    defaultLocale: string;
+  };
+  server?: {
+    port?: number;
+    host?: string;
+  };
+  storage?: {
+    baseDir?: string;
+  };
+}
+
+export function defineConfig(config: CmsUserConfig): CmsUserConfig {
+  return config;
+}
 
 function printMainHelp(): void {
   console.log(`
@@ -198,4 +217,6 @@ function parseArgs(): void {
   }
 }
 
-parseArgs();
+export function main(): void {
+  parseArgs();
+}

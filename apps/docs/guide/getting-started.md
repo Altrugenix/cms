@@ -32,12 +32,17 @@ This starts:
 ```
 cms/
 ├── apps/
-│   ├── admin/          # Admin panel UI (React 19)
-│   ├── api/            # Fastify API server
-│   └── docs/           # Documentation site
+│   ├── docs/           # Documentation site
+│   └── playground/     # Dev playground
 ├── packages/
+│   ├── cms/
+│   │   ├── src/        # CLI + server logic + admin panel
+│   │   │   └── admin/  # Admin panel UI (React 19)
+│   │   ├── dist/       # Compiled output
+│   │   │   └── admin/  # Bundled admin panel build
+│   │   └── bin/        # CLI binary
 │   ├── core/           # DI container, event bus, lifecycle, logger
-│   ├── schema/         # Schema definition API (defineCollection, field helpers)
+│   ├── schema/         # Schema definition API
 │   ├── database/       # Database adapter layer (Drizzle ORM)
 │   ├── auth/           # JWT authentication
 │   ├── permissions/    # RBAC / permissions engine
@@ -47,7 +52,6 @@ cms/
 │   ├── validation/     # Zod validation generator
 │   ├── generators/     # Code generation pipeline
 │   ├── plugins/        # Plugin system + official plugins
-│   ├── cli/            # CLI tools
 │   ├── admin-ui/       # Shared admin UI components
 │   ├── builder/        # Visual schema builder
 │   ├── types/          # Shared TypeScript types

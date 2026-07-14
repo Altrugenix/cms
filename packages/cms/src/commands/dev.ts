@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-import { existsSync, mkdirSync, cpSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,30 +48,25 @@ Options:
 
 function ensureAdminBuild(logger: ReturnType<typeof createLogger>): void {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const bundledAdmin = resolve(currentDir, "../../../admin");
+  const bundledAdmin = resolve(currentDir, "../admin");
 
   if (existsSync(bundledAdmin) && existsSync(resolve(bundledAdmin, "index.html"))) return;
 
-  const monorepoAdmin = resolve(process.cwd(), "apps/admin");
-  if (existsSync(monorepoAdmin)) {
+  const adminSource = resolve(currentDir, "../../src/admin");
+  if (existsSync(adminSource)) {
     logger.info("Admin panel build not found — building from source...");
     try {
-      execSync("pnpm --filter @arche-cms/admin build", {
+      execSync("pnpm build:admin", {
+        cwd: resolve(currentDir, "../.."),
         stdio: "inherit",
         env: { ...process.env, NODE_ENV: "production" },
       });
-      const adminDist = resolve(monorepoAdmin, "dist");
-      if (existsSync(adminDist)) {
-        const adminOut = resolve(currentDir, "../../../admin");
-        if (!existsSync(adminOut)) mkdirSync(adminOut, { recursive: true });
-        cpSync(adminDist, adminOut, { recursive: true });
-        logger.info("Admin panel built and copied");
-      }
+      logger.info("Admin panel built at " + bundledAdmin);
     } catch {
       logger.warn("Admin panel build failed — admin UI will not be available");
     }
   } else {
-    logger.warn("Admin panel not found at " + bundledAdmin);
+    logger.warn("Admin panel source not found at " + adminSource);
   }
 }
 

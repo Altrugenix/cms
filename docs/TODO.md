@@ -90,7 +90,7 @@
 - [x] Generate create and update schema variants
 - [x] Write tests for generated validation (24 tests)
 
-### Fastify API Server (`apps/api`)
+### Fastify API Server (`packages/cms/api`)
 
 - [x] Scaffold Fastify server with plugin architecture (app factory with DI-style opts)
 - [x] Register REST routes (wired from schema defs)
@@ -137,7 +137,7 @@
 
 ## Milestone 5: Admin UI (Weeks 12–16)
 
-### Admin App Scaffold (`apps/admin`)
+### Admin App Scaffold (`packages/cms/admin`)
 
 - [x] Scaffold Vite + React + TanStack Router + Tailwind v4 + shadcn/ui
 - [x] Set up dark mode with ThemeProvider
@@ -248,7 +248,7 @@
 - [x] Implement extension points (custom fields via `getCustomFields()`, custom admin panels via `getAdminPanels()`, custom routes via `runRouteHook()`)
 - [x] Wire PluginManager hooks into SchemaLoader (onBeforeLoad/onAfterLoad callbacks)
 - [x] Wire PluginManager hooks into API app (beforeRouteRegister/afterRouteRegister)
-- [x] Integrate plugin system into server entry point (apps/api/src/index.ts)
+- [x] Integrate plugin system into server entry point (packages/cms/api/src/index.ts)
 - [x] Write plugin developer documentation
 
 ### Official Plugins
@@ -338,11 +338,11 @@ npm install @arche-cms/cms         # local dep → `pnpm cms dev` / `npx cms dev
 npx @arche-cms/cms dev             # one-off, no install
 ```
 
-Currently the API server lives in `apps/api` and the CLI is a schema watcher that doesn't start an HTTP server.
+Currently the API server lives in `packages/cms/api` and the CLI is a schema watcher that doesn't start an HTTP server.
 
 ### CLI Server Integration (`packages/cms`)
 
-- [x] Move server bootstrap code from `apps/api/src/index.ts` into `packages/cms/src/commands/dev.ts`
+- [x] Move server bootstrap code from `packages/cms/api/src/index.ts` into `packages/cms/src/commands/dev.ts`
 - [x] Support flags: `--port`, `--host`, `--schema-dir`, `--db-url`, `--db-adapter`
 - [x] Auto-detect and create SQLite database file on first run (`cms.db`)
 - [x] Add all server dependencies to CLI package.json
@@ -354,15 +354,15 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [ ] **Verify `cms dev` starts REST + GraphQL APIs in standalone app** — scaffold a project with `npx @arche-cms/create-app`, run `cd <project> && pnpm install && pnpm dev`, then test `GET /api/posts`, `POST /api/posts`, GraphQL at `/graphql`, Swagger at `/docs` (blocked: needs v0.1.2 published with fixed workspace:* deps)
 - [ ] **Verify `cms dev` serves admin panel** — check that `http://localhost:3000` renders the admin login page (blocked: needs v0.1.2 published with bundled admin)
 
-### Admin Panel Bundling (`apps/admin`)
+### Admin Panel Bundling (`packages/cms/admin`)
 
 - [x] Make the admin panel build to a static directory that the API server serves
 - [x] Configure Vite build output — production mode uses relative API URLs
 - [x] Serve static admin panel from Fastify with SPA `index.html` fallback via `@fastify/static`
 - [x] Add environment-aware admin URL: dev uses Vite dev server (port 5173), production uses bundled static
 - [x] Auto-build admin panel as part of `cms build` pipeline before server build
-- [x] **Bundle admin panel build with published `@arche-cms/cms` package** — copied `apps/admin/dist/` into `packages/cms/admin/`; updated `registerAdminStatic` to resolve from `import.meta.url` (package install path); added `"admin"` to `"files"` array in `packages/cms/package.json`
-- [x] **Serve admin panel in `cms dev`** — added `ensureAdminBuild()` check: if bundled admin is missing and monorepo `apps/admin/` exists, auto-builds it with `pnpm --filter @arche-cms/admin build` and copies to `packages/cms/admin/`; otherwise logs a warning
+- [x] **Bundle admin panel build with published `@arche-cms/cms` package** — Vite builds to `packages/cms/admin/dist/`; `"files": ["admin"]` in `packages/cms/package.json` includes it in the published package; `registerAdminStatic` resolves from `import.meta.url` to find the dist
+- [x] **Serve admin panel in `cms dev`** — added `ensureAdminBuild()` check: if bundled admin dist is missing and monorepo `packages/cms/admin/` exists, auto-builds it with `pnpm --filter @arche-cms/admin build` and serves from `admin/dist/`
 
 ### Package Restructuring
 
@@ -405,3 +405,41 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [x] Update scaffold template to use pnpm
 - [ ] **Update standalone-usage.md** — document that `cms dev` starts a full server with REST + GraphQL APIs at `localhost:3000`, admin panel at `localhost:3000`, and Swagger at `/docs`; include a "What you get" section showing the default posts collection API endpoints
 - [ ] Create v0.2.0 release (after npm publish via GitHub Actions — tag + GitHub Release)
+
+---
+
+## Milestone 10: Admin UI Bug Fixes & Feature Gaps
+
+### Status
+
+`cms dev` verified working end-to-end via Playwright:
+
+- Registration (POST `/api/auth/register` → 201, auto-login)
+- Dashboard loads stats (collections, entries, media, users — all API calls return 200)
+- Collections page lists "Posts" with 4 fields
+- Globals page lists "Site Settings" with 6 fields
+- Zero console errors. The root cause was a **stale admin build** — the `VITE_API_URL` was previously hardcoded to `http://localhost:3000` instead of `""` (same-origin), or the admin dist was not rebuilt after API route changes. Rebuilding the admin (`pnpm build:admin`) produces `const Xs=""` and `const jo=""` in the compiled JS, making all API calls use relative URLs — which works correctly when served from the same Fastify server.
+
+### Critical — Data Not Loading in Admin UI
+
+- [x] **Diagnose loading spinner freeze** — verified in Playwright: auth flow works, all API calls succeed (200), zero console errors. Root cause was stale admin build — fixed by rebuilding admin with `VITE_API_URL=""`.
+- [x] **Fix loading issue** — resolved by the admin rebuild in Milestone 9 bundling work.
+
+### Medium — Missing UI Elements
+
+- [x] **Add "Create User" button + `/users/new` route** — added `routes/users/new.tsx` with email + password form, `createUser()` in `api.ts` (calls `POST /api/auth/register` with admin token), registered route in `router.tsx`, and "Add User" button in users list header.
+- [x] **Add "Create Collection" button on `/collections`** — added link to `/schemas/new` (Schema Builder) with "Create Collection" button in collections list header.
+
+### Medium — Settings Page Defaults
+
+- [x] **Settings page works with existing `site-settings` global** — test-cms already has `cms/globals/site-settings.ts`. The scaffold template (`@arche-cms/create-app`) generates a `site-settings` global by default. If missing, the informative error message "Settings global not found. Create cms/globals/site-settings.ts" is shown.
+
+### Low — Tech Debt
+
+- [x] **Fix hardcoded locale list** — 3 files (`collections/$slug.tsx`, `new.$slug.tsx`, `$id_.$slug.edit.tsx`) now read from `collection.localization?.locales ?? ["en"]` instead of hardcoding EN/FR/DE/ES/JA/ZH.
+- [x] **Add password change field to Edit User** — `auth/src/service.ts:updateUser()` now accepts and hashes `password`; `routes/users/$id.tsx` shows "New Password" input (blank = keep current); `api.ts:updateUser()` accepts `password`; `cms/src/server/routes/users.ts` passes `password` through.
+- [x] **Coerce types in Settings/Global editors** — `settings/index.tsx` and `globals/$slug.tsx` changed from `Record<string, string>` to `Record<string, unknown>`; initial values preserve original types instead of coercing via `String()`; required validation checks `""`/`null` instead of falsy (to allow `false`/`0`).
+- [x] **Fix unused `schema` state in Schema Editor** — removed unused `useState<SchemaInfo | null>(null)` from `schemas/$type.$slug.tsx`.
+- [x] **Silent error swallowing on Dashboard** — `routes/index.tsx` now captures errors into `dashboardError` state and renders a `bg-destructive/10` banner when set.
+- [x] **Add cancelled flag to Create Entry effect** — `new.$slug.tsx` now uses `let cancelled = false` guard pattern consistent with other routes.
+- [x] **Redundant API calls** — added `DataProvider` (React Context) at `lib/data.tsx` that fetches collections/globals once. `useCollections()`, `useGlobals()`, `useCollection(slug)`, `useGlobal(slug)` hooks shared by Sidebar, CommandPalette, Dashboard, and all collection/global/settings pages. Single fetch replaces N+1 per navigation.

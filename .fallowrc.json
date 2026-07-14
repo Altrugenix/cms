@@ -6,7 +6,7 @@
     "**/.turbo/**",
     "**/coverage/**",
     "**/.vitepress/cache/**",
-    "packages/cms/admin/**"
+    "packages/cms/src/admin/**"
   ],
   "ignoreDependencies": [
     "@arche-cms/types",
@@ -14,7 +14,12 @@
     "@arche-cms/database",
     "@arche-cms/rest-api",
     "@arche-cms/schema",
-    "@arche-cms/validation"
+    "@arche-cms/validation",
+    "clsx",
+    "lucide-react",
+    "react",
+    "tailwind-merge",
+    "@tailwindcss/vite"
   ],
   "audit": {
     "gate": "new-only"
@@ -50,7 +55,7 @@
     "minTokens": 50,
     "skipLocal": true,
     "threshold": 5.0,
-    "ignore": ["apps/api/src/**", "packages/cms/src/server/**"]
+    "ignore": ["packages/cms/src/server/**"]
   },
-  "entry": ["apps/api/src/index.ts", "apps/admin/src/main.tsx", "packages/*/src/index.ts"]
+  "entry": ["packages/cms/src/admin/main.tsx", "packages/*/src/index.ts"]
 }

@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 
 import { execSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export interface BuildOptions {
   clean?: boolean;
@@ -90,9 +91,9 @@ function generatePackageJson(outDir: string): void {
   writeFileSync(join(outDir, "package.json"), JSON.stringify(pkg, null, 2));
 }
 
-const ADMIN_DIST = "apps/admin/dist";
-const CMS_DIST = "packages/cms/dist";
-const CMS_ADMIN_DIR = "packages/cms/admin";
+function cmsPackageRoot(): string {
+  return resolve(fileURLToPath(import.meta.url), "../../..");
+}
 
 export async function build(options: BuildOptions): Promise<void> {
   const log = (msg: string) => console.log(`[cms] ${msg}`);
@@ -104,33 +105,20 @@ export async function build(options: BuildOptions): Promise<void> {
     execSync("pnpm clean", { stdio: "inherit" });
   }
 
-  // Build the admin panel UI (Vite SPA)
-  log("Building admin panel...");
+  // Build the admin + server (pnpm build runs build:admin + tsc)
+  log("Building admin panel and server code...");
   try {
-    execSync("pnpm --filter @arche-cms/admin build", {
+    execSync("pnpm build", {
+      cwd: cmsPackageRoot(),
       stdio: "inherit",
       env: { ...process.env, NODE_ENV: "production" },
     });
-    log("Admin panel built");
   } catch {
-    log("Warning: admin panel build failed (admin-ui will not be available)");
+    log("Build failed — see errors above");
+    process.exit(1);
   }
-
-  // Copy admin build into packages/cms/admin/ for bundled distribution
-  if (existsSync(ADMIN_DIST)) {
-    const adminOut = CMS_ADMIN_DIR;
-    if (!existsSync(adminOut)) mkdirSync(adminOut, { recursive: true });
-    cpSync(ADMIN_DIST, adminOut, { recursive: true });
-    log(`Admin panel copied to ${adminOut}/`);
-  }
-
-  // Build the TypeScript server code
-  log("Building server code...");
-  execSync("pnpm --filter @arche-cms/cms build", { stdio: "inherit" });
 
   log("Build complete");
-  log(`  Admin panel: ${ADMIN_DIST}/`);
-  log(`  Server code: ${CMS_DIST}/`);
 
   if (!options.outDir) return;
 
@@ -139,15 +127,18 @@ export async function build(options: BuildOptions): Promise<void> {
 
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
-  const adminOut = join(outDir, "admin");
-  if (existsSync(ADMIN_DIST)) {
+  const cmsDist = resolve(cmsPackageRoot(), "dist");
+  const adminDist = resolve(cmsDist, "admin");
+
+  if (existsSync(adminDist)) {
+    const adminOut = resolve(outDir, "admin");
     if (!existsSync(adminOut)) mkdirSync(adminOut, { recursive: true });
-    cpSync(ADMIN_DIST, adminOut, { recursive: true });
+    execSync(`cp -r "${adminDist}/"* "${adminOut}/"`, { stdio: "inherit" });
     log(`  Copied admin panel → admin/`);
   }
 
-  if (existsSync(CMS_DIST)) {
-    cpSync(CMS_DIST, join(outDir, "dist"), { recursive: true });
+  if (existsSync(cmsDist)) {
+    execSync(`cp -r "${cmsDist}/"* "${outDir}/dist/"`, { stdio: "inherit" });
     log(`  Copied server code → dist/`);
   }
 
