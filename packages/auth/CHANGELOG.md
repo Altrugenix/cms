@@ -1,5 +1,13 @@
 # @arche-cms/auth
 
+## 0.1.2
+
+### Patch Changes
+
+- fix: replace workspace:* with published version ranges in all dependencies
+- Updated dependencies
+  - @arche-cms/database@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes

@@ -334,7 +334,7 @@ Make `cms dev` work like Strapi — a single command that starts a full CMS serv
 
 ```bash
 npm install -g @arche-cms/cms     # global install → `cms dev`
-npm install @arche-cms/cms         # local dep → `yarn cms dev` / `npx cms dev`
+npm install @arche-cms/cms         # local dep → `pnpm cms dev` / `npx cms dev`
 npx @arche-cms/cms dev             # one-off, no install
 ```
 
@@ -351,8 +351,8 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [x] Wire schema watcher into server hot-reload (debounced close + re-create Fastify)
 - [x] Add `cms start` command for production (no file watching, no hot-reload)
 - [x] Auto-migrate on startup: `getExistingSchema` added to DatabaseAdapter interface and implemented in SQLite + Postgres adapters; `connectAndLoad` now generates and runs pending migrations
-- [ ] **Verify `cms dev` starts REST + GraphQL APIs in standalone app** — scaffold a project with `npx @arche-cms/create-app`, run `cd <project> && pnpm install && pnpm dev`, then test `GET /api/posts`, `POST /api/posts`, GraphQL at `/graphql`, Swagger at `/docs`
-- [ ] **Verify `cms dev` serves admin panel** — check that `http://localhost:3000` renders the admin login page (requires v0.1.1+ package published with bundled admin)
+- [ ] **Verify `cms dev` starts REST + GraphQL APIs in standalone app** — scaffold a project with `npx @arche-cms/create-app`, run `cd <project> && pnpm install && pnpm dev`, then test `GET /api/posts`, `POST /api/posts`, GraphQL at `/graphql`, Swagger at `/docs` (blocked: needs v0.1.2 published with fixed workspace:* deps)
+- [ ] **Verify `cms dev` serves admin panel** — check that `http://localhost:3000` renders the admin login page (blocked: needs v0.1.2 published with bundled admin)
 
 ### Admin Panel Bundling (`apps/admin`)
 
@@ -379,7 +379,8 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [x] Enable npm provenance (`NPM_CONFIG_PROVENANCE`) and GitHub Release creation
 - [ ] **Manual:** Set `NPM_TOKEN` as a GitHub Actions secret in repo settings
 - [ ] **Manual:** Ensure `@arche-cms` org exists on npm with publish-capable token
-- [ ] **Manual:** Create a changeset (`yarn changeset`), push to `main`, merge the auto-generated version PR, and publishing happens automatically
+- [x] **Create changeset (`fix-workspace-deps.md`)** — bumps 11 affected packages to 0.1.2; ready to push, merge, and publish
+- [ ] **Manual:** Push to `main`, the auto-generated Version Packages PR will appear (requires "Allow GitHub Actions to create PRs" enabled), merge it, and publishing happens automatically
 
 ### Scaffolding (`@arche-cms/create-app`)
 

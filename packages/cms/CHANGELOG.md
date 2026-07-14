@@ -1,5 +1,21 @@
 # @arche-cms/cms
 
+## 0.1.2
+
+### Patch Changes
+
+- fix: replace workspace:* with published version ranges in all dependencies
+- Updated dependencies
+  - @arche-cms/auth@0.1.2
+  - @arche-cms/core@0.1.2
+  - @arche-cms/database@0.1.2
+  - @arche-cms/generators@0.1.2
+  - @arche-cms/graphql@0.1.2
+  - @arche-cms/permissions@0.1.2
+  - @arche-cms/plugins@0.1.2
+  - @arche-cms/rest-api@0.1.2
+  - @arche-cms/schema@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
