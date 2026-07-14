@@ -367,7 +367,9 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [x] Update all workspace references, docs, changesets, lockfile
 - [x] Verify `packages/cms/bin/cms.js` entry point with proper shebang
 - [x] Verify pack tarball: 42KB, includes `dist/` + `bin/cms.js` + `package.json` with resolved workspace versions
-- [ ] Publish `@altrugenix/cms` and all `@altrugenix/*` workspace packages to npm (pre-publish requirement)
+- [x] Bump all packages to v0.1.0 via changeset
+- [x] Fix bin field format in cms and create-app (use object form)
+- [ ] Publish `@altrugenix/cms` and all `@altrugenix/*` workspace packages to npm via GitHub Actions
 
 ### Scaffolding (`create-altrugenix-app`)
 
@@ -375,7 +377,8 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 - [x] Prompt for project name, database choice, default locale
 - [x] Scaffold example project with `cms/collections/`, `cms/globals/`, `.env`, config
 - [x] Add `"dev": "cms dev"`, `"build": "cms build"`, `"start": "cms start"` scripts
-- [ ] Publish `create-altrugenix-app` to npm
+- [x] Fix bin field format
+- [ ] Publish `create-altrugenix-app` to npm via GitHub Actions
 
 ### Production Build (`cms build`)
 
@@ -387,5 +390,4 @@ Currently the API server lives in `apps/api` and the CLI is a schema watcher tha
 
 - [x] Update root README with `npx @altrugenix/cms dev` quick start
 - [x] Write "Usage as a Standalone App" guide in `docs/standalone-usage.md`
-- [ ] Create v0.2.0 release with all changes (after publish)
-- [ ] Publish `@altrugenix/cms` and `create-altrugenix-app` to npm
+- [ ] Create v0.2.0 release (after npm publish via GitHub Actions)

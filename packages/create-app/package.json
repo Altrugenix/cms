@@ -2,7 +2,9 @@
   "name": "create-altrugenix-app",
   "version": "0.0.1",
   "type": "module",
-  "bin": "./bin/create-altrugenix-app.js",
+  "bin": {
+    "create-altrugenix-app": "./bin/create-altrugenix-app.js"
+  },
   "main": "dist/index.js",
   "files": [
     "dist",
