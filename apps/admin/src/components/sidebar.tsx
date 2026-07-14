@@ -63,7 +63,7 @@ export function Sidebar({ collapsed, mobileOpen, onToggle, onMobileClose }: Side
         )}
       >
         <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
-          {!collapsed && <span className="font-semibold tracking-tight">ArcheCMS</span>}
+          {!collapsed && <span className="font-semibold tracking-tight">Arche CMS</span>}
           <Button
             variant="ghost"
             size="icon"

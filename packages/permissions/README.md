@@ -1,6 +1,6 @@
 # @arche-cms/permissions
 
-Role-based access control (RBAC) engine for ArcheCMS CMS. Supports role management and field-level permissions.
+Role-based access control (RBAC) engine for Arche CMS. Supports role management and field-level permissions.
 
 ## Installation
 

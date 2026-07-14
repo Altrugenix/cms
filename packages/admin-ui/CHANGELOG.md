@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- da9f85d: Initial v0.1.0 release of ArcheCMS CMS
+- da9f85d: Initial v0.1.0 release of Arche CMS
 
   - File-based schema definition with 30 field types
   - Auto-generated REST API, GraphQL API, and TypeScript SDK

@@ -1,6 +1,6 @@
 # @arche-cms/database
 
-Database adapter layer for ArcheCMS CMS. Provides a unified interface over multiple database engines with migration support.
+Database adapter layer for Arche CMS. Provides a unified interface over multiple database engines with migration support.
 
 ## Installation
 

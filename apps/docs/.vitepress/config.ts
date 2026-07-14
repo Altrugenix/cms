@@ -1,7 +1,7 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "ArcheCMS CMS",
+  title: "Arche CMS",
   description: "File-based, open-source, developer-first headless CMS",
   lang: "en-US",
   lastUpdated: true,
@@ -76,7 +76,7 @@ export default defineConfig({
 
     footer: {
       message: "Released under the MIT License.",
-      copyright: "Copyright 2026 ArcheCMS",
+      copyright: "Copyright 2026 Arche CMS",
     },
 
     search: {

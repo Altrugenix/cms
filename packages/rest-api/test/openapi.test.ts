@@ -54,7 +54,7 @@ describe("generateOpenApiSpec", () => {
     const collectionRouter = createCollectionRouter(postCollection, mockAdapter);
     const spec = generateOpenApiSpec([postCollection], collectionRouter.routes);
     expect(spec.openapi).toBe("3.1.0");
-    expect(spec.info.title).toBe("ArcheCMS CMS API");
+    expect(spec.info.title).toBe("Arche CMS API");
     expect(spec.info.version).toBe("0.1.0");
   });
 

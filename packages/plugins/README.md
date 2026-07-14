@@ -1,6 +1,6 @@
 # @arche-cms/plugins
 
-Plugin system for ArcheCMS CMS. Includes the plugin registry, auto-discovery, hook system, extension points, and official plugins.
+Plugin system for Arche CMS. Includes the plugin registry, auto-discovery, hook system, extension points, and official plugins.
 
 ## Installation
 

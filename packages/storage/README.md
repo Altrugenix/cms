@@ -1,6 +1,6 @@
 # @arche-cms/storage
 
-File storage adapters for ArcheCMS CMS. Supports local filesystem, S3-compatible, and Cloudflare R2 storage backends.
+File storage adapters for Arche CMS. Supports local filesystem, S3-compatible, and Cloudflare R2 storage backends.
 
 ## Installation
 

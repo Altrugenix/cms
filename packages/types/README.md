@@ -1,6 +1,6 @@
 # @arche-cms/types
 
-Shared TypeScript type definitions for ArcheCMS CMS. Used by all packages to ensure type consistency across the framework.
+Shared TypeScript type definitions for Arche CMS. Used by all packages to ensure type consistency across the framework.
 
 ## Installation
 

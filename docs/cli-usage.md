@@ -1,6 +1,6 @@
 # CLI Usage Guide
 
-The ArcheCMS CMS CLI provides commands for development, building, code generation, and schema management.
+The Arche CMS CLI provides commands for development, building, code generation, and schema management.
 
 ## Installation
 

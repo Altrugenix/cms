@@ -1,6 +1,6 @@
 # @arche-cms/auth
 
-Authentication package for ArcheCMS CMS. Provides JWT-based auth with login, register, token refresh, and password reset flows.
+Authentication package for Arche CMS. Provides JWT-based auth with login, register, token refresh, and password reset flows.
 
 ## Installation
 

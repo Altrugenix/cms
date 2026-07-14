@@ -1,8 +1,8 @@
-# AGENTS.md — ArcheCMS CMS
+# AGENTS.md — Arche CMS
 
 ## Project
 
-ArcheCMS CMS — a file-based, open-source, developer-first headless CMS (Strapi + Payload inspired). Schema is stored in source files, not in the database. Everything is designed for extensibility, plugins, type safety, and excellent developer experience.
+Arche CMS — a file-based, open-source, developer-first headless CMS (Strapi + Payload inspired). Schema is stored in source files, not in the database. Everything is designed for extensibility, plugins, type safety, and excellent developer experience.
 
 ## Principles
 

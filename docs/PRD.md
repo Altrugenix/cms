@@ -1,4 +1,4 @@
-# Product Requirements Document — ArcheCMS CMS
+# Product Requirements Document — Arche CMS
 
 > **Status:** Draft v1
 > **Last Updated:** July 8, 2026
@@ -7,7 +7,7 @@
 
 ## 1. Executive Summary
 
-ArcheCMS CMS is a modern, open-source, developer-first headless content management system. Schema definitions live in source code files rather than the database — making the file system the single source of truth for content models. The CMS automatically generates types, database schemas, migrations, APIs (REST + GraphQL), validation, and admin UI from these schema files.
+Arche CMS is a modern, open-source, developer-first headless content management system. Schema definitions live in source code files rather than the database — making the file system the single source of truth for content models. The CMS automatically generates types, database schemas, migrations, APIs (REST + GraphQL), validation, and admin UI from these schema files.
 
 The project is inspired by Strapi and Payload but differentiated by its file-first approach, clean architecture, type safety, and extensive plugin system.
 

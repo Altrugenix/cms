@@ -1,6 +1,6 @@
 # @arche-cms/sdk
 
-TypeScript client SDK for the ArcheCMS CMS API. Provides a typed client for interacting with any ArcheCMS CMS instance.
+TypeScript client SDK for the Arche CMS API. Provides a typed client for interacting with any Arche CMS instance.
 
 ## Installation
 

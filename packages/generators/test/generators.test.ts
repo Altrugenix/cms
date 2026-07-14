@@ -118,7 +118,7 @@ describe("openApiGenerator", () => {
 
     const spec = JSON.parse(files[0]?.content ?? "null");
     expect(spec?.openapi).toBe("3.1.0");
-    expect(spec?.info?.title).toBe("ArcheCMS CMS API");
+    expect(spec?.info?.title).toBe("Arche CMS API");
     expect(spec?.paths?.["/api/collections/posts"]).toBeDefined();
     expect(spec?.paths?.["/api/collections/posts/{id}"]).toBeDefined();
     expect(spec?.paths?.["/api/collections/users"]).toBeDefined();

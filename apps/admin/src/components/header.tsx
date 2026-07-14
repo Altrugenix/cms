@@ -17,7 +17,7 @@ export function Header({ onOpenPalette, onToggleSidebar }: HeaderProps) {
         <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="lg:hidden">
           <Menu className="h-5 w-5" />
         </Button>
-        <h2 className="text-sm font-semibold md:text-lg">ArcheCMS CMS</h2>
+        <h2 className="text-sm font-semibold md:text-lg">Arche CMS</h2>
       </div>
       <div className="flex items-center gap-1 md:gap-2">
         <button

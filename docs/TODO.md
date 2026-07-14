@@ -1,4 +1,4 @@
-# TODO — ArcheCMS CMS
+# TODO — Arche CMS
 
 > Project status: Milestone 9 complete. All 20 test packages pass (zero failures). Fixed pre-existing test failures: API mock adapter conflated internal tables (version history entries leaked into posts map); schema watcher tests made robust via polling instead of fixed delays. Publish workflow configured (with `workflow_dispatch`, provenance, GitHub Releases). Pending `NPM_TOKEN` secret + `@arche-cms` npm org setup.
 

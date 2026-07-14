@@ -1,6 +1,6 @@
 # @arche-cms/schema
 
-Schema definition API for ArcheCMS CMS. Define collections, globals, and components using a declarative field system.
+Schema definition API for Arche CMS. Define collections, globals, and components using a declarative field system.
 
 ## Installation
 

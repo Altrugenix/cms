@@ -2,7 +2,7 @@
 
 ## Overview
 
-ArcheCMS CMS is a file-based, developer-first headless CMS built as a modular monolith. Schema is stored in source files (not the database) and code is auto-generated from those definitions.
+Arche CMS is a file-based, developer-first headless CMS built as a modular monolith. Schema is stored in source files (not the database) and code is auto-generated from those definitions.
 
 ## Core Principles
 

@@ -1,6 +1,6 @@
 # @arche-cms/core
 
-Foundation package for the ArcheCMS CMS framework. Provides dependency injection, event bus, lifecycle management, logging, and configuration loading.
+Foundation package for the Arche CMS framework. Provides dependency injection, event bus, lifecycle management, logging, and configuration loading.
 
 ## Installation
 

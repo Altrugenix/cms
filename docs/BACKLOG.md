@@ -1,4 +1,4 @@
-# Backlog — ArcheCMS CMS
+# Backlog — Arche CMS
 
 Future milestones and feature ideas.
 

@@ -48,7 +48,7 @@ export function loadConfig(): ServerConfig {
       timeWindow: process.env.RATE_LIMIT_WINDOW || "1 minute",
     },
     swagger: {
-      title: process.env.SWAGGER_TITLE || "ArcheCMS CMS API",
+      title: process.env.SWAGGER_TITLE || "Arche CMS API",
       version: process.env.SWAGGER_VERSION || "0.1.0",
       description: process.env.SWAGGER_DESCRIPTION || "Auto-generated REST API",
     },

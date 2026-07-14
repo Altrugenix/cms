@@ -161,7 +161,7 @@ function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to ArcheCMS CMS</p>
+        <p className="text-muted-foreground">Welcome to Arche CMS</p>
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

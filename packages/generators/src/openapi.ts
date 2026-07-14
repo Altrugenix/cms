@@ -74,7 +74,7 @@ function generateOpenApiFile(collections: CollectionDefinition[]): string {
   const spec = {
     openapi: "3.1.0",
     info: {
-      title: "ArcheCMS CMS API",
+      title: "Arche CMS API",
       version: "0.1.0",
     },
     paths,

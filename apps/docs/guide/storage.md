@@ -1,6 +1,6 @@
 # Storage
 
-ArcheCMS CMS supports multiple storage backends for file uploads through a common `StorageAdapter` interface.
+Arche CMS supports multiple storage backends for file uploads through a common `StorageAdapter` interface.
 
 ## Adapters
 

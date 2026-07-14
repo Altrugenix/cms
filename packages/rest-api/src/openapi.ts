@@ -158,7 +158,7 @@ export function generateOpenApiSpec(
   return {
     openapi: "3.1.0",
     info: {
-      title: options?.title ?? "ArcheCMS CMS API",
+      title: options?.title ?? "Arche CMS API",
       version: options?.version ?? "0.1.0",
       description: options?.description ?? "Auto-generated REST API for CMS collections",
     },

@@ -1,6 +1,6 @@
 # @arche-cms/graphql
 
-GraphQL schema generator. Auto-generates GraphQL types, queries, and mutations from ArcheCMS schema definitions.
+GraphQL schema generator. Auto-generates GraphQL types, queries, and mutations from Arche CMS schema definitions.
 
 ## Installation
 

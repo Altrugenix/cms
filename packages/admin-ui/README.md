@@ -1,6 +1,6 @@
 # @arche-cms/admin-ui
 
-Shared admin UI components and blocks for the ArcheCMS CMS admin panel. Built with React, shadcn/ui, and Tailwind CSS v4.
+Shared admin UI components and blocks for the Arche CMS admin panel. Built with React, shadcn/ui, and Tailwind CSS v4.
 
 ## Installation
 

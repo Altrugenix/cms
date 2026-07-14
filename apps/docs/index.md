@@ -3,7 +3,7 @@
 layout: home
 
 hero:
-  name: "ArcheCMS CMS"
+  name: "Arche CMS"
   text: "File-based, developer-first, open-source headless CMS"
   tagline: Schema in source files, not the database. Type-safe APIs auto-generated. Everything extensible via plugins.
   actions:

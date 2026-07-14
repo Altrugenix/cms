@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ArcheCMS CMS API is auto-generated from your schema definitions. Every collection and global produces corresponding REST endpoints and GraphQL operations.
+The Arche CMS API is auto-generated from your schema definitions. Every collection and global produces corresponding REST endpoints and GraphQL operations.
 
 - **Base URL**: `http://localhost:3000`
 - **Auth**: JWT Bearer tokens via `Authorization: Bearer <token>` header

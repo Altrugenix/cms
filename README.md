@@ -1,4 +1,4 @@
-# ArcheCMS CMS
+# Arche CMS
 
 **File-based, open-source, developer-first headless CMS.**
 

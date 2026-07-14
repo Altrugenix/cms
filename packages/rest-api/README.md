@@ -1,6 +1,6 @@
 # @arche-cms/rest-api
 
-REST API route generator. Auto-generates CRUD routes from ArcheCMS schema definitions.
+REST API route generator. Auto-generates CRUD routes from Arche CMS schema definitions.
 
 ## Installation
 

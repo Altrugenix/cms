@@ -1,6 +1,6 @@
 # @arche-cms/cms
 
-The main ArcheCMS CMS package. Provides a `cms` binary for development, building, code generation, and schema management.
+The main Arche CMS package. Provides a `cms` binary for development, building, code generation, and schema management.
 
 ## Installation
 

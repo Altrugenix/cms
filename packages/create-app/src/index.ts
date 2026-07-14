@@ -140,7 +140,7 @@ async function main(): Promise<void> {
     console.log(`
 Usage: npm create arche-cms-app [project-name]
 
-Creates a new ArcheCMS CMS project in the specified directory.
+Creates a new Arche CMS project in the specified directory.
 `);
     process.exit(0);
   }

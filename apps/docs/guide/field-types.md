@@ -1,6 +1,6 @@
 # Field Types
 
-ArcheCMS CMS provides 30 field types covering a wide range of content modeling needs.
+Arche CMS provides 30 field types covering a wide range of content modeling needs.
 
 ## Text & Rich Content
 

@@ -1,6 +1,6 @@
 # Plugin Development Guide
 
-This guide explains how to create plugins for ArcheCMS CMS.
+This guide explains how to create plugins for Arche CMS.
 
 ## Overview
 

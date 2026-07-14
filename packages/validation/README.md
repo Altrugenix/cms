@@ -1,6 +1,6 @@
 # @arche-cms/validation
 
-Zod validation schema generator. Auto-generates validation schemas from ArcheCMS field definitions.
+Zod validation schema generator. Auto-generates validation schemas from Arche CMS field definitions.
 
 ## Installation
 

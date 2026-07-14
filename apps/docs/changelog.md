@@ -2,7 +2,7 @@
 
 ## v0.1.0 (Initial Release)
 
-Initial release of ArcheCMS CMS.
+Initial release of Arche CMS.
 
 ### Features
 
