@@ -33,5 +33,10 @@
   "peerDependencies": {
     "graphql": "^16.0.0",
     "mercurius": "^16.9.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
+    "directory": "packages/graphql"
   }
 }

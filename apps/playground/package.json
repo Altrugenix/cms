@@ -10,5 +10,10 @@
     "typecheck": "tsc --noEmit",
     "test": "echo 'no tests'",
     "clean": "rm -rf dist .next"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
+    "directory": "packages/playground"
   }
 }

@@ -37,5 +37,10 @@
     "pg": {
       "optional": true
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
+    "directory": "packages/database"
   }
 }

@@ -28,5 +28,10 @@
   "dependencies": {
     "@arche-cms/types": "workspace:*",
     "zod": "^4.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
+    "directory": "packages/validation"
   }
 }

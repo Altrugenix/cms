@@ -35,5 +35,10 @@
   "devDependencies": {
     "tsx": "^4.19.3",
     "vitest": "^3.2.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
+    "directory": "packages/api"
   }
 }

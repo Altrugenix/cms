@@ -14,5 +14,10 @@
     "typecheck": "echo 'ok'",
     "test": "echo 'no tests'",
     "clean": "rm -rf .vitepress/dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
+    "directory": "packages/docs"
   }
 }

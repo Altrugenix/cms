@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "bin": {
-    "create-arche-cms-app": "./bin/create-arche-cms-app.js"
+    "create-arche-cms-app": "bin/create-arche-cms-app.js"
   },
   "main": "dist/index.js",
   "files": [
@@ -20,5 +20,10 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
+    "directory": "packages/create-app"
   }
 }

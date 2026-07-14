@@ -29,5 +29,10 @@
     "@arche-cms/database": "workspace:*",
     "@arche-cms/types": "workspace:*",
     "@arche-cms/validation": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
+    "directory": "packages/rest-api"
   }
 }
