@@ -26,9 +26,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@arche-cms/database": "^0.1.0",
-    "@arche-cms/types": "^0.1.0",
-    "@arche-cms/validation": "^0.1.0"
+    "@arche-cms/database": "workspace:*",
+    "@arche-cms/types": "workspace:*",
+    "@arche-cms/validation": "workspace:*"
   },
   "peerDependencies": {
     "graphql": "^16.0.0",

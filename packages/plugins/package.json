@@ -17,8 +17,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@arche-cms/core": "^0.1.0",
-    "@arche-cms/types": "^0.1.0"
+    "@arche-cms/core": "workspace:*",
+    "@arche-cms/types": "workspace:*"
   },
   "scripts": {
     "build": "tsc",

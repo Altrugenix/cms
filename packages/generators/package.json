@@ -17,11 +17,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@arche-cms/database": "^0.1.0",
-    "@arche-cms/rest-api": "^0.1.0",
-    "@arche-cms/schema": "^0.1.0",
-    "@arche-cms/types": "^0.1.0",
-    "@arche-cms/validation": "^0.1.0"
+    "@arche-cms/database": "workspace:*",
+    "@arche-cms/rest-api": "workspace:*",
+    "@arche-cms/schema": "workspace:*",
+    "@arche-cms/types": "workspace:*",
+    "@arche-cms/validation": "workspace:*"
   },
   "scripts": {
     "build": "tsc",
