@@ -11,6 +11,7 @@ export async function registerPermissions(
   options: PermissionPluginOptions,
 ): Promise<void> {
   const ac = new AccessControl(options.adapter);
+  await ac.init();
   await ac.seedDefaultRoles();
 
   fastify.decorate("permissions", ac);

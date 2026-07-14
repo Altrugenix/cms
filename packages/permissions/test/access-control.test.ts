@@ -50,6 +50,7 @@ describe("AccessControl", () => {
   beforeEach(async () => {
     adapter = createMockAdapter();
     ac = new AccessControl(adapter);
+    await ac.init();
     await ac.seedDefaultRoles();
   });
 

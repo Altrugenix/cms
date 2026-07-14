@@ -1,5 +1,14 @@
 # @arche-cms/cms
 
+## 0.1.4
+
+### Patch Changes
+
+- fix(permissions): add init() to auto-create __cms_roles table before seeding default roles
+  fix(cms): make admin panel path resolution search upward from module location instead of using hardcoded relative path
+- Updated dependencies
+  - @arche-cms/permissions@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes

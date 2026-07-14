@@ -4,8 +4,24 @@ import { fileURLToPath } from "node:url";
 import type { FastifyInstance } from "fastify";
 import fastifyStatic from "@fastify/static";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const bundledAdminDir = resolve(currentDir, "../../../admin");
+const currentFile = fileURLToPath(import.meta.url);
+
+function findAdminDir(): string | null {
+  const envDir = process.env.CMS_ADMIN_DIR;
+  if (envDir && existsSync(envDir)) return envDir;
+
+  let dir = dirname(currentFile);
+  for (let i = 0; i < 10; i++) {
+    const candidate = resolve(dir, "admin");
+    if (existsSync(candidate) && existsSync(resolve(candidate, "index.html"))) {
+      return candidate;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
 
 export interface AdminStaticOptions {
   adminDir?: string;
@@ -15,13 +31,14 @@ export async function registerAdminStatic(
   fastify: FastifyInstance,
   options: AdminStaticOptions,
 ): Promise<void> {
-  const adminDir = options.adminDir ?? process.env.CMS_ADMIN_DIR ?? bundledAdminDir;
+  const adminDir = options.adminDir ?? findAdminDir();
 
-  if (!existsSync(adminDir)) {
+  if (!adminDir) {
     fastify.log.warn(
-      `Admin panel build not found at ${adminDir}. ` +
-        "The admin UI will not be available in production mode. " +
-        "Set CMS_ADMIN_DIR env var or run the admin Vite dev server on port 5173 for development.",
+      "Admin panel build not found. " +
+        "The admin UI will not be available. " +
+        "Build it with: pnpm --filter @arche-cms/admin build " +
+        "or set CMS_ADMIN_DIR env var.",
     );
     return;
   }

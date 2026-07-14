@@ -44,9 +44,22 @@ function resourceMatches(required: string, granted: string): boolean {
 
 export class AccessControl {
   private readonly db: DatabaseAdapter;
+  private initialized = false;
 
   constructor(db: DatabaseAdapter) {
     this.db = db;
+  }
+
+  async init(): Promise<void> {
+    if (this.initialized) return;
+    await this.db.createTable(ROLES_TABLE, {
+      name: "TEXT NOT NULL UNIQUE",
+      description: "TEXT",
+      permissions: "TEXT",
+      createdAt: "TEXT NOT NULL",
+      updatedAt: "TEXT NOT NULL",
+    });
+    this.initialized = true;
   }
 
   async seedDefaultRoles(): Promise<void> {
