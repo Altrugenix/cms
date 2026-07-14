@@ -69,8 +69,6 @@ jobs:
       - run: |
           find org-site/ -mindepth 1 -not -name '.git' -exec rm -rf {} +
           cp -r apps/docs/.vitepress/dist/. org-site/
-      - name: Commit and push to .github
-        run: |
           cd org-site
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
