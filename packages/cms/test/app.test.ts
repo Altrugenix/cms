@@ -254,6 +254,63 @@ describe("CMS API Server", () => {
       expect(res.statusCode).toBe(401);
     });
 
+    it("rejects register with invalid email format", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        body: { email: "notanemail", password: "password123" },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe("VALIDATION_ERROR");
+    });
+
+    it("rejects register with short password", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        body: { email: "valid@example.com", password: "short" },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe("VALIDATION_ERROR");
+    });
+
+    it("handles forgot-password endpoint", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/forgot-password",
+        body: { email: "test@example.com" },
+      });
+      expect(res.statusCode).toBe(200);
+    });
+
+    it("rejects forgot-password with invalid email", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/forgot-password",
+        body: { email: "bad" },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it("handles reset-password endpoint (will fail gracefully)", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/reset-password",
+        body: { token: "invalid", password: "newpassword123" },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it("returns setup-status", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/auth/setup-status",
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.hasAdmin).toBe(true);
+    });
+
     it("returns user from /me with valid token", async () => {
       const loginRes = await app.inject({
         method: "POST",
@@ -384,6 +441,108 @@ describe("CMS API Server", () => {
       });
       const body = JSON.parse(res.body);
       expect(body.data?.deletePosts).toBe(true);
+    });
+  });
+
+  describe("collection and global metadata endpoints", () => {
+    let metaApp: FastifyInstance;
+
+    beforeAll(async () => {
+      metaApp = await createApp({
+        config: testConfig,
+        adapter: createMockAdapter(),
+        collections: [
+          {
+            slug: "products",
+            labels: { singular: "Product", plural: "Products" },
+            fields: [
+              { name: "title", type: "text" },
+              { name: "category", type: "select", options: [{ label: "A", value: "a" }, "b"] },
+              { name: "tags", type: "multiSelect", options: ["x", "y"] },
+              { name: "color", type: "radio", options: ["red", "blue"] },
+            ],
+          },
+        ],
+        globals: [
+          {
+            slug: "settings",
+            label: "Settings",
+            fields: [
+              { name: "siteName", type: "text" },
+              { name: "logo", type: "relation", to: "media" },
+              { name: "theme", type: "select", options: ["light", "dark"] },
+            ],
+          },
+        ],
+      });
+    });
+
+    afterAll(async () => {
+      await metaApp.close();
+    });
+
+    it("returns collection metadata with field options", async () => {
+      const res = await metaApp.inject({
+        method: "GET",
+        url: "/api/collections",
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      const products = body.find((c: Record<string, unknown>) => c.slug === "products");
+      expect(products).toBeDefined();
+      const category = products.fields.find((f: Record<string, unknown>) => f.name === "category");
+      expect(category.options).toEqual(["a", "b"]);
+    });
+
+    it("returns global metadata with relation and select fields", async () => {
+      const res = await metaApp.inject({
+        method: "GET",
+        url: "/api/globals",
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      const settings = body.find((g: Record<string, unknown>) => g.slug === "settings");
+      expect(settings).toBeDefined();
+      const logo = settings.fields.find((f: Record<string, unknown>) => f.name === "logo");
+      expect(logo.to).toBe("media");
+      const theme = settings.fields.find((f: Record<string, unknown>) => f.name === "theme");
+      expect(theme.options).toEqual(["light", "dark"]);
+    });
+  });
+
+  describe("permissions and error handling", () => {
+    it("returns 401 for roles endpoint without auth", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/roles",
+        body: { name: "test" },
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("health degraded when adapter fails", async () => {
+      const adapter = createMockAdapter();
+      const origRaw = adapter.raw;
+      adapter.raw = async (...args: unknown[]) => {
+        if (
+          args[0] !== undefined &&
+          typeof args[0] === "string" &&
+          args[0].toLowerCase().startsWith("select 1")
+        ) {
+          throw new Error("db down");
+        }
+        return origRaw(...args);
+      };
+      const degradedApp = await createApp({
+        config: testConfig,
+        adapter,
+        collections: [collection],
+      });
+      const res = await degradedApp.inject({ method: "GET", url: "/health" });
+      const body = JSON.parse(res.body);
+      expect(body.db).toBe("error");
+      expect(body.status).toBe("degraded");
+      await degradedApp.close();
     });
   });
 });

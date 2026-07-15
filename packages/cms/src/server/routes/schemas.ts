@@ -116,6 +116,11 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
     component: "component",
     dynamicZone: "dynamicZone",
     slug: "slug",
+    array: "array",
+    object: "object",
+    group: "group",
+    repeater: "repeater",
+    tabs: "tabs",
   };
 
   function serializeValidation(val: Record<string, unknown> | undefined): string {

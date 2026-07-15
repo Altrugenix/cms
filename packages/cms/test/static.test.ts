@@ -27,7 +27,7 @@ describe("registerAdminStatic", () => {
 
     const { registerAdminStatic } = await import("../src/server/plugins/static.js");
     const fastify = mockFastify();
-    await registerAdminStatic(fastify, { adminDir: "/nonexistent" });
+    await registerAdminStatic(fastify, {});
 
     expect(fastify.log.warn).toHaveBeenCalledWith(
       expect.stringContaining("Admin panel build not found"),

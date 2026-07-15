@@ -5,6 +5,10 @@ import { tmpdir } from "node:os";
 
 interface MockConfig {
   database: { adapter: string; url: string };
+  schema?: { baseDir: string };
+  logger?: { level: string };
+  port?: number;
+  host?: string;
 }
 
 interface MockLogger {
@@ -146,5 +150,65 @@ describe("applyCliOverrides", () => {
     const { applyCliOverrides } = await import("../src/server/bootstrap.js");
     applyCliOverrides({ dbAdapter: "postgres" });
     expect(process.env.DB_ADAPTER).toBe("postgres");
+  });
+});
+
+describe("connectAndLoad", () => {
+  it("loads schemas and applies auto-migrations", async () => {
+    const { connectAndLoad } = await import("../src/server/bootstrap.js");
+    const mockAdapter = {
+      connect: vi.fn(),
+      raw: vi.fn(),
+      getExistingSchema: vi.fn().mockResolvedValue({ tables: new Map() }),
+      getExecutedMigrations: vi.fn().mockResolvedValue([]),
+      runMigration: vi.fn().mockResolvedValue(undefined),
+      transaction: vi.fn().mockImplementation(async (fn: () => Promise<unknown>) => fn()),
+    };
+    const config = {
+      schema: { baseDir: "./cms" },
+      database: { adapter: "sqlite", url: ":memory:" },
+      logger: { level: "silent" },
+    };
+    const result = await connectAndLoad(config as never, mockAdapter as never);
+    expect(mockAdapter.connect).toHaveBeenCalled();
+    expect(mockAdapter.raw).toHaveBeenCalledWith("SELECT 1");
+    expect(result.collections).toEqual([]);
+    expect(result.globals).toEqual([]);
+  });
+});
+
+describe("createAndStartApp", () => {
+  it("creates Fastify app and starts listening", async () => {
+    vi.mock("../src/server/app.js", () => ({
+      createApp: vi.fn().mockResolvedValue({
+        inject: vi.fn(),
+        listen: vi.fn(),
+        close: vi.fn(),
+        addHook: vi.fn(),
+        log: { info: vi.fn(), warn: vi.fn() },
+      }),
+    }));
+    vi.mock("../src/server/services/scheduled-publisher.js", () => ({
+      createScheduledPublisher: vi.fn().mockReturnValue({ stop: vi.fn() }),
+    }));
+    vi.mock("../src/server/plugins/static.js", () => ({
+      registerAdminStatic: vi.fn(),
+    }));
+
+    const { createAndStartApp } = await import("../src/server/bootstrap.js");
+    const adapter = { connect: vi.fn(), raw: vi.fn() };
+    const result = await createAndStartApp(
+      {
+        port: 3001,
+        host: "127.0.0.1",
+        logger: { level: "silent" },
+        database: { adapter: "sqlite", url: ":memory:" },
+      } as never,
+      adapter as never,
+      [],
+      [],
+    );
+    expect(result.stop).toBeDefined();
+    result.stop();
   });
 });

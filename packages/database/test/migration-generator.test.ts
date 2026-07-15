@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { MigrationGenerator } from "../src/migration-generator.js";
 import type { CollectionDefinition, ExistingSchema } from "../src/index.js";
+import type { GlobalDefinition } from "@arche-cms/types";
 
 const emptySchema: ExistingSchema = {
   tables: new Map([
@@ -359,5 +360,31 @@ describe("MigrationGenerator", () => {
     expect(migrations[0].up).toContain("entryId TEXT");
     expect(migrations[0].up).toContain("version INTEGER");
     expect(migrations[0].up).toContain("data TEXT");
+  });
+
+  it("adds columns to existing global table", () => {
+    const generator = new MigrationGenerator();
+    const globals: GlobalDefinition[] = [
+      {
+        slug: "settings",
+        label: "Settings",
+        fields: [
+          { name: "siteName", type: "text" },
+          { name: "description", type: "textarea" },
+        ],
+      },
+    ];
+
+    const existing: ExistingSchema = {
+      tables: new Map([
+        ["__cms_versions", ["id", "collection", "entryId", "version", "data", "createdAt"]],
+        ["__cms_settings", ["id", "siteName"]],
+      ]),
+    };
+
+    const migrations = generator.generate([], existing, globals);
+    expect(migrations).toHaveLength(1);
+    expect(migrations[0].name).toBe("add_global_fields___cms_settings");
+    expect(migrations[0].up).toContain("ADD COLUMN description TEXT");
   });
 });
