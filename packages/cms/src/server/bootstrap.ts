@@ -85,7 +85,7 @@ export async function connectAndLoad(
 
   const existingSchema = await adapter.getExistingSchema();
   const generator = new MigrationGenerator();
-  const migrations = generator.generate(collections, existingSchema);
+  const migrations = generator.generate(collections, existingSchema, globals);
   if (migrations.length > 0) {
     const runner = new MigrationRunner(adapter);
     await runner.run(migrations);

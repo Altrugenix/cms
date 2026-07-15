@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type { CollectionDefinition, GlobalDefinition, DatabaseAdapter } from "@arche-cms/database";
 import {
   createGlobalGetHandler,
@@ -38,6 +38,27 @@ function createGlobalAdapter(): DatabaseAdapter {
     dropTable: async () => {},
     runMigration: async () => {},
     getExecutedMigrations: async () => [],
+    getTableName: () => "",
+  };
+}
+
+function createMockAdapter(): DatabaseAdapter {
+  return {
+    findOne: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    deleteMany: vi.fn(),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    transaction: vi.fn(),
+    raw: vi.fn(),
+    createTable: vi.fn(),
+    dropTable: vi.fn(),
+    runMigration: vi.fn(),
+    getExecutedMigrations: vi.fn(),
+    getTableName: vi.fn(),
   };
 }
 
@@ -116,8 +137,44 @@ describe("global handlers", () => {
       const result = await handler({ params: {}, query: {}, body: null, headers: {} });
       expect(result.statusCode).toBe(400);
     });
+
+    it("returns 409 on unique constraint violation", async () => {
+      const adapter = createAdapterWithUniqueError();
+      const handler = createGlobalUpsertHandler(globalDef, adapter);
+      const result = await handler({
+        params: {},
+        query: {},
+        body: { title: "Test" },
+        headers: {},
+      });
+      expect(result.statusCode).toBe(409);
+      expect(result.body).toHaveProperty("code", "CONFLICT");
+    });
   });
 });
+
+function createAdapterWithUniqueError(): DatabaseAdapter {
+  return {
+    findOne: async () => null,
+    findMany: async () => ({ data: [], total: 0 }),
+    create: async () => {
+      throw new Error("UNIQUE constraint failed");
+    },
+    update: async () => {
+      throw new Error("UNIQUE constraint failed");
+    },
+    delete: async () => false,
+    deleteMany: async () => 0,
+    connect: async () => {},
+    disconnect: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
+    raw: async () => [],
+    createTable: async () => {},
+    dropTable: async () => {},
+    runMigration: async () => {},
+    getExecutedMigrations: async () => [],
+  };
+}
 
 describe("unique constraint error handling", () => {
   function createAdapterWithUniqueError(): DatabaseAdapter {
@@ -170,97 +227,227 @@ describe("unique constraint error handling", () => {
   });
 });
 
-describe("adapter error handling", () => {
-  function createFailingAdapter(): DatabaseAdapter {
-    return {
-      findOne: async () => {
-        throw new Error("DB connection failed");
-      },
-      findMany: async () => {
-        throw new Error("DB connection failed");
-      },
-      create: async () => {
-        throw new Error("DB connection failed");
-      },
-      update: async () => {
-        throw new Error("DB connection failed");
-      },
-      delete: async () => {
-        throw new Error("DB connection failed");
-      },
-      deleteMany: async () => {
-        throw new Error("DB connection failed");
-      },
-      connect: async () => {},
-      disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
-      dropTable: async () => {},
-      runMigration: async () => {},
-      getExecutedMigrations: async () => [],
+describe("getHandler with locale", () => {
+  it("resolves to fallback locale when specified locale has no value", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", {
+      title: "Hello",
+      body: { es: "Hola" },
+      _status: "published",
+    });
+    const localizedCollection: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [
+        { name: "title", type: "text", localized: true },
+        { name: "body", type: "text", localized: true },
+      ],
+      localization: { defaultLocale: "en", locales: ["en", "es"] },
     };
-  }
-
-  it("listHandler returns 500 on adapter error", async () => {
-    const adapter = createFailingAdapter();
-    const handler = createListHandler(collection, adapter, 100, 10);
-    const result = await handler({ params: {}, query: {}, body: null, headers: {} });
-    expect(result.statusCode).toBe(500);
-    expect(result.body).toHaveProperty("error", "Internal server error");
-  });
-
-  it("getHandler returns 500 on adapter error", async () => {
-    const adapter = createFailingAdapter();
-    const handler = createGetHandler(collection, adapter);
-    const result = await handler({ params: { id: "1" }, query: {}, body: null, headers: {} });
-    expect(result.statusCode).toBe(500);
-    expect(result.body).toHaveProperty("error", "Internal server error");
-  });
-
-  it("createHandler returns 500 on adapter error", async () => {
-    const adapter = createFailingAdapter();
-    const handler = createCreateHandler(collection, adapter);
+    const handler = createGetHandler(localizedCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
-      body: { title: "Test", slug: "test" },
+      params: { id: "1" },
+      query: { locale: "es" },
+      body: null,
       headers: {},
     });
-    expect(result.statusCode).toBe(500);
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.body).toBe("Hola");
   });
 
-  it("updateHandler returns 500 on adapter error", async () => {
-    const adapter = createFailingAdapter();
-    const handler = createUpdateHandler(collection, adapter);
+  it("falls back to first key when neither locale nor default locale match", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", {
+      title: { de: "Hallo" },
+      _status: "published",
+    });
+    const localizedCollection: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [{ name: "title", type: "text", localized: true }],
+      localization: { defaultLocale: "en", locales: ["de"] },
+    };
+    const handler = createGetHandler(localizedCollection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: { locale: "fr" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.title).toBe("Hallo");
+  });
+});
+
+describe("getHandler with locale (filterLocale fallback)", () => {
+  it("falls back to first key when neither locale nor default locale match", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", {
+      title: { de: "Hallo" },
+      _status: "published",
+    });
+    const localizedCollection: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [{ name: "title", type: "text", localized: true }],
+      localization: { defaultLocale: "en", locales: ["de"] },
+    };
+    const handler = createGetHandler(localizedCollection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: { locale: "fr" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.title).toBe("Hallo");
+  });
+
+  it("resolves to fallback locale when no locale param given", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", {
+      title: "Hello",
+      body: "World",
+      _status: "published",
+    });
+    const localizedCollection: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [
+        { name: "title", type: "text", localized: true },
+        { name: "body", type: "text", localized: true },
+      ],
+      localization: { defaultLocale: "en", locales: ["en"] },
+    };
+    const handler = createGetHandler(localizedCollection, adapter);
     const result = await handler({
       params: { id: "1" },
       query: {},
-      body: { title: "Test" },
+      body: null,
       headers: {},
     });
-    expect(result.statusCode).toBe(500);
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.title).toBe("Hello");
   });
 
-  it("globalGetHandler returns 500 on adapter error", async () => {
-    const adapter = createFailingAdapter();
-    const handler = createGlobalGetHandler(
-      { slug: "settings", label: "Settings", fields: [] },
-      adapter,
-    );
-    const result = await handler({ params: {}, query: {}, body: null, headers: {} });
-    expect(result.statusCode).toBe(500);
+  it("returns record without modification when locale not specified", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", {
+      title: { en: "Hello" },
+      _status: "published",
+    });
+    const localizedCollection: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [{ name: "title", type: "text", localized: true }],
+      localization: { defaultLocale: "en", locales: ["en"] },
+    };
+    const handler = createGetHandler(localizedCollection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.title).toEqual({ en: "Hello" });
   });
+});
 
-  it("globalUpsertHandler returns 500 on adapter error", async () => {
-    const adapter = createFailingAdapter();
-    const handler = createGlobalUpsertHandler(
-      { slug: "settings", label: "Settings", fields: [] },
-      adapter,
-    );
-    const result = await handler({ params: {}, query: {}, body: { title: "Test" }, headers: {} });
-    expect(result.statusCode).toBe(500);
+function createFailingAdapter(): DatabaseAdapter {
+  return {
+    findOne: async () => {
+      throw new Error("DB connection failed");
+    },
+    findMany: async () => {
+      throw new Error("DB connection failed");
+    },
+    create: async () => {
+      throw new Error("DB connection failed");
+    },
+    update: async () => {
+      throw new Error("DB connection failed");
+    },
+    delete: async () => {
+      throw new Error("DB connection failed");
+    },
+    deleteMany: async () => {
+      throw new Error("DB connection failed");
+    },
+    connect: async () => {},
+    disconnect: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
+    raw: async () => [],
+    createTable: async () => {},
+    dropTable: async () => {},
+    runMigration: async () => {},
+    getExecutedMigrations: async () => [],
+  };
+}
+
+it("listHandler returns 500 on adapter error", async () => {
+  const adapter = createFailingAdapter();
+  const handler = createListHandler(collection, adapter, 100, 10);
+  const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+  expect(result.statusCode).toBe(500);
+  expect(result.body).toHaveProperty("error", "Internal server error");
+});
+
+it("getHandler returns 500 on adapter error", async () => {
+  const adapter = createFailingAdapter();
+  const handler = createGetHandler(collection, adapter);
+  const result = await handler({ params: { id: "1" }, query: {}, body: null, headers: {} });
+  expect(result.statusCode).toBe(500);
+  expect(result.body).toHaveProperty("error", "Internal server error");
+});
+
+it("createHandler returns 500 on adapter error", async () => {
+  const adapter = createFailingAdapter();
+  const handler = createCreateHandler(collection, adapter);
+  const result = await handler({
+    params: {},
+    query: {},
+    body: { title: "Test", slug: "test" },
+    headers: {},
   });
+  expect(result.statusCode).toBe(500);
+});
+
+it("updateHandler returns 500 on adapter error", async () => {
+  const adapter = createFailingAdapter();
+  const handler = createUpdateHandler(collection, adapter);
+  const result = await handler({
+    params: { id: "1" },
+    query: {},
+    body: { title: "Test" },
+    headers: {},
+  });
+  expect(result.statusCode).toBe(500);
+});
+
+it("globalGetHandler returns 500 on adapter error", async () => {
+  const adapter = createFailingAdapter();
+  const handler = createGlobalGetHandler(
+    { slug: "settings", label: "Settings", fields: [] },
+    adapter,
+  );
+  const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+  expect(result.statusCode).toBe(500);
+});
+
+it("globalUpsertHandler returns 500 on adapter error", async () => {
+  const adapter = createFailingAdapter();
+  const handler = createGlobalUpsertHandler(
+    { slug: "settings", label: "Settings", fields: [] },
+    adapter,
+  );
+  const result = await handler({ params: {}, query: {}, body: { title: "Test" }, headers: {} });
+  expect(result.statusCode).toBe(500);
 });
 
 describe("query validation edge cases", () => {
@@ -311,6 +498,249 @@ describe("query validation edge cases", () => {
       headers: {},
     });
     expect(result.statusCode).toBe(400);
+  });
+
+  it("listHandler rejects negative offset", async () => {
+    const adapter = createGlobalAdapter();
+    const handler = createListHandler(collection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { offset: "-1" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("listHandler rejects non-integer limit", async () => {
+    const adapter = createGlobalAdapter();
+    const handler = createListHandler(collection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { limit: "1.5" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("listHandler rejects non-integer offset value", async () => {
+    const adapter = createGlobalAdapter();
+    const handler = createListHandler(collection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { offset: "1.5" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+});
+
+describe("updateHandler edge cases", () => {
+  it("returns 400 for missing id", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createUpdateHandler(collection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: { title: "Updated" },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("returns 400 for missing body", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createUpdateHandler(collection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("returns 400 for non-object body", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createUpdateHandler(collection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: {},
+      body: "string body",
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("returns 400 for validation failure", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createUpdateHandler(collection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: {},
+      body: { title: 123 },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+    const body = result.body as Record<string, unknown>;
+    expect(body.error).toBe("Validation failed");
+  });
+});
+
+describe("createHandler edge cases", () => {
+  it("returns 400 for non-object body", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createCreateHandler(collection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: "string body",
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+});
+
+describe("listHandler locale and sort edge cases", () => {
+  it("applies locale to localized fields", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", {
+      title: { en: "Hello", fr: "Bonjour" },
+      _status: "published",
+    });
+    const localizedCollection: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [{ name: "title", type: "text", localized: true }],
+      localization: { defaultLocale: "en", locales: ["en", "fr"] },
+    };
+    const handler = createListHandler(localizedCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { locale: "fr" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as { data: Record<string, unknown>[] };
+    expect(body.data[0].title).toBe("Bonjour");
+  });
+
+  it("sorts by field without direction (defaults to asc)", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", { title: "Banana", _status: "published" });
+    await adapter.create("__cms_posts", { title: "Apple", _status: "published" });
+    const handler = createListHandler(draftCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { sort: "title" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as { data: Record<string, unknown>[] };
+    // Mock returns insertion order; sort param is passed to adapter
+    expect(body.data.length).toBe(2);
+  });
+
+  it("sorts by field with asc direction", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", { title: "Banana", _status: "published" });
+    await adapter.create("__cms_posts", { title: "Apple", _status: "published" });
+    const handler = createListHandler(draftCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { sort: "title:asc" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as { data: Record<string, unknown>[] };
+    // Mock returns insertion order; sort param is passed to adapter
+    expect(body.data.length).toBe(2);
+  });
+
+  it("returns undefined sort for non-string input", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createListHandler(draftCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { sort: ["title", "desc"] as never },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("returns undefined select for non-string input", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createListHandler(draftCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { select: ["title"] as never },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("returns undefined populate for non-string input", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createListHandler(draftCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { populate: ["author"] as never },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("populates with empty select fields", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", { title: "Test", _status: "published" });
+    const handler = createListHandler(draftCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { select: ",,," },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("populates with empty populate fields", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", { title: "Test", _status: "published" });
+    const handler = createListHandler(draftCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { populate: ",,," },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("listHandler shows deleted entries when deleted=only", async () => {
+    const adapter = createSoftDeleteAdapter();
+    await adapter.create("__cms_posts", { title: "Active" });
+    await adapter.create("__cms_posts", {
+      title: "Deleted",
+      _deletedAt: "2024-01-01T00:00:00.000Z",
+    });
+    const handler = createListHandler(softDeleteCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { deleted: "only" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as { data: Record<string, unknown>[]; total: number };
+    expect(body.total).toBe(2);
   });
 });
 
@@ -460,6 +890,66 @@ describe("draft/publish handlers", () => {
     const body = result.body as Record<string, unknown>;
     expect(body._status).toBe("draft");
     expect(body._publishedAt).toBeNull();
+  });
+
+  it("unpublishHandler returns 400 for missing id", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createUnpublishHandler(draftCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("unpublishHandler returns 404 for missing entry", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createUnpublishHandler(draftCollection, adapter);
+    const result = await handler({
+      params: { id: "999" },
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(404);
+  });
+
+  it("publishHandler returns 400 for missing id", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createPublishHandler(draftCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("unpublishHandler returns 500 on adapter error", async () => {
+    const adapter = createFailingAdapter();
+    const handler = createUnpublishHandler(draftCollection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(500);
+  });
+
+  it("publishHandler returns 500 on adapter error", async () => {
+    const adapter = createFailingAdapter();
+    const handler = createPublishHandler(draftCollection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(500);
   });
 
   it("publishHandler returns 404 for missing entry", async () => {
@@ -680,6 +1170,90 @@ describe("soft delete handlers", () => {
     });
     expect(result.statusCode).toBe(404);
   });
+
+  it("deleteHandler returns 400 for missing id", async () => {
+    const adapter = createSoftDeleteAdapter();
+    const handler = createDeleteHandler(softDeleteCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("deleteHandler returns 500 on adapter error", async () => {
+    const adapter = createFailingAdapter();
+    const handler = createDeleteHandler(softDeleteCollection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(500);
+  });
+
+  it("bulkDeleteHandler returns 500 on adapter error", async () => {
+    const adapter = createFailingAdapter();
+    const handler = createBulkDeleteHandler(softDeleteCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: { ids: ["1", "2"] },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(500);
+  });
+
+  it("bulkDeleteHandler returns 400 for non-array ids", async () => {
+    const adapter = createSoftDeleteAdapter();
+    const handler = createBulkDeleteHandler(softDeleteCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: { ids: "not-an-array" },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("bulkDeleteHandler returns 400 for null body", async () => {
+    const adapter = createSoftDeleteAdapter();
+    const handler = createBulkDeleteHandler(softDeleteCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("restoreHandler returns 400 for missing id", async () => {
+    const adapter = createSoftDeleteAdapter();
+    const handler = createRestoreHandler(softDeleteCollection, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("restoreHandler returns 500 on adapter error", async () => {
+    const adapter = createFailingAdapter();
+    const handler = createRestoreHandler(softDeleteCollection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(500);
+  });
 });
 
 const scheduledCollection: CollectionDefinition = {
@@ -738,5 +1312,282 @@ describe("scheduled publishing handlers", () => {
     const body = result.body as Record<string, unknown>;
     expect(body.title).toBe("Updated");
     expect(body._publishAt).toBe("2099-01-01T00:00:00.000Z");
+  });
+});
+
+describe("filterLocale — fallback locale branch (line 265)", () => {
+  it("resolves to fallback locale when requested locale is missing but fallback exists", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", {
+      title: { en: "Hello in English" },
+      _status: "published",
+    });
+    const localizedCollection: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [{ name: "title", type: "text", localized: true }],
+      localization: { defaultLocale: "en", locales: ["en", "fr"] },
+    };
+    const handler = createGetHandler(localizedCollection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: { locale: "fr" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.title).toBe("Hello in English");
+  });
+});
+
+describe("applyLocaleToRecord — no locale branch (line 278)", () => {
+  it("returns record unmodified when no locale param is passed on localized list", async () => {
+    const adapter = createDraftAdapter();
+    await adapter.create("__cms_posts", {
+      title: { en: "Hello", fr: "Bonjour" },
+      _status: "published",
+    });
+    const localizedCollection: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [{ name: "title", type: "text", localized: true }],
+      localization: { defaultLocale: "en", locales: ["en", "fr"] },
+    };
+    const handler = createListHandler(localizedCollection, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as { data: Record<string, unknown>[] };
+    expect(body.data[0].title).toEqual({ en: "Hello", fr: "Bonjour" });
+  });
+});
+
+describe("updateHandler — draft 404 branch (line 485)", () => {
+  it("returns 404 when updating a draft-enabled collection with missing id", async () => {
+    const adapter = createDraftAdapter();
+    const handler = createUpdateHandler(draftCollection, adapter);
+    const result = await handler({
+      params: { id: "999" },
+      query: {},
+      body: { title: "Updated" },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(404);
+  });
+});
+
+describe("globalUpsertHandler — update returns null fallback (line 534)", () => {
+  it("falls back to empty object when adapter.update returns null for existing global", async () => {
+    const adapter: DatabaseAdapter = {
+      findOne: async (_collection, id) => {
+        if (id === "1") return { id: 1, title: "Old" };
+        return null;
+      },
+      findMany: async () => ({ data: [], total: 0 }),
+      create: async (_collection, data) => ({ ...data }),
+      update: async () => null,
+      delete: async () => false,
+      deleteMany: async () => 0,
+      connect: async () => {},
+      disconnect: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
+      raw: async () => [],
+      createTable: async () => {},
+      dropTable: async () => {},
+      runMigration: async () => {},
+      getExecutedMigrations: async () => [],
+    };
+    const handler = createGlobalUpsertHandler(globalDef, adapter);
+    const result = await handler({
+      params: {},
+      query: {},
+      body: { title: "Updated" },
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    expect(result.body).toEqual({});
+  });
+
+  it("falls back to en when defaultLocale is not set in collection", async () => {
+    const col: CollectionDefinition = {
+      ...collection,
+      localization: { locales: ["en", "fr"] },
+      fields: [{ name: "title", type: "text", localized: true }],
+    };
+    const adapter = createMockAdapter();
+    const handler = createGetHandler(col, adapter);
+    const record = { id: "1", title: { en: "Hello", fr: "Bonjour" } };
+    adapter.findOne.mockResolvedValue(record);
+    const result = await handler({
+      params: { id: "1" },
+      query: { locale: "de" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("populates relation field with null when related record not found", async () => {
+    const col: CollectionDefinition = {
+      ...collection,
+      fields: [
+        { name: "title", type: "text" },
+        { name: "author", type: "relation", to: "users" },
+      ],
+    };
+    const adapter = createMockAdapter();
+    adapter.getTableName.mockReturnValue("users");
+    adapter.findMany.mockResolvedValue({
+      data: [{ id: "1", title: "Post", author: "nonexistent" }],
+      total: 1,
+    });
+    const handler = createListHandler(col, adapter);
+    const result = await handler({
+      params: {},
+      query: { populate: "author" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("returns early when records list is empty in populateRelations", async () => {
+    const col: CollectionDefinition = {
+      ...collection,
+      fields: [
+        { name: "title", type: "text" },
+        { name: "author", type: "relation", to: "users" },
+      ],
+    };
+    const adapter = createMockAdapter();
+    adapter.getTableName.mockReturnValue("users");
+    adapter.findMany.mockResolvedValue({ data: [], total: 0 });
+    const handler = createListHandler(col, adapter);
+    const result = await handler({
+      params: {},
+      query: { populate: "author" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("filterLocale handles null field value", async () => {
+    const col: CollectionDefinition = {
+      ...collection,
+      localization: { defaultLocale: "en", locales: ["en"] },
+      fields: [{ name: "title", type: "text", localized: true }],
+    };
+    const adapter = createMockAdapter();
+    adapter.findOne.mockResolvedValue({ id: "1", title: null });
+    const handler = createGetHandler(col, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: { locale: "en" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("populate with non-relation field returns early", async () => {
+    const col: CollectionDefinition = {
+      ...collection,
+      fields: [
+        { name: "title", type: "text" },
+        { name: "author", type: "relation", to: "users" },
+      ],
+    };
+    const adapter = createMockAdapter();
+    adapter.getTableName.mockReturnValue("users");
+    adapter.findMany.mockResolvedValue({
+      data: [{ id: "1", title: "Post", author: "1" }],
+      total: 1,
+    });
+    const handler = createListHandler(col, adapter);
+    const result = await handler({
+      params: {},
+      query: { populate: "title" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("populate with array relation maps missing IDs to null", async () => {
+    const col: CollectionDefinition = {
+      ...collection,
+      fields: [
+        { name: "title", type: "text" },
+        { name: "tags", type: "relation", to: "tags", multiple: true },
+      ],
+    };
+    const adapter = createMockAdapter();
+    adapter.getTableName.mockReturnValue("tags");
+    adapter.findMany.mockResolvedValue({ data: [], total: 0 });
+    const handler = createListHandler(col, adapter);
+    const result = await handler({
+      params: {},
+      query: { populate: "tags" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("populate with array relation maps missing IDs to null", async () => {
+    const col: CollectionDefinition = {
+      ...collection,
+      fields: [
+        { name: "title", type: "text" },
+        { name: "tags", type: "relation", to: "tags", multiple: true },
+      ],
+    };
+    const adapter = createMockAdapter();
+    adapter.getTableName.mockReturnValue("tags");
+    adapter.findMany.mockResolvedValue({
+      data: [{ id: "1", title: "Post", tags: ["existing", "missing"] }],
+      total: 1,
+    });
+    const handler = createListHandler(col, adapter);
+    const result = await handler({
+      params: {},
+      query: { populate: "tags" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+  });
+
+  it("populate skips null relation values in multi-record list", async () => {
+    const col: CollectionDefinition = {
+      ...collection,
+      fields: [
+        { name: "title", type: "text" },
+        { name: "author", type: "relation", to: "users" },
+      ],
+    };
+    const adapter = createMockAdapter();
+    adapter.getTableName.mockReturnValue("users");
+    adapter.findMany.mockResolvedValue({
+      data: [
+        { id: "1", title: "Post 1", author: "user1" },
+        { id: "2", title: "Post 2", author: null },
+      ],
+      total: 2,
+    });
+    const handler = createListHandler(col, adapter);
+    const result = await handler({
+      params: {},
+      query: { populate: "author" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
   });
 });

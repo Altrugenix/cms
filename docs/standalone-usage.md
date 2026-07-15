@@ -33,6 +33,27 @@ When you run `cms dev`, Arche starts a full CMS server at `http://localhost:3000
 | `http://localhost:3000/graphiql`         | GraphiQL IDE                        |
 | `http://localhost:3000/health`           | Health check                        |
 
+## Default admin account
+
+On first start, Arche auto-creates a default admin account:
+
+| Email                 | Password   |
+| --------------------- | ---------- |
+| `admin@arche-cms.com` | `admin123` |
+
+Change this password after your first login.
+
+## Requirements
+
+In production (`cms start`), you **must** set the `AUTH_SECRET` environment variable:
+
+```bash
+export AUTH_SECRET=$(openssl rand -hex 32)
+cms start
+```
+
+In development (`cms dev`), a temporary secret is auto-generated if not set.
+
 ### Example REST endpoints
 
 If you have a `posts` collection in `cms/collections/posts.ts`:

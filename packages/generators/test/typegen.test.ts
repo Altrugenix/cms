@@ -1,6 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { generateTypes } from "../src/typegen.js";
+import { describe, it, expect, afterEach } from "vitest";
+import { generateTypes, generateTypesToFile } from "../src/typegen.js";
 import type { CollectionDefinition, ComponentDefinition } from "@arche-cms/types";
+import { mkdtemp, rm, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 describe("generateTypes", () => {
   it("generates interface for a basic collection", () => {
@@ -146,5 +149,232 @@ describe("generateTypes", () => {
     const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
     expect(output).toContain("required_field: string;");
     expect(output).toContain("optional_field?: string;");
+  });
+
+  it("handles component fields", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [{ name: "seo", type: "component", component: "seo" }],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("seo?: Seo;");
+  });
+
+  it("handles repeatable component fields", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [{ name: "blocks", type: "component", component: "block", repeatable: true }],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("blocks?: Block[];");
+  });
+
+  it("handles dynamicZone fields", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [{ name: "content", type: "dynamicZone", components: ["hero", "text-block"] }],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("content?: Hero | TextBlock;");
+  });
+
+  it("handles array fields", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [
+          {
+            name: "items",
+            type: "array",
+            fields: [
+              { name: "label", type: "text" },
+              { name: "count", type: "number" },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("items");
+  });
+
+  it("handles object and group fields", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [
+          { name: "metadata", type: "object", fields: [{ name: "key", type: "text" }] },
+          { name: "group", type: "group", fields: [{ name: "val", type: "number" }] },
+        ],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("metadata");
+    expect(output).toContain("group");
+  });
+
+  it("handles repeater fields", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [{ name: "items", type: "repeater", fields: [{ name: "name", type: "text" }] }],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("items");
+  });
+
+  it("handles tabs fields", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [
+          {
+            name: "tab_fields",
+            type: "tabs",
+            tabs: [
+              {
+                label: "Content",
+                fields: [
+                  { name: "title", type: "text" },
+                  { name: "body", type: "richText" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("tab_fields");
+  });
+
+  it("handles unknown field type via default", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "test",
+        labels: { singular: "Test", plural: "Tests" },
+        fields: [{ name: "custom", type: "unknown-type" as never }],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("custom?: unknown;");
+  });
+
+  it("handles localized fields", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [
+          { name: "title", type: "text", localized: true },
+          { name: "body", type: "richText", localized: true },
+          { name: "count", type: "number", localized: true },
+        ],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("title?: Record<string, string>;");
+    expect(output).toContain("body?: Record<string, unknown>;");
+    expect(output).toContain("count?: Record<string, number>;");
+  });
+
+  it("handles localized relation field via switch path", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [{ name: "author", type: "relation", to: "users", localized: true }],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("author?: Record<string, Users | string>;");
+  });
+
+  it("handles localized component field via switch path", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "pages",
+        labels: { singular: "Page", plural: "Pages" },
+        fields: [{ name: "seo", type: "component", component: "seo", localized: true }],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("seo?: Record<string, Seo>;");
+  });
+
+  it("handles manyToOne relation", () => {
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "posts",
+        labels: { singular: "Post", plural: "Posts" },
+        fields: [{ name: "author", type: "relation", to: "users", kind: "manyToOne" }],
+      },
+    ];
+
+    const output = generateTypes({ collections, outputPath: "cms/generated/types.ts" });
+    expect(output).toContain("author?: Users | string;");
+  });
+});
+
+describe("generateTypesToFile", () => {
+  let tmpDir: string;
+
+  afterEach(async () => {
+    if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("writes generated types to a file", async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), "typegen-test-"));
+    const outPath = join(tmpDir, "generated", "types.ts");
+
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "posts",
+        labels: { singular: "Post", plural: "Posts" },
+        fields: [{ name: "title", type: "text" }],
+      },
+    ];
+
+    await generateTypesToFile({ collections, outputPath: outPath });
+
+    const content = await readFile(outPath, "utf-8");
+    expect(content).toContain("export interface Posts");
+    expect(content).toContain("title?: string;");
+    expect(content).toContain("id: string;");
+  });
+
+  it("creates parent directories recursively", async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), "typegen-nested-"));
+    const outPath = join(tmpDir, "a", "b", "c", "types.ts");
+
+    await generateTypesToFile({ collections: [], outputPath: outPath });
+
+    const content = await readFile(outPath, "utf-8");
+    expect(content).toContain("Auto-generated");
   });
 });

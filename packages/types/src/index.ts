@@ -1,3 +1,5 @@
+export const PKG_NAME = "@arche-cms/types";
+
 export type {
   FieldType,
   FieldBase,

@@ -14,29 +14,29 @@
 git clone https://github.com/Arche-CMS/arche-cms.git
 cd cms
 corepack enable
-yarn install
+pnpm install
 ```
 
 ### Development
 
 ```bash
 # Start all dev servers
-yarn dev
+pnpm dev
 
 # Build all packages
-yarn build
+pnpm build
 
 # Run all tests
-yarn test
+pnpm test
 
 # Run lint + typecheck + test
-yarn lint && yarn typecheck && yarn test
+pnpm lint && pnpm typecheck && pnpm test
 ```
 
 ## Project Structure
 
 ```
-apps/           # Application packages (admin, api, docs, playground)
+apps/           # Application packages (docs, playground)
 packages/       # Library packages (core, schema, database, plugins, etc.)
 docs/           # Documentation
 cms/            # CMS schema definitions (user-created)
@@ -50,7 +50,7 @@ See [architecture.md](architecture.md) for the full project layout and dependenc
 2. Create a branch from `main`
 3. Make changes following the conventions below
 4. Write or update tests
-5. Run `yarn lint && yarn typecheck && yarn test` — all must pass
+5. Run `pnpm lint && pnpm typecheck && pnpm test` — all must pass
 6. Commit using conventional commit format
 7. Push and open a pull request
 
@@ -77,7 +77,7 @@ Order: 1) Node built-ins, 2) third-party packages, 3) `@/` project aliases, 4) r
 ### Testing
 
 - Vitest for unit/integration tests
-- Playwright for E2E tests (in `apps/admin/e2e/`)
+- Playwright for E2E tests (in `packages/cms/src/admin/e2e/`)
 - Tests are required for all new features
 
 ### Commits

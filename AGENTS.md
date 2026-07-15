@@ -60,11 +60,15 @@ Priority order: 1) Developer Experience, 2) Type Safety, 3) Performance, 4) Exte
 ```
 arche-cms/
 ├── apps/
-│   ├── admin/          # Admin panel UI
-│   ├── api/            # Fastify API server
 │   ├── docs/           # Documentation site
 │   └── playground/     # Dev playground
 ├── packages/
+│   ├── cms/            # CMS package (CLI, server, admin panel, API)
+│   │   ├── src/        # CLI + server logic + admin panel
+│   │   │   └── admin/  # Admin panel UI (React 19)
+│   │   ├── dist/       # Compiled output
+│   │   │   └── admin/  # Bundled admin panel build
+│   │   └── bin/        # CLI binary
 │   ├── core/           # Core framework, DI, event bus
 │   ├── schema/         # Schema definition API (defineCollection, field helpers)
 │   ├── database/       # Database adapter layer (Drizzle ORM)
@@ -129,7 +133,7 @@ Order: 1) Node built-ins, 2) third-party packages, 3) project aliases (`@/`), 4)
 
 - Vitest
 - Tests next to source files: `*.test.ts` / `*.spec.ts`
-- E2E tests with Playwright in `apps/admin/e2e/`
+- E2E tests with Playwright in `packages/cms/src/admin/e2e/`
 
 ### Commits
 

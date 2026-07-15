@@ -64,8 +64,11 @@ export class EventBus {
         },
       ];
       const execute = async (index: number): Promise<void> => {
-        const fn = chain[index];
-        if (!fn) return;
+        const fn = chain[index] as (
+          event: string,
+          payload: unknown,
+          next: () => Promise<void>,
+        ) => Promise<void>;
         if (index < chain.length - 1) {
           await fn(event, payload, () => execute(index + 1));
         } else {

@@ -1,5 +1,17 @@
 import { readdir } from "node:fs/promises";
 import { resolve } from "node:path";
+
+let tsxRegistered = false;
+async function ensureTsSupport(): Promise<void> {
+  if (tsxRegistered) return;
+  try {
+    // @ts-expect-error — tsx/esm has no types, but it's a side-effect hook
+    await import("tsx/esm");
+  } catch {
+    // tsx not available — rely on native TS support (Node 22+)
+  }
+  tsxRegistered = true;
+}
 import type { CollectionDefinition, GlobalDefinition, ComponentDefinition } from "@arche-cms/types";
 
 interface WithSlug {
@@ -60,6 +72,8 @@ export class SchemaLoader {
       const files = await readdir(dir);
       const filtered = files.filter((f) => f.endsWith(".ts") || f.endsWith(".js"));
       if (filtered.length === 0) return map;
+
+      if (filtered.some((f) => f.endsWith(".ts"))) await ensureTsSupport();
 
       const mods = await Promise.all(filtered.map((file) => import(resolve(dir, file))));
 

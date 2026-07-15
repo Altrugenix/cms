@@ -14,8 +14,8 @@ services:
       - SCHEMA_DIR=${SCHEMA_DIR:-./cms}
       - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:
-      - api_data:/app/apps/api/data
-      - ./cms:/app/apps/api/cms:ro
+      - api_data:/app/data
+      - ./cms:/app/cms:ro
 
 volumes:
   api_data:

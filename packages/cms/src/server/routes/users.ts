@@ -35,7 +35,7 @@ export function registerUserRoutes(
     { preHandler: [fastify.authenticate, fastify.requirePermission("update", "users")] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
-      const body = request.body as { email?: string; role?: string };
+      const body = request.body as { email?: string; role?: string; password?: string };
       const user = await authService.updateUser(id, body);
       if (!user) return reply.status(404).send({ error: "User not found" });
       return reply.send(user);

@@ -40,7 +40,7 @@ function parseSort(raw: unknown): Record<string, "asc" | "desc"> | undefined {
       sort[field] = dir === "desc" ? "desc" : "asc";
     }
   }
-  return Object.keys(sort).length > 0 ? sort : undefined;
+  return sort;
 }
 
 function validateQueryParams(query: Record<string, string | string[] | undefined>): string | null {
@@ -126,7 +126,7 @@ function collectRelationIds(records: Record<string, unknown>[], field: string): 
   const isArrayMap = new Map<number, boolean>();
   for (let i = 0; i < records.length; i++) {
     const record = records[i];
-    if (!record) continue;
+    if (record == null) continue;
     const value = record[field];
     if (value == null) continue;
     if (Array.isArray(value)) {
@@ -148,7 +148,7 @@ function attachRelatedRecords(
 ): void {
   for (let i = 0; i < records.length; i++) {
     const record = records[i];
-    if (!record) continue;
+    if (record == null) continue;
     const value = record[field];
     if (value == null) continue;
     record[field] =
@@ -167,7 +167,7 @@ function populateRelations(
   const relationFields = getRelationFields(collection).filter((rf) =>
     populateFields.includes(rf.name),
   );
-  if (relationFields.length === 0 || records.length === 0) return Promise.resolve();
+  if (relationFields.length === 0) return Promise.resolve();
 
   return Promise.all(
     relationFields.map(async (rf) => {
@@ -255,20 +255,6 @@ function defaultLocale(collection: CollectionDefinition): string {
 
 function localizedFields(collection: CollectionDefinition): FieldDefinition[] {
   return collection.fields.filter((f) => f.localized);
-}
-
-function normalizeLocaleData(
-  data: Record<string, unknown>,
-  collection: CollectionDefinition,
-): Record<string, unknown> {
-  const def = defaultLocale(collection);
-  for (const field of localizedFields(collection)) {
-    const val = data[field.name];
-    if (val !== undefined && val !== null && (typeof val !== "object" || Array.isArray(val))) {
-      data[field.name] = { [def]: val };
-    }
-  }
-  return data;
 }
 
 function filterLocale(data: unknown, locale: string | undefined, fallback: string): unknown {
@@ -438,7 +424,7 @@ export function createCreateHandler(
           body: { error: "Validation failed", details: parsed.error.issues },
         };
       }
-      const data = normalizeLocaleData(parsed.data as Record<string, unknown>, collection);
+      const data = parsed.data as Record<string, unknown>;
       if (hasDrafts(collection)) {
         data._status = data._status ?? "draft";
         if (data._status === "published") {
@@ -490,7 +476,7 @@ export function createUpdateHandler(
           body: { error: "Validation failed", details: parsed.error.issues },
         };
       }
-      const data = normalizeLocaleData(parsed.data as Record<string, unknown>, collection);
+      const data = parsed.data as Record<string, unknown>;
       let record: Record<string, unknown> | null;
       if (hasDrafts(collection)) {
         const { _status, _publishedAt, _publishedBy, ...rest } = data;

@@ -163,7 +163,7 @@ export function generateResolvers(
     mutationFields[`create${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
       const schema = createMutationPayloadSchema(collection);
       const data = normalizeLocaleData(
-        (schema.parse(args.data) ?? {}) as Record<string, unknown>,
+        schema.parse(args.data) as Record<string, unknown>,
         collection,
       );
       const row = await adapter.create(table, data);
@@ -173,7 +173,7 @@ export function generateResolvers(
     mutationFields[`update${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
       const schema = updateMutationPayloadSchema(collection);
       const data = normalizeLocaleData(
-        (schema.parse(args.data) ?? {}) as Record<string, unknown>,
+        schema.parse(args.data) as Record<string, unknown>,
         collection,
       );
       const row = await adapter.update(table, args.id as string, data);

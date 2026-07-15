@@ -1,0 +1,12 @@
+{
+  "name": "test-cms",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cms dev",
+    "start": "cms start"
+  },
+  "dependencies": {
+    "@arche-cms/cms": "workspace:*"
+  }
+}

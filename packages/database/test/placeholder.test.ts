@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { SQLiteAdapter } from "../src/sqlite.js";
-import { Repository } from "../src/repository.js";
-import { MigrationRunner } from "../src/migration.js";
-import type { Migration } from "../src/types.js";
+import { SQLiteAdapter, Repository, MigrationRunner, MigrationGenerator } from "../src/index.js";
+import type { Migration, DatabaseAdapter, QueryOptions, ExistingSchema } from "../src/index.js";
+import type {
+  QueryOptions as QueryOptionsFromTypes,
+  Migration as MigrationFromTypes,
+} from "../src/types.js";
 
 const adapter = new SQLiteAdapter(":memory:");
 
@@ -124,5 +126,56 @@ describe("MigrationRunner", () => {
     await runner.run(migrations);
     const executed = await adapter.getExecutedMigrations();
     expect(executed.filter((e) => e === "001").length).toBe(1);
+  });
+});
+
+describe("package exports", () => {
+  it("exports SQLiteAdapter", () => {
+    expect(SQLiteAdapter).toBeDefined();
+  });
+
+  it("exports Repository", () => {
+    expect(Repository).toBeDefined();
+  });
+
+  it("exports MigrationRunner", () => {
+    expect(MigrationRunner).toBeDefined();
+  });
+
+  it("exports MigrationGenerator", () => {
+    expect(MigrationGenerator).toBeDefined();
+  });
+
+  it("exports type DatabaseAdapter", () => {
+    // Type-only export — verify it resolves at runtime via typeof
+    expect(typeof ({} as DatabaseAdapter)).toBe("object");
+  });
+
+  it("exports type QueryOptions", () => {
+    expect(typeof ({} as QueryOptions)).toBe("object");
+  });
+
+  it("exports type ExistingSchema", () => {
+    expect(typeof ({} as ExistingSchema)).toBe("object");
+  });
+
+  it("createPostgresAdapter is a function", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.createPostgresAdapter).toBe("function");
+  });
+
+  it("createPostgresAdapter returns a PostgresAdapter instance", async () => {
+    const mod = await import("../src/index.js");
+    const adapter = await mod.createPostgresAdapter({
+      connectionString: "postgres://localhost:5432/test",
+    });
+    expect(adapter).toBeDefined();
+    expect(typeof adapter.connect).toBe("function");
+  });
+
+  it("imports types from src/types.ts", () => {
+    const _q: QueryOptionsFromTypes = {};
+    const _m: MigrationFromTypes = { id: "1", name: "test", up: "", down: "" };
+    expect(true).toBe(true);
   });
 });

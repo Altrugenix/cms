@@ -21,6 +21,14 @@ import { registerSchemaRoutes } from "./routes/schemas.js";
 import { registerActivityRoutes } from "./routes/activity.js";
 import { ensureActivityTable } from "./lib/activity.js";
 
+function normalizeOptions(opts: unknown[]): string[] {
+  return opts.map((o) => {
+    if (typeof o === "string") return o;
+    if (o && typeof o === "object" && "value" in o) return String((o as { value: string }).value);
+    return String(o);
+  });
+}
+
 export interface AppOptions {
   config: ServerConfig;
   adapter: DatabaseAdapter;
@@ -110,8 +118,8 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
         return { ...base, to: (f as { to?: string }).to ?? "" };
       }
       if (f.type === "select" || f.type === "multiSelect" || f.type === "radio") {
-        const opts = (f as { options?: Array<{ label: string; value: string }> }).options ?? [];
-        return { ...base, options: opts.map((o) => o.value) };
+        const opts = (f as { options?: unknown[] }).options ?? [];
+        return { ...base, options: normalizeOptions(opts) };
       }
       return base;
     }),
@@ -132,8 +140,8 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
         return { ...base, to: (f as { to?: string }).to ?? "" };
       }
       if (f.type === "select" || f.type === "multiSelect" || f.type === "radio") {
-        const opts = (f as { options?: Array<{ label: string; value: string }> }).options ?? [];
-        return { ...base, options: opts.map((o) => o.value) };
+        const opts = (f as { options?: unknown[] }).options ?? [];
+        return { ...base, options: normalizeOptions(opts) };
       }
       return base;
     }),

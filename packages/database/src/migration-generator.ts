@@ -1,4 +1,4 @@
-import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
+import type { CollectionDefinition, GlobalDefinition, FieldDefinition } from "@arche-cms/types";
 import type { Migration, ExistingSchema } from "./types.js";
 
 const fieldToSqlType: Record<string, string> = {
@@ -75,7 +75,11 @@ function softDeleteColumns(): string[] {
 const VERSIONS_TABLE = "__cms_versions";
 
 export class MigrationGenerator {
-  generate(collections: CollectionDefinition[], existing: ExistingSchema): Migration[] {
+  generate(
+    collections: CollectionDefinition[],
+    existing: ExistingSchema,
+    globals?: GlobalDefinition[],
+  ): Migration[] {
     const migrations: Migration[] = [];
     const now = new Date().toISOString().replace(/[:.]/g, "-");
 
@@ -123,7 +127,65 @@ export class MigrationGenerator {
       }
     }
 
+    if (globals) {
+      for (const globalDef of globals) {
+        const tableName = collectionTableName(globalDef.slug);
+        if (!existing.tables.has(tableName)) {
+          migrations.push(this.createGlobalTableMigration(globalDef, tableName, now));
+        } else {
+          const existingColumns = existing.tables.get(tableName) ?? [];
+          const newColumns = globalDef.fields.filter(
+            (f) => !existingColumns.includes(fieldColumnName(f.name)),
+          );
+          if (newColumns.length > 0) {
+            migrations.push(this.addGlobalColumnsMigration(newColumns, tableName, now));
+          }
+        }
+      }
+    }
+
     return migrations;
+  }
+
+  private createGlobalTableMigration(
+    globalDef: GlobalDefinition,
+    tableName: string,
+    timestamp: string,
+  ): Migration {
+    const columns = globalDef.fields.map(
+      (f) => `  ${fieldColumnName(f.name)} ${sqlTypeForField(f)}`,
+    );
+    const columnsStr = columns.length > 0 ? `,\n${columns.join(",\n")}` : "";
+    const up = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT${columnsStr}\n);`;
+    const down = `DROP TABLE IF EXISTS "${tableName}";`;
+
+    return {
+      id: `mig_${timestamp}_create_global_${globalDef.slug}`,
+      name: `create_global_${globalDef.slug}`,
+      up,
+      down,
+    };
+  }
+
+  private addGlobalColumnsMigration(
+    newFields: FieldDefinition[],
+    tableName: string,
+    timestamp: string,
+  ): Migration {
+    const upLines = newFields.map(
+      (f) =>
+        `ALTER TABLE "${tableName}" ADD COLUMN ${fieldColumnName(f.name)} ${sqlTypeForField(f)};`,
+    );
+    const downLines = newFields.map(
+      (f) => `-- WARNING: Cannot automatically revert ADD COLUMN for ${fieldColumnName(f.name)}`,
+    );
+
+    return {
+      id: `mig_${timestamp}_add_global_fields_${tableName}`,
+      name: `add_global_fields_${tableName}`,
+      up: upLines.join("\n"),
+      down: downLines.join("\n"),
+    };
   }
 
   private createTableMigration(
@@ -146,7 +208,8 @@ export class MigrationGenerator {
       columns.push("  _deletedAt TEXT");
       columns.push("  _deletedBy TEXT");
     }
-    const up = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n${columns.join(",\n")}\n);`;
+    const columnsStr = columns.length > 0 ? `,\n${columns.join(",\n")}` : "";
+    const up = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT${columnsStr}\n);`;
     const down = `DROP TABLE IF EXISTS "${tableName}";`;
 
     return {

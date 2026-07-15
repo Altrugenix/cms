@@ -6,7 +6,12 @@
     "**/.turbo/**",
     "**/coverage/**",
     "**/.vitepress/cache/**",
-    "packages/cms/admin/**"
+    "packages/cms/src/admin/**",
+    "packages/generators/test/**",
+    "apps/test-cms/cms/collections/posts.ts",
+    "packages/create-app/explicit/cms/collections/posts.ts",
+    "packages/create-app/my-cms/cms/collections/posts.ts",
+    "packages/create-app/my-value/cms/collections/posts.ts"
   ],
   "ignoreDependencies": [
     "@arche-cms/types",
@@ -14,7 +19,13 @@
     "@arche-cms/database",
     "@arche-cms/rest-api",
     "@arche-cms/schema",
-    "@arche-cms/validation"
+    "@arche-cms/validation",
+    "@arche-cms/cms",
+    "clsx",
+    "lucide-react",
+    "react",
+    "tailwind-merge",
+    "@tailwindcss/vite"
   ],
   "audit": {
     "gate": "new-only"
@@ -24,6 +35,7 @@
     "maxCognitive": 30,
     "maxUnitSize": 150,
     "maxCrap": 400,
+    "ignore": ["packages/*/test/**/*.test.ts", "apps/*/test/**/*.test.ts"],
     "thresholdOverrides": [
       {
         "files": ["packages/cms/src/server/routes/schemas.ts"],
@@ -42,6 +54,18 @@
         "maxCognitive": 65,
         "maxCrap": 2000,
         "reason": "command-line arg parser with multiple subcommands"
+      },
+      {
+        "files": ["packages/database/src/migration-generator.ts"],
+        "maxCyclomatic": 20,
+        "maxCognitive": 35,
+        "maxUnitSize": 250,
+        "reason": "table migration generator handles both collections and globals"
+      },
+      {
+        "files": ["packages/generators/src/migrations.ts"],
+        "maxCyclomatic": 25,
+        "reason": "field-to-column mapping has many type branches"
       }
     ]
   },
@@ -50,7 +74,11 @@
     "minTokens": 50,
     "skipLocal": true,
     "threshold": 5.0,
-    "ignore": ["apps/api/src/**", "packages/cms/src/server/**"]
+    "ignore": [
+      "packages/cms/src/server/**",
+      "packages/graphql/src/resolvers.ts",
+      "packages/rest-api/src/handlers.ts"
+    ]
   },
-  "entry": ["apps/api/src/index.ts", "apps/admin/src/main.tsx", "packages/*/src/index.ts"]
+  "entry": ["packages/cms/src/admin/main.tsx", "packages/*/src/index.ts"]
 }

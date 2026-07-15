@@ -2,7 +2,6 @@ import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js
 import type { CollectionDefinition } from "@arche-cms/types";
 
 function jsValue(val: unknown): string {
-  if (val === undefined) return "undefined";
   if (val === null) return "null";
   if (typeof val === "string") return JSON.stringify(val);
   if (typeof val === "number" || typeof val === "boolean") return String(val);

@@ -13,27 +13,21 @@
 git clone https://github.com/Arche-CMS/arche-cms.git
 cd cms
 corepack enable
-yarn install
+pnpm install
 
 # Configure environment
 cp .env.example .env
 # Edit .env with your settings
 
 # Start
-yarn dev
+pnpm dev
 ```
 
 ## Production Build
 
 ```bash
-# Build all packages
-yarn build
-
-# Build the API server
-yarn workspace @arche-cms/api build
-
-# Build the admin UI
-yarn workspace @arche-cms/admin build
+# Build all packages (CMS server + admin panel)
+pnpm build
 ```
 
 ## Configuration
@@ -64,10 +58,10 @@ Config via environment variables:
 FROM node:20-alpine
 WORKDIR /app
 COPY . .
-RUN corepack enable && yarn install --immutable
-RUN yarn build
+RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm build
 EXPOSE 3000
-CMD ["yarn", "workspace", "@arche-cms/api", "start"]
+CMD ["pnpm", "--filter", "@arche-cms/api-server", "start"]
 ```
 
 ### Docker Compose
@@ -104,20 +98,20 @@ volumes:
 
 ```bash
 # Build
-yarn build
+pnpm build
 
 # Run migrations
-yarn cms migrate --run
+pnpm cms migrate --run
 
 # Start server
-node apps/api/dist/index.js
+node packages/cms/api/dist/index.js
 ```
 
 ### Using a Process Manager (PM2)
 
 ```bash
 npm install -g pm2
-pm2 start apps/api/dist/index.js --name cms-api
+pm2 start packages/cms/api/dist/index.js --name cms-api
 pm2 save
 pm2 startup
 ```

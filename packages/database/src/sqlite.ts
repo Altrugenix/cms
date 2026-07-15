@@ -73,7 +73,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
       sql: `SELECT COUNT(*) as count FROM "${collection}" ${whereClause}`,
       args: toArgs(values),
     });
-    const total = Number((countResult.rows[0] as Record<string, unknown>)?.count ?? 0);
+    const total = Number((countResult.rows[0] as Record<string, unknown>).count);
 
     const sortClause = options?.sort
       ? `ORDER BY ${Object.entries(options.sort)

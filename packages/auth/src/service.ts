@@ -220,14 +220,16 @@ export class AuthService {
 
   async updateUser(
     id: string,
-    data: { email?: string; role?: string },
+    data: { email?: string; role?: string; password?: string },
   ): Promise<PublicUser | null> {
     const user = await this.findById(id);
     if (!user) return null;
-    const updated = await this.db.update(USERS_TABLE, id, {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    const updateData: Record<string, unknown> = { ...data, updatedAt: new Date().toISOString() };
+    if (data.password) {
+      updateData.passwordHash = await hashPassword(data.password);
+      delete updateData.password;
+    }
+    const updated = await this.db.update(USERS_TABLE, id, updateData);
     if (!updated || !isAuthUser(updated)) return null;
     return toPublicUser(castAuthUser(updated));
   }
