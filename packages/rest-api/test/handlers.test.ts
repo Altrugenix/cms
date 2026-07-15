@@ -236,6 +236,20 @@ describe("CRUD handlers", () => {
     expect(result.statusCode).toBe(404);
   });
 
+  it("getHandler applies field selection", async () => {
+    const adapter = createMockAdapter();
+    const handler = createGetHandler(collection, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: { select: "title" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.title).toBe("Hello");
+  });
+
   it("getHandler returns 400 for missing id", async () => {
     const adapter = createMockAdapter();
     const handler = createGetHandler(collection, adapter);
@@ -259,6 +273,29 @@ describe("CRUD handlers", () => {
     });
     const body = result.body as Record<string, unknown>;
     expect(body.author).toEqual({ id: "user-1", name: "Alice" });
+  });
+
+  it("getHandler populates array relations", async () => {
+    const adapter = createMockAdapter();
+    (adapter as Record<string, unknown>).__store = [
+      { id: 1, title: "Hello", categories: ["cat-1", "cat-2"] },
+    ];
+    const collectionWithArrayRelation: CollectionDefinition = {
+      slug: "custom-posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [
+        { name: "title", type: "text" },
+        { name: "categories", type: "relation", to: "tags" },
+      ],
+    };
+    const handler = createGetHandler(collectionWithArrayRelation, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: { populate: "categories" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
   });
 
   it("createHandler creates a record", async () => {
@@ -391,5 +428,236 @@ describe("CRUD handlers", () => {
       headers: {},
     });
     expect(result.statusCode).toBe(400);
+  });
+});
+
+describe("array relation populate", () => {
+  it("collectRelationIds handles array values", async () => {
+    const store: Record<string, unknown>[] = [{ id: 1, title: "Post A", tags: ["tag-1", "tag-2"] }];
+    const tagsStore: Record<string, unknown>[] = [
+      { id: "tag-1", name: "Tech" },
+      { id: "tag-2", name: "Science" },
+    ];
+    const adapter: DatabaseAdapter = {
+      findOne: async (_c, id) => {
+        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
+        return store.find((s) => String(s.id) === id) ?? null;
+      },
+      findMany: async (_c, opts) => {
+        if (_c === "__cms_tags") {
+          if (opts?.where?.id) {
+            const ids = opts.where.id as string[];
+            return { data: tagsStore.filter((t) => ids.includes(String(t.id))), total: 0 };
+          }
+          return { data: tagsStore, total: tagsStore.length };
+        }
+        let data = [...store];
+        if (opts?.where) {
+          for (const [key, value] of Object.entries(opts.where)) {
+            if (Array.isArray(value)) {
+              data = data.filter((r) => value.includes(String(r[key])));
+            } else {
+              data = data.filter((r) => r[key] === value);
+            }
+          }
+        }
+        return { data, total: data.length };
+      },
+      create: async (_, d) => {
+        const r = { id: store.length + 1, ...d };
+        store.push(r);
+        return r;
+      },
+      update: async (_, id, d) => {
+        const i = store.findIndex((r) => String(r.id) === id);
+        if (i === -1) return null;
+        store[i] = { ...store[i], ...d };
+        return store[i];
+      },
+      delete: async () => false,
+      deleteMany: async () => 0,
+      connect: async () => {},
+      disconnect: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
+      raw: async () => [],
+      createTable: async () => {},
+      dropTable: async () => {},
+      runMigration: async () => {},
+      getExecutedMigrations: async () => [],
+    };
+    const collectionWithArrayRel: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [
+        { name: "title", type: "text" },
+        { name: "tags", type: "relation", to: "tags" },
+      ],
+    };
+    const handler = createGetHandler(collectionWithArrayRel, adapter);
+    const result = await handler({
+      params: { id: "1" },
+      query: { populate: "tags" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as Record<string, unknown>;
+    expect(body.tags).toEqual([
+      { id: "tag-1", name: "Tech" },
+      { id: "tag-2", name: "Science" },
+    ]);
+  });
+
+  it("collectRelationIds handles mixed array and non-array values", async () => {
+    const store: Record<string, unknown>[] = [
+      { id: 1, title: "Post A", tags: ["tag-1", "tag-2"] },
+      { id: 2, title: "Post B", tags: "tag-1" },
+    ];
+    const tagsStore: Record<string, unknown>[] = [
+      { id: "tag-1", name: "Tech" },
+      { id: "tag-2", name: "Science" },
+    ];
+    const adapter: DatabaseAdapter = {
+      findOne: async (_c, id) => {
+        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
+        return store.find((s) => String(s.id) === id) ?? null;
+      },
+      findMany: async (_c, opts) => {
+        if (_c === "__cms_tags") {
+          if (opts?.where?.id) {
+            const ids = opts.where.id as string[];
+            return { data: tagsStore.filter((t) => ids.includes(String(t.id))), total: 0 };
+          }
+          return { data: tagsStore, total: tagsStore.length };
+        }
+        let data = [...store];
+        if (opts?.where) {
+          for (const [key, value] of Object.entries(opts.where)) {
+            if (Array.isArray(value)) {
+              data = data.filter((r) => value.includes(String(r[key])));
+            } else {
+              data = data.filter((r) => r[key] === value);
+            }
+          }
+        }
+        return { data, total: data.length };
+      },
+      create: async (_, d) => {
+        const r = { id: store.length + 1, ...d };
+        store.push(r);
+        return r;
+      },
+      update: async (_, id, d) => {
+        const i = store.findIndex((r) => String(r.id) === id);
+        if (i === -1) return null;
+        store[i] = { ...store[i], ...d };
+        return store[i];
+      },
+      delete: async () => false,
+      deleteMany: async () => 0,
+      connect: async () => {},
+      disconnect: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
+      raw: async () => [],
+      createTable: async () => {},
+      dropTable: async () => {},
+      runMigration: async () => {},
+      getExecutedMigrations: async () => [],
+    };
+    const collectionWithArrayRel: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [
+        { name: "title", type: "text" },
+        { name: "tags", type: "relation", to: "tags" },
+      ],
+    };
+    const handler = createListHandler(collectionWithArrayRel, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { populate: "tags" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as { data: Record<string, unknown>[] };
+    expect(body.data[0].tags).toEqual([
+      { id: "tag-1", name: "Tech" },
+      { id: "tag-2", name: "Science" },
+    ]);
+    expect(body.data[1].tags).toEqual({ id: "tag-1", name: "Tech" });
+  });
+
+  it("collectRelationIds handles null value", async () => {
+    const store: Record<string, unknown>[] = [
+      null as unknown as Record<string, unknown>,
+      { id: 2, title: "Post B", tags: "tag-1" },
+    ];
+    const tagsStore: Record<string, unknown>[] = [{ id: "tag-1", name: "Tech" }];
+    const adapter: DatabaseAdapter = {
+      findOne: async (_c, id) => {
+        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
+        return store.find((s) => s && String(s.id) === id) ?? null;
+      },
+      findMany: async (_c, opts) => {
+        if (_c === "__cms_tags") {
+          if (opts?.where?.id) {
+            const ids = opts.where.id as string[];
+            return { data: tagsStore.filter((t) => ids.includes(String(t.id))), total: 0 };
+          }
+          return { data: tagsStore, total: tagsStore.length };
+        }
+        let data = [...store.filter(Boolean)];
+        if (opts?.where) {
+          for (const [key, value] of Object.entries(opts.where)) {
+            if (Array.isArray(value)) {
+              data = data.filter((r) => value.includes(String(r[key])));
+            } else {
+              data = data.filter((r) => r[key] === value);
+            }
+          }
+        }
+        return { data, total: data.length };
+      },
+      create: async (_, d) => {
+        const r = { id: store.length + 1, ...d };
+        store.push(r);
+        return r;
+      },
+      update: async (_, id, d) => {
+        const i = store.findIndex((r) => r && String(r.id) === id);
+        if (i === -1) return null;
+        store[i] = { ...store[i], ...d };
+        return store[i];
+      },
+      delete: async () => false,
+      deleteMany: async () => 0,
+      connect: async () => {},
+      disconnect: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
+      raw: async () => [],
+      createTable: async () => {},
+      dropTable: async () => {},
+      runMigration: async () => {},
+      getExecutedMigrations: async () => [],
+    };
+    const collectionWithArrayRel: CollectionDefinition = {
+      slug: "posts",
+      labels: { singular: "Post", plural: "Posts" },
+      fields: [
+        { name: "title", type: "text" },
+        { name: "tags", type: "relation", to: "tags" },
+      ],
+    };
+    const handler = createListHandler(collectionWithArrayRel, adapter, 100, 10);
+    const result = await handler({
+      params: {},
+      query: { populate: "tags" },
+      body: null,
+      headers: {},
+    });
+    expect(result.statusCode).toBe(200);
+    const body = result.body as { data: Record<string, unknown>[] };
+    expect(body.data[0].tags).toEqual({ id: "tag-1", name: "Tech" });
   });
 });

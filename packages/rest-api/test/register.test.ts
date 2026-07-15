@@ -135,4 +135,52 @@ describe("registerRoutes", () => {
 
     expect(route).not.toHaveBeenCalled();
   });
+
+  it("handles non-Error throw with fallback message", async () => {
+    const send = vi.fn();
+    const status = vi.fn().mockReturnValue({ send, header: vi.fn() });
+
+    const adapter: RouterAdapter = {
+      route: (opts) => {
+        opts.handler({ params: {}, query: {}, body: null, headers: {} }, { status });
+      },
+    };
+
+    registerRoutes(adapter, [
+      {
+        method: "GET",
+        path: "/error",
+        handler: async () => {
+          throw "string error";
+        },
+      },
+    ]);
+
+    await new Promise(process.nextTick);
+
+    expect(status).toHaveBeenCalledWith(500);
+    expect(send).toHaveBeenCalledWith({ error: "Internal server error" });
+  });
+
+  it("passes collection to handler context", async () => {
+    const handler = vi.fn().mockResolvedValue({ statusCode: 200, body: {} });
+    const adapter: RouterAdapter = {
+      route: (opts) => {
+        opts.handler(
+          { params: {}, query: {}, body: null, headers: {} },
+          { status: () => ({ send: () => {}, header: () => {} }) },
+        );
+      },
+    };
+
+    registerRoutes(adapter, [
+      {
+        method: "POST",
+        path: "/posts",
+        handler,
+      },
+    ]);
+
+    expect(handler).toHaveBeenCalled();
+  });
 });

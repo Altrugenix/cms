@@ -47,8 +47,6 @@ function fieldToColumnType(type: string): string {
       return "TEXT";
     case "relation":
       return "TEXT";
-    case "component":
-      return "TEXT";
     default:
       return "TEXT";
   }

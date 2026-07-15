@@ -170,6 +170,56 @@ describe("MigrationGenerator", () => {
     expect(m.up).toContain("_publishedBy TEXT");
   });
 
+  it("uses TEXT for unknown field types", () => {
+    const generator = new MigrationGenerator();
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "unknown-type",
+        labels: { singular: "Unknown", plural: "Unknowns" },
+        fields: [
+          { name: "custom", type: "customType" as unknown as import("../src/types.js").FieldType },
+        ],
+      },
+    ];
+
+    const [m] = generator.generate(collections, emptySchema);
+    expect(m.up).toContain("custom TEXT");
+  });
+
+  it("uses TEXT for localized fields", () => {
+    const generator = new MigrationGenerator();
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "localized",
+        labels: { singular: "Localized", plural: "Localized" },
+        fields: [
+          { name: "title", type: "text", localized: true },
+          { name: "count", type: "number", localized: true },
+        ],
+      },
+    ];
+
+    const [m] = generator.generate(collections, emptySchema);
+    expect(m.up).toContain("title TEXT");
+    expect(m.up).toContain("count TEXT");
+  });
+
+  it("creates table with no fields and no version features", () => {
+    const generator = new MigrationGenerator();
+    const collections: CollectionDefinition[] = [
+      {
+        slug: "empty",
+        labels: { singular: "Empty", plural: "Empties" },
+        fields: [],
+      },
+    ];
+
+    const [m] = generator.generate(collections, emptySchema);
+    expect(m.name).toBe("create_empty");
+    expect(m.up).toContain("CREATE TABLE IF NOT EXISTS");
+    expect(m.up).toContain("id INTEGER PRIMARY KEY AUTOINCREMENT");
+  });
+
   it("adds soft delete columns when versions.softDelete is true", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [

@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 
-function ask(query: string, defaultVal?: string): Promise<string> {
+export function ask(query: string, defaultVal?: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => {
     const hint = defaultVal ? ` (${defaultVal})` : "";
@@ -17,7 +17,7 @@ function ask(query: string, defaultVal?: string): Promise<string> {
   });
 }
 
-function scaffold(
+export function scaffold(
   projectDir: string,
   opts: {
     dbAdapter: string;
@@ -34,7 +34,7 @@ function scaffold(
     resolve(projectDir, "package.json"),
     JSON.stringify(
       {
-        name: projectDir.split("/").pop() ?? "my-cms",
+        name: projectDir.split("/").pop() ?? "my-cms-app",
         version: "0.1.0",
         private: true,
         type: "module",

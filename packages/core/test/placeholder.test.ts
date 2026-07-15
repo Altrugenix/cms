@@ -1,9 +1,32 @@
 import { describe, it, expect } from "vitest";
-import { Container } from "../src/container.js";
-import { EventBus } from "../src/event-bus.js";
-import { Lifecycle } from "../src/lifecycle.js";
-import { createLogger } from "../src/logger.js";
-import { createConfigLoader } from "../src/config.js";
+import { Container, EventBus, Lifecycle, createLogger, createConfigLoader } from "../src/index.js";
+
+describe("package index exports", () => {
+  it("exports Container", () => {
+    expect(Container).toBeDefined();
+    expect(typeof Container).toBe("function");
+  });
+
+  it("exports EventBus", () => {
+    expect(EventBus).toBeDefined();
+    expect(typeof EventBus).toBe("function");
+  });
+
+  it("exports Lifecycle", () => {
+    expect(Lifecycle).toBeDefined();
+    expect(typeof Lifecycle).toBe("function");
+  });
+
+  it("exports createLogger", () => {
+    expect(createLogger).toBeDefined();
+    expect(typeof createLogger).toBe("function");
+  });
+
+  it("exports createConfigLoader", () => {
+    expect(createConfigLoader).toBeDefined();
+    expect(typeof createConfigLoader).toBe("function");
+  });
+});
 
 describe("Container", () => {
   it("registers and resolves a singleton", async () => {

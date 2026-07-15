@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
-import type { CollectionDefinition, DatabaseAdapter } from "@arche-cms/database";
+import type { CollectionDefinition, GlobalDefinition, DatabaseAdapter } from "@arche-cms/database";
 import type { RouteHandlerContext, RouteHandlerResult, MiddlewareHooks } from "../src/types.js";
-import { createCollectionRouter, createCollectionRouters } from "../src/route-generator.js";
+import {
+  createCollectionRouter,
+  createCollectionRouters,
+  createGlobalRouter,
+  createGlobalRouters,
+} from "../src/route-generator.js";
 import { applyMiddleware } from "../src/middleware.js";
 
 const mockAdapter = {
@@ -266,5 +271,69 @@ describe("createCollectionRouters", () => {
     expect(r1.routes).toHaveLength(6);
     expect(r0.routes[0].operationId).toBe("listPosts");
     expect(r1.routes[0].operationId).toBe("listUsers");
+  });
+});
+
+const siteSettings: GlobalDefinition = {
+  slug: "site-settings",
+  label: "Site Settings",
+  fields: [
+    { name: "title", type: "text", validation: { required: true } },
+    { name: "description", type: "textarea" },
+  ],
+};
+
+describe("createGlobalRouter", () => {
+  it("generates GET and PUT routes for a global", () => {
+    const router = createGlobalRouter(siteSettings, mockAdapter);
+    expect(router.routes).toHaveLength(2);
+
+    const get = router.routes.find((r) => r.operationId === "getGlobalSiteSettings") as {
+      method: string;
+      path: string;
+      tags: string[];
+    };
+    expect(get).toBeDefined();
+    expect(get.method).toBe("GET");
+    expect(get.path).toBe("/api/globals/site-settings");
+    expect(get.tags).toEqual(["Globals"]);
+
+    const put = router.routes.find((r) => r.operationId === "upsertGlobalSiteSettings") as {
+      method: string;
+      path: string;
+      tags: string[];
+    };
+    expect(put).toBeDefined();
+    expect(put.method).toBe("PUT");
+    expect(put.path).toBe("/api/globals/site-settings");
+    expect(put.tags).toEqual(["Globals"]);
+  });
+
+  it("uses custom basePath", () => {
+    const router = createGlobalRouter(siteSettings, mockAdapter, { basePath: "/cms/api" });
+    for (const route of router.routes) {
+      expect(route.path).toMatch(/^\/cms\/api\/globals\//);
+    }
+  });
+});
+
+describe("createGlobalRouters", () => {
+  it("generates routers for multiple globals", () => {
+    const navSettings: GlobalDefinition = {
+      slug: "nav-settings",
+      label: "Nav Settings",
+      fields: [{ name: "items", type: "json" }],
+    };
+    const routers = createGlobalRouters([siteSettings, navSettings], mockAdapter);
+    expect(routers).toHaveLength(2);
+    expect(routers[0].routes).toHaveLength(2);
+    expect(routers[1].routes).toHaveLength(2);
+    expect(routers[0].routes[0].operationId).toBe("getGlobalSiteSettings");
+    expect(routers[1].routes[0].operationId).toBe("getGlobalNavSettings");
+  });
+
+  it("passes config to each router", () => {
+    const routers = createGlobalRouters([siteSettings], mockAdapter, { basePath: "/custom" });
+    expect(routers[0].routes[0].path).toBe("/custom/globals/site-settings");
   });
 });

@@ -443,3 +443,22 @@ Currently the API server lives in `packages/cms/api` and the CLI is a schema wat
 - [x] **Silent error swallowing on Dashboard** — `routes/index.tsx` now captures errors into `dashboardError` state and renders a `bg-destructive/10` banner when set.
 - [x] **Add cancelled flag to Create Entry effect** — `new.$slug.tsx` now uses `let cancelled = false` guard pattern consistent with other routes.
 - [x] **Redundant API calls** — added `DataProvider` (React Context) at `lib/data.tsx` that fetches collections/globals once. `useCollections()`, `useGlobals()`, `useCollection(slug)`, `useGlobal(slug)` hooks shared by Sidebar, CommandPalette, Dashboard, and all collection/global/settings pages. Single fetch replaces N+1 per navigation.
+
+---
+
+## Milestone 11: Test Coverage Expansion
+
+### Status
+
+Current baseline: ~379 real test cases across 16 packages. Key gaps in validation coverage, schema loader, plugin discovery, CMS server routes/plugins, storage adapters, and scaffolding CLI.
+
+### Validation Package (`packages/validation`)
+
+- [x] **Field type coverage** — 12 new tests for: `password`, `media`, `upload`, `radio` (with options), `select` (without options), `array`/`repeater`/`object`/`group` (without and with sub-fields), `tabs` (with/without tabs), unknown default type
+- [x] **Localization** — 3 tests covering `fieldToZodSchema(field, true)` with localized field, non-localized field, and `localize=false` with localized field
+- [x] **Custom validation function** — 1 test for `validation.custom` applied as `refine()`
+- [x] **Pattern validation on email/url** — 2 tests for regex pattern on email and url types
+- [x] **Combined validators** — 1 test for concurrent minLength + maxLength + pattern
+- [x] **Create schema extras** — 3 tests for `_status` with drafts, `_publishAt` with scheduledPublishing, both together
+- [x] **Update schema extras** — 2 tests for `_status` and `_publishAt` in update variant
+- [x] **Custom validation message** — 5 tests covering custom messages for minLength, maxLength, min, max, pattern
