@@ -5,6 +5,7 @@ import { createCollectionRouters } from "@arche-cms/rest-api";
 import type { RouteHandlerContext } from "@arche-cms/rest-api";
 import { createGlobalGetHandler, createGlobalUpsertHandler } from "@arche-cms/rest-api";
 import { recordActivity } from "../lib/activity.js";
+import { dispatchWebhooks } from "../lib/webhooks.js";
 
 class BadSlugError extends Error {
   statusCode: number;
@@ -62,6 +63,21 @@ function labelFromBody(body: unknown): string {
   return "";
 }
 
+function actionToEvent(action: string): string | null {
+  switch (action) {
+    case "create":
+      return "collection:created";
+    case "update":
+      return "collection:updated";
+    case "upsert":
+      return "collection:updated";
+    case "delete":
+      return "collection:deleted";
+    default:
+      return null;
+  }
+}
+
 function wrapWithActivity(
   handler: (ctx: RouteHandlerContext) => Promise<{ statusCode: number; body: unknown }>,
   method: string,
@@ -73,12 +89,20 @@ function wrapWithActivity(
     const result = await handler(ctx);
     if (result.statusCode >= 200 && result.statusCode < 300) {
       const body = result.body as Record<string, unknown> | undefined;
+      const action = actionFor(method, path);
+      const collection = slugFromPath(path);
+      const documentId = body?.id != null ? String(body.id) : undefined;
       recordActivity(adapter, {
-        action: actionFor(method, path) as "create" | "update" | "delete" | "bulkDelete" | "upsert",
-        collection: slugFromPath(path),
-        documentId: body?.id != null ? String(body.id) : undefined,
+        action: action as "create" | "update" | "delete" | "bulkDelete" | "upsert",
+        collection,
+        documentId,
         label: labelFromBody(body),
       }).catch(() => {});
+
+      const event = actionToEvent(action);
+      if (event) {
+        dispatchWebhooks(adapter, event, collection, documentId, body ?? undefined).catch(() => {});
+      }
     }
     return result;
   };
@@ -94,10 +118,32 @@ export function registerCollectionRoutes(
 
   for (const routeDef of allRoutes) {
     const handler = wrapWithActivity(routeDef.handler, routeDef.method, routeDef.path, adapter);
+    const slug = slugFromPath(routeDef.path);
+    const methodLabel = routeDef.method.toUpperCase();
     void fastify.route({
       method: routeDef.method,
       url: routeDef.path,
       preHandler: [fastify.authenticate],
+      schema: {
+        summary: `${methodLabel} /api/${slug}`,
+        description:
+          routeDef.method === "GET"
+            ? routeDef.path.endsWith("/:id")
+              ? `Get a single ${slug} entry by ID`
+              : `List ${slug} entries (with pagination, filtering, sorting)`
+            : routeDef.path.endsWith("/bulk-delete")
+              ? `Bulk delete ${slug} entries`
+              : routeDef.path.includes("/publish")
+                ? `Publish a ${slug} entry`
+                : routeDef.path.includes("/unpublish")
+                  ? `Unpublish a ${slug} entry`
+                  : routeDef.path.includes("/restore")
+                    ? `Restore a deleted ${slug} entry`
+                    : routeDef.path.includes("/versions")
+                      ? `List or restore ${slug} versions`
+                      : `${methodLabel === "POST" ? "Create" : methodLabel === "PATCH" ? "Update" : methodLabel === "DELETE" ? "Delete" : "Upsert"} a ${slug} entry`,
+        tags: ["Collections"],
+      },
       handler: asHandler(handler),
     });
   }
@@ -117,7 +163,22 @@ export function registerGlobalRoutes(
 
   fastify.get(
     "/api/globals/:slug",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Get global",
+        description: "Returns the value of a global by slug",
+        tags: ["Globals"],
+        params: {
+          type: "object",
+          properties: { slug: { type: "string", description: "Global slug" } },
+        },
+        response: {
+          200: { type: "object" },
+          404: { type: "object", properties: { error: { type: "string" } } },
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { slug } = request.params as { slug: string };
@@ -135,7 +196,23 @@ export function registerGlobalRoutes(
 
   fastify.put(
     "/api/globals/:slug",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Upsert global",
+        description: "Create or update a global by slug",
+        tags: ["Globals"],
+        params: {
+          type: "object",
+          properties: { slug: { type: "string", description: "Global slug" } },
+        },
+        response: {
+          200: { type: "object" },
+          201: { type: "object" },
+          404: { type: "object", properties: { error: { type: "string" } } },
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { slug } = request.params as { slug: string };
@@ -144,12 +221,20 @@ export function registerGlobalRoutes(
         const result = await handler(makeCtx(request));
         if (result.statusCode >= 200 && result.statusCode < 300) {
           const body = result.body as Record<string, unknown> | undefined;
+          const documentId = body?.id != null ? String(body.id) : undefined;
           recordActivity(adapter, {
             action: "upsert",
             collection: slug,
-            documentId: body?.id != null ? String(body.id) : undefined,
+            documentId,
             label: body?.name != null ? String(body.name) : g.label,
           }).catch(() => {});
+          dispatchWebhooks(
+            adapter,
+            "collection:updated",
+            slug,
+            documentId,
+            body ?? undefined,
+          ).catch(() => {});
         }
         return reply.status(result.statusCode).send(result.body);
       } catch (error) {

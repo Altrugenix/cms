@@ -2,6 +2,11 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { DatabaseAdapter } from "@arche-cms/database";
 import { AuthService, JwtService } from "@arche-cms/auth";
 import type { AuthConfig } from "@arche-cms/auth";
+import { verifyApiToken, ensureApiTokensTable } from "../routes/api-tokens.js";
+
+const publicSchema = {
+  security: [] as const,
+};
 
 export interface AuthPluginOptions {
   adapter: DatabaseAdapter;
@@ -18,11 +23,14 @@ export async function registerAuth(
   await authService.init();
   await authService.seedDefaultAdmin("admin123");
 
+  // Ensure the api_tokens table exists so API key auth can work
+  await ensureApiTokensTable(options.adapter);
+
   fastify.decorate("auth", authService);
 
   fastify.decorateRequest("user", null);
 
-  // JWT verification preHandler
+  // JWT verification preHandler with API token fallback
   fastify.decorate("authenticate", async (request: FastifyRequest, reply: FastifyReply) => {
     const header = request.headers.authorization;
     if (!header || !header.startsWith("Bearer ")) {
@@ -30,17 +38,37 @@ export async function registerAuth(
     }
 
     const token = header.slice(7);
+
+    // Try JWT first
     try {
       const payload = await jwtService.verifyAccessToken(token);
       request.user = payload;
+      return;
     } catch {
-      return reply.status(401).send({ error: "Invalid or expired token" });
+      // JWT failed — try API token
     }
+
+    // Fall back to API token lookup
+    const apiResult = await verifyApiToken(options.adapter, token);
+    if (apiResult) {
+      request.user = apiResult.user;
+      return;
+    }
+
+    return reply.status(401).send({ error: "Invalid or expired token" });
   });
 
   // Auth routes (public)
   fastify.post(
     "/api/auth/register",
+    {
+      schema: {
+        ...publicSchema,
+        summary: "Register a new user",
+        description: "Create a new user account (requires setup to be complete)",
+        tags: ["Auth"],
+      },
+    },
     async (
       request: FastifyRequest<{ Body: { email: string; password: string } }>,
       reply: FastifyReply,
@@ -72,6 +100,14 @@ export async function registerAuth(
 
   fastify.post(
     "/api/auth/login",
+    {
+      schema: {
+        ...publicSchema,
+        summary: "Login",
+        description: "Authenticate with email and password, returns JWT tokens",
+        tags: ["Auth"],
+      },
+    },
     async (
       request: FastifyRequest<{ Body: { email: string; password: string } }>,
       reply: FastifyReply,
@@ -88,6 +124,14 @@ export async function registerAuth(
 
   fastify.post(
     "/api/auth/refresh",
+    {
+      schema: {
+        ...publicSchema,
+        summary: "Refresh tokens",
+        description: "Exchange a refresh token for a new access token and refresh token pair",
+        tags: ["Auth"],
+      },
+    },
     async (request: FastifyRequest<{ Body: { refreshToken: string } }>, reply: FastifyReply) => {
       try {
         const tokens = await authService.refresh(request.body.refreshToken);
@@ -101,6 +145,15 @@ export async function registerAuth(
 
   fastify.post(
     "/api/auth/forgot-password",
+    {
+      schema: {
+        ...publicSchema,
+        summary: "Forgot password",
+        description:
+          "Request a password reset email (always returns success to prevent email enumeration)",
+        tags: ["Auth"],
+      },
+    },
     async (request: FastifyRequest<{ Body: { email: string } }>, reply: FastifyReply) => {
       try {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -122,6 +175,14 @@ export async function registerAuth(
 
   fastify.post(
     "/api/auth/reset-password",
+    {
+      schema: {
+        ...publicSchema,
+        summary: "Reset password",
+        description: "Reset password using a token from the forgot-password email",
+        tags: ["Auth"],
+      },
+    },
     async (
       request: FastifyRequest<{ Body: { token: string; password: string } }>,
       reply: FastifyReply,
@@ -138,7 +199,14 @@ export async function registerAuth(
 
   fastify.get(
     "/api/auth/me",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Get current user",
+        description: "Returns the authenticated user's profile",
+        tags: ["Auth"],
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const userId = request.user?.sub;
       if (!userId) {
@@ -153,10 +221,21 @@ export async function registerAuth(
   );
 
   // GET /api/auth/setup-status — check if any admin user exists
-  fastify.get("/api/auth/setup-status", async () => {
-    const users = await authService.listUsers();
-    return { hasAdmin: users.length > 0 };
-  });
+  fastify.get(
+    "/api/auth/setup-status",
+    {
+      schema: {
+        summary: "Setup status",
+        description: "Check if the CMS has been set up (at least one admin user exists)",
+        tags: ["Auth"],
+        security: [],
+      },
+    },
+    async () => {
+      const users = await authService.listUsers();
+      return { hasAdmin: users.length > 0 };
+    },
+  );
 }
 
 // Augment Fastify types

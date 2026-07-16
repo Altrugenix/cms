@@ -19,6 +19,8 @@ import { registerRoleRoutes } from "./routes/roles.js";
 import { registerMediaRoutes } from "./routes/media.js";
 import { registerSchemaRoutes } from "./routes/schemas.js";
 import { registerActivityRoutes } from "./routes/activity.js";
+import { registerApiTokenRoutes } from "./routes/api-tokens.js";
+import { registerWebhookRoutes } from "./routes/webhooks.js";
 import { ensureActivityTable } from "./lib/activity.js";
 
 function normalizeOptions(opts: unknown[]): string[] {
@@ -44,6 +46,10 @@ export interface AppOptions {
       icon?: string;
       component: string;
       plugin: string;
+    }>;
+    getAll(): Array<{
+      plugin: { slug: string; name: string; description?: string; version?: string };
+      enabled: boolean;
     }>;
   };
 }
@@ -78,6 +84,8 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
   await registerPermissions(fastify, { adapter });
   registerUserRoutes(fastify, adapter, config.auth);
   registerRoleRoutes(fastify, adapter);
+  registerApiTokenRoutes(fastify, adapter);
+  registerWebhookRoutes(fastify, adapter);
   registerActivityRoutes(fastify, adapter);
   await ensureActivityTable(adapter);
 
@@ -147,8 +155,58 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
     }),
   }));
 
-  fastify.get("/api/collections", async () => collectionMeta);
-  fastify.get("/api/globals", async () => globalMeta);
+  fastify.get(
+    "/api/collections",
+    {
+      schema: {
+        summary: "List collections",
+        description: "Returns metadata about all registered collections",
+        tags: ["Collections"],
+        security: [],
+        response: { 200: { type: "array", items: { type: "object" } } },
+      },
+    },
+    async () => collectionMeta,
+  );
+
+  fastify.get(
+    "/api/globals",
+    {
+      schema: {
+        summary: "List globals",
+        description: "Returns metadata about all registered globals",
+        tags: ["Globals"],
+        security: [],
+        response: { 200: { type: "array", items: { type: "object" } } },
+      },
+    },
+    async () => globalMeta,
+  );
+
+  fastify.get(
+    "/api/plugins",
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "List plugins",
+        description: "Returns all registered plugins and their status",
+        tags: ["System"],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              data: { type: "array", items: { type: "object" } },
+              total: { type: "integer" },
+            },
+          },
+        },
+      },
+    },
+    async () => {
+      const plugins = options.pluginManager?.getAll() ?? [];
+      return { data: plugins, total: plugins.length };
+    },
+  );
 
   return fastify;
 }

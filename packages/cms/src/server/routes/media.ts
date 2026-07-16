@@ -57,11 +57,38 @@ export function registerMediaRoutes(
     }
   }
 
+  const errResp = {
+    type: "object" as const,
+    properties: { error: { type: "string" as const } },
+  };
+
+  const listResp = {
+    type: "object" as const,
+    properties: {
+      data: { type: "array" as const, items: { type: "object" as const } },
+      total: { type: "integer" as const },
+    },
+  };
+
   // ─── Media CRUD ───────────────────────────────────────────
 
   fastify.get(
     "/api/media",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "List media",
+        description: "Returns media files, optionally filtered by folderId",
+        tags: ["Media"],
+        querystring: {
+          type: "object",
+          properties: {
+            folderId: { type: "string", description: "Filter by folder ID (or 'null' for root)" },
+          },
+        },
+        response: { 200: listResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const query = request.query as Record<string, string>;
@@ -87,7 +114,19 @@ export function registerMediaRoutes(
 
   fastify.get(
     "/api/media/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Get media",
+        description: "Returns a single media record by ID",
+        tags: ["Media"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string", description: "Media ID" } },
+        },
+        response: { 200: { type: "object" }, 404: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
@@ -99,7 +138,26 @@ export function registerMediaRoutes(
 
   fastify.post(
     "/api/media",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Upload media",
+        description: "Upload a new media file (base64-encoded data)",
+        tags: ["Media"],
+        body: {
+          type: "object",
+          required: ["fileName", "mimeType", "data"],
+          properties: {
+            fileName: { type: "string" },
+            mimeType: { type: "string" },
+            data: { type: "string", description: "Base64-encoded file content" },
+            alt: { type: "string" },
+            folderId: { type: "string", nullable: true },
+          },
+        },
+        response: { 201: { type: "object" }, 400: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const body = request.body as {
@@ -143,7 +201,27 @@ export function registerMediaRoutes(
 
   fastify.patch(
     "/api/media/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Update media",
+        description: "Update a media file's metadata (name, alt, folder)",
+        tags: ["Media"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string", description: "Media ID" } },
+        },
+        body: {
+          type: "object",
+          properties: {
+            originalName: { type: "string" },
+            alt: { type: "string" },
+            folderId: { type: "string", nullable: true },
+          },
+        },
+        response: { 200: { type: "object" }, 400: errResp, 404: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
@@ -170,7 +248,25 @@ export function registerMediaRoutes(
 
   fastify.delete(
     "/api/media/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Delete media",
+        description: "Delete a media file and its database record",
+        tags: ["Media"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string", description: "Media ID" } },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: { message: { type: "string" } },
+          },
+          404: errResp,
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
@@ -187,7 +283,19 @@ export function registerMediaRoutes(
 
   fastify.get(
     "/api/media/file/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Download media file",
+        description: "Returns the raw file stream for a media record",
+        tags: ["Media"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string", description: "Media ID" } },
+        },
+        response: { 404: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
@@ -210,7 +318,21 @@ export function registerMediaRoutes(
 
   fastify.get(
     "/api/media/folders",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "List folders",
+        description: "Returns media folders, optionally filtered by parentId",
+        tags: ["Media"],
+        querystring: {
+          type: "object",
+          properties: {
+            parentId: { type: "string", description: "Filter by parent folder ID" },
+          },
+        },
+        response: { 200: listResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const query = request.query as Record<string, string>;
@@ -236,7 +358,19 @@ export function registerMediaRoutes(
 
   fastify.get(
     "/api/media/folders/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Get folder",
+        description: "Returns a single media folder by ID",
+        tags: ["Media"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string", description: "Folder ID" } },
+        },
+        response: { 200: { type: "object" }, 404: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
@@ -257,7 +391,23 @@ export function registerMediaRoutes(
 
   fastify.post(
     "/api/media/folders",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Create folder",
+        description: "Create a new media folder",
+        tags: ["Media"],
+        body: {
+          type: "object",
+          required: ["name"],
+          properties: {
+            name: { type: "string" },
+            parentId: { type: "number", nullable: true },
+          },
+        },
+        response: { 201: { type: "object" }, 400: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const body = request.body as { name?: string; parentId?: number | null };
@@ -281,7 +431,26 @@ export function registerMediaRoutes(
 
   fastify.patch(
     "/api/media/folders/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Update folder",
+        description: "Update a media folder's name or parent",
+        tags: ["Media"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string", description: "Folder ID" } },
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            parentId: { type: "number", nullable: true },
+          },
+        },
+        response: { 200: { type: "object" }, 400: errResp, 404: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
@@ -315,21 +484,35 @@ export function registerMediaRoutes(
 
   fastify.delete(
     "/api/media/folders/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Delete folder",
+        description: "Delete a media folder (moves child media and folders to root)",
+        tags: ["Media"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string", description: "Folder ID" } },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: { message: { type: "string" } },
+          },
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
       const numericId = Number(id);
 
-      // Move media in this folder to root
       await adapter.raw(`UPDATE ${MEDIA_TABLE} SET folderId = NULL WHERE folderId = ?`, [
         numericId,
       ]);
-      // Move child folders to root
       await adapter.raw(`UPDATE ${FOLDERS_TABLE} SET parentId = NULL WHERE parentId = ?`, [
         numericId,
       ]);
-      // Delete the folder
       await adapter.raw(`DELETE FROM ${FOLDERS_TABLE} WHERE id = ?`, [numericId]);
 
       return reply.send({ message: "Folder deleted" });

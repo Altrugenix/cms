@@ -8,7 +8,14 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
 
   fastify.get(
     "/api/roles",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "List roles",
+        description: "Returns all roles with their permissions",
+        tags: ["Roles"],
+      },
+    },
     async (_request: FastifyRequest, reply: FastifyReply) => {
       const roles = await ac.getAllRoles();
       return reply.send({ data: roles, total: roles.length });
@@ -17,7 +24,14 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
 
   fastify.get(
     "/api/roles/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Get role",
+        description: "Returns a single role by ID with its permissions",
+        tags: ["Roles"],
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
       const role = await ac.getRoleById(id);
@@ -28,7 +42,14 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
 
   fastify.post(
     "/api/roles",
-    { preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")] },
+    {
+      preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")],
+      schema: {
+        summary: "Create role",
+        description: "Create a new role with permissions (requires manage:roles permission)",
+        tags: ["Roles"],
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const body = request.body as {
         name: string;
@@ -51,7 +72,15 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
 
   fastify.patch(
     "/api/roles/:id",
-    { preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")] },
+    {
+      preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")],
+      schema: {
+        summary: "Update role",
+        description:
+          "Update a role's name, description, or permissions (requires manage:roles permission)",
+        tags: ["Roles"],
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
       const body = request.body as {
@@ -70,7 +99,14 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
 
   fastify.delete(
     "/api/roles/:id",
-    { preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")] },
+    {
+      preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")],
+      schema: {
+        summary: "Delete role",
+        description: "Delete a role (requires manage:roles permission)",
+        tags: ["Roles"],
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
       const deleted = await ac.deleteRole(id);

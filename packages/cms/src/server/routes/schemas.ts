@@ -57,10 +57,23 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
     return result;
   }
 
+  const errResp = {
+    type: "object" as const,
+    properties: { error: { type: "string" as const } },
+  };
+
   // GET /api/schemas — list all schemas
   fastify.get(
     "/api/schemas",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "List schemas",
+        description: "Returns all collection, global, and component schema definitions",
+        tags: ["Schemas"],
+        response: { 200: { type: "object", properties: { data: { type: "array" } } } },
+      },
+    },
     async (_request: FastifyRequest, reply: FastifyReply) => {
       try {
         const schemas = await loadSchemas();
@@ -75,7 +88,22 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
   // GET /api/schemas/:type/:slug — get a single schema
   fastify.get(
     "/api/schemas/:type/:slug",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Get schema",
+        description: "Returns a single schema definition by type and slug",
+        tags: ["Schemas"],
+        params: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["collection", "global", "component"] },
+            slug: { type: "string" },
+          },
+        },
+        response: { 200: { type: "object" }, 404: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { type, slug } = request.params as { type: string; slug: string };
@@ -381,7 +409,31 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
   // POST /api/schemas/:type — create a new schema
   fastify.post(
     "/api/schemas/:type",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Create schema",
+        description: "Create a new collection, global, or component schema as a .ts file on disk",
+        tags: ["Schemas"],
+        params: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["collection", "global", "component"] },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["slug"],
+          properties: {
+            slug: { type: "string" },
+            label: { type: "string" },
+            fields: { type: "array", items: { type: "object" } },
+            meta: { type: "object" },
+          },
+        },
+        response: { 201: { type: "object" }, 400: errResp, 409: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { type } = request.params as { type: string };
@@ -444,7 +496,30 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
   // PUT /api/schemas/:type/:slug — update an existing schema
   fastify.put(
     "/api/schemas/:type/:slug",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Update schema",
+        description: "Overwrite an existing schema definition file on disk",
+        tags: ["Schemas"],
+        params: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["collection", "global", "component"] },
+            slug: { type: "string" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            label: { type: "string" },
+            fields: { type: "array", items: { type: "object" } },
+            meta: { type: "object" },
+          },
+        },
+        response: { 200: { type: "object" }, 400: errResp, 404: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { type, slug } = request.params as { type: string; slug: string };
@@ -494,7 +569,23 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
   // DELETE /api/schemas/:type/:slug — delete a schema file
   fastify.delete(
     "/api/schemas/:type/:slug",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Delete schema",
+        description:
+          "Delete a schema definition file from disk (requires manage:schemas permission)",
+        tags: ["Schemas"],
+        params: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["collection", "global", "component"] },
+            slug: { type: "string" },
+          },
+        },
+        response: { 200: { type: "object" }, 400: errResp, 404: errResp },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { type, slug } = request.params as { type: string; slug: string };

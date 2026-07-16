@@ -295,6 +295,7 @@ describe("index / CLI entrypoint", () => {
         dir: undefined,
         dbUrl: undefined,
         dbAdapter: undefined,
+        vite: false,
       });
     });
 
@@ -319,6 +320,7 @@ describe("index / CLI entrypoint", () => {
         dir: "./schemas",
         dbUrl: "file:./test.db",
         dbAdapter: "sqlite",
+        vite: false,
       });
     });
 
@@ -333,6 +335,7 @@ describe("index / CLI entrypoint", () => {
         dir: undefined,
         dbUrl: undefined,
         dbAdapter: undefined,
+        vite: false,
       });
     });
 

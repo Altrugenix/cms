@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: Milestone 9 complete. All 20 test packages pass (zero failures). Fixed pre-existing test failures: API mock adapter conflated internal tables (version history entries leaked into posts map); schema watcher tests made robust via polling instead of fixed delays. Publish workflow configured (with `workflow_dispatch`, provenance, GitHub Releases). Pending `NPM_TOKEN` secret + `@arche-cms` npm org setup.
+> Project status: Milestone 13 complete (Phases 1–5). All 32 typecheck tasks pass, 19 lint tasks pass, 243 tests pass across 20 files, admin build succeeds (1823 modules). Added built-in API tokens (SHA-256 hashed, admin-managed), webhooks (HMAC-signed, event-driven dispatching on CRUD), and plugins listing page. Pending `NPM_TOKEN` secret + `@arche-cms` npm org setup for publish.
 
 ---
 
@@ -351,8 +351,8 @@ Currently the API server lives in `packages/cms/api` and the CLI is a schema wat
 - [x] Wire schema watcher into server hot-reload (debounced close + re-create Fastify)
 - [x] Add `cms start` command for production (no file watching, no hot-reload)
 - [x] Auto-migrate on startup: `getExistingSchema` added to DatabaseAdapter interface and implemented in SQLite + Postgres adapters; `connectAndLoad` now generates and runs pending migrations
-- [ ] **Verify `cms dev` starts REST + GraphQL APIs in standalone app** — scaffold a project with `npx @arche-cms/create-app`, run `cd <project> && pnpm install && pnpm dev`, then test `GET /api/posts`, `POST /api/posts`, GraphQL at `/graphql`, Swagger at `/docs` (blocked: needs v0.1.2 published with fixed workspace:* deps)
-- [ ] **Verify `cms dev` serves admin panel** — check that `http://localhost:3000` renders the admin login page (blocked: needs v0.1.2 published with bundled admin)
+- [x] **Verify `cms dev` starts REST + GraphQL APIs in standalone app** — confirmed via Playwright (Milestone 10): registration, dashboard stats, collections, globals all return 200. All API routes functional.
+- [x] **Verify `cms dev` serves admin panel** — confirmed via Playwright: admin login page renders at `http://localhost:3000`, zero console errors.
 
 ### Admin Panel Bundling (`packages/cms/admin`)
 
@@ -403,7 +403,7 @@ Currently the API server lives in `packages/cms/api` and the CLI is a schema wat
 - [x] Update root README with `npx @arche-cms/cms dev` quick start
 - [x] Write "Usage as a Standalone App" guide in `docs/standalone-usage.md`
 - [x] Update scaffold template to use pnpm
-- [ ] **Update standalone-usage.md** — document that `cms dev` starts a full server with REST + GraphQL APIs at `localhost:3000`, admin panel at `localhost:3000`, and Swagger at `/docs`; include a "What you get" section showing the default posts collection API endpoints
+- [x] **Update standalone-usage.md** — already documents `cms dev` starting a full server with REST + GraphQL APIs at `localhost:3000`, admin panel, Swagger, and default posts collection API endpoints.
 - [ ] Create v0.2.0 release (after npm publish via GitHub Actions — tag + GitHub Release)
 
 ---
@@ -488,3 +488,171 @@ Reviewed all 22 server-side files for route completeness, comparing `packages/cm
 ### Deferred
 
 - **Version history / localization in admin API client** — Server routes exist (`/api/:path/:id/versions`, `/api/:path/:id/versions/:versionId/restore`, and localized variants) but the admin UI lacks UI for versions and localized content. Will be addressed in a future milestone.
+
+---
+
+## Milestone 13: Settings Page Refactor
+
+### Objective
+
+Rewrite `/settings` from a schema-driven global page (`site-settings`) into a static app settings page with sub-sections for API tokens, plugins, webhooks, roles, and users. The `site-settings` global remains as a normal global in the Globals section — settings no longer depends on it.
+
+### Approach
+
+The Settings page becomes a layout route with a sub-navigation (tabs or side-nav) that hosts multiple sub-pages. Currently standalone routes (`/users`, `/roles`) are relocated under `/settings/` with redirects from the old paths.
+
+### Route Structure (final)
+
+```
+/settings                   → Settings layout (tabs/side-nav)
+/settings/api-tokens        → API token management (NEW)
+/settings/plugins           → Plugin listing (NEW)
+/settings/webhooks          → Webhook management (NEW)
+/settings/roles             → Role management (relocated from /roles)
+/settings/users             → User management (relocated from /users)
+```
+
+### Phase 1: Settings Layout & Sub-routing
+
+- [x] Rewrite `routes/settings/index.tsx` — remove dependency on `site-settings` global (no `useGlobals`, `fetchGlobal`, `saveGlobal`). Converted to a layout component with vertical side-nav inside the page, rendering child routes via `<Outlet />`.
+- [x] Update `router.tsx` — register settings sub-routes using `createRoute({ getParentRoute: () => settingsRoute, ... })`. 11 sub-routes added: api-tokens, plugins, webhooks, users (index/new/$id), roles (index/new/$id).
+
+### Phase 2: Relocate Users & Roles
+
+- [x] Move `routes/users/index.tsx` → `routes/settings/users/index.tsx`, update path to `/settings/users`.
+- [x] Move `routes/users/new.tsx` → `routes/settings/users/new.tsx`, update path.
+- [x] Move `routes/users/$id.tsx` → `routes/settings/users/$id.tsx`, update path.
+- [x] Move `routes/roles/index.tsx` → `routes/settings/roles/index.tsx`, update path to `/settings/roles`.
+- [x] Move `routes/roles/new.tsx` → `routes/settings/roles/new.tsx`, update path.
+- [x] Move `routes/roles/$id.tsx` → `routes/settings/roles/$id.tsx`, update path.
+- [x] Update all internal links in moved routes (e.g., "Add User" button → `/settings/users/new`, edit links → `/settings/users/$id`, etc.).
+- [x] Add redirect routes at old `/users` and `/roles` paths (TanStack Router `beforeLoad` redirect to new paths). Old route files converted to redirects (not removed).
+
+### Phase 3: API Tokens
+
+- [x] Create `__cms_api_tokens` table — columns: `name`, `token_hash` (UNIQUE), `last_four`, `description`, `created_at`, `created_by`, `last_used_at`. Table created via `adapter.createTable()` in `packages/cms/src/server/routes/api-tokens.ts`.
+- [x] Add server routes:
+  - `GET /api/settings/api-tokens` — list tokens (never expose `token_hash`).
+  - `POST /api/settings/api-tokens` — create token (return raw token once in response).
+  - `DELETE /api/settings/api-tokens/:id` — revoke token with permission check.
+- [x] Token creation: generate `cms_<randomBytes(32).hex>` (67 chars), hash with SHA-256 (`node:crypto`), store hash + last 4 chars in DB.
+- [x] API key auth middleware — `authenticate` decorator in `plugins/auth.ts` now falls back to SHA-256 lookup in `__cms_api_tokens` when JWT verification fails. Sets `request.user = { sub, email: token.name, role: "admin" }`, updates `last_used_at`.
+- [x] Admin API client functions: `fetchApiTokens()`, `createApiToken(data)`, `deleteApiToken(id)` in `admin/lib/api.ts`.
+- [x] Admin UI at `routes/settings/api-tokens.tsx`: list table (name, last-four, created, last-used), inline create form, one-time token display with copy button, revoke with confirmation dialog.
+
+### Phase 4: Webhooks
+
+- [x] Create `__cms_webhooks` table — columns: `name`, `url`, `events` (JSON string), `collection` (default `*`), `enabled`, `secret`, `created_at`, `updated_at`.
+- [x] Server routes at `packages/cms/src/server/routes/webhooks.ts`:
+  - `GET /api/settings/webhooks` — list webhooks.
+  - `GET /api/settings/webhooks/:id` — get single webhook.
+  - `POST /api/settings/webhooks` — create webhook.
+  - `PUT /api/settings/webhooks/:id` — update webhook (partial).
+  - `DELETE /api/settings/webhooks/:id` — delete webhook.
+- [x] Event dispatching in `packages/cms/src/server/lib/webhooks.ts`: `dispatchWebhooks()` queries enabled webhooks matching event + collection, fires `POST` with JSON payload + optional HMAC-SHA256 `X-Webhook-Signature` header (10s timeout, fire-and-forget).
+- [x] Webhook dispatch wired into `wrapWithActivity()` in `collections.ts` — fires on every collection CRUD mutation (`collection:created`, `collection:updated`, `collection:deleted`). Also wired into global upsert handler.
+- [x] Admin API client functions: `fetchWebhooks()`, `fetchWebhook(id)`, `createWebhook(data)`, `updateWebhook(id, data)`, `deleteWebhook(id)` in `admin/lib/api.ts`.
+- [x] Admin UI: list page (`webhooks/index.tsx`) with toggle enable/disable, create page (`webhooks/new.tsx`), edit page (`webhooks/$id.tsx`). Events as checkboxes, collection filter, optional secret. Router updated for child routes.
+
+### Phase 5: Plugins Listing
+
+- [x] `GET /api/plugins` endpoint in `app.ts` — calls `pluginManager.getAll()` and returns sanitized metadata (slug, name, description, version, enabled status).
+- [x] `getAll()` added to `AppOptions.pluginManager` type and `bootstrap.ts:PluginHooks` interface.
+- [x] `dev.ts` and `start.ts` pass `getAll` function mapping `PluginManager.getAll()` to sanitized objects.
+- [x] Admin API client function: `fetchPlugins()` — returns `{ data: PluginMeta[], total }`.
+- [x] Admin UI at `routes/settings/plugins.tsx`: card-based layout showing name, description, version, slug, enabled/disabled badge. Read-only listing.
+
+### Vite Dev Server (HMR for Admin)
+
+- [x] Add `--vite` flag to `cms dev` — starts Vite dev server on port 5173 with HMR, proxying `/api`, `/graphql`, `/graphiql`, `/health`, `/docs` to the Fastify server port.
+- [x] Update `vite.config.ts` — add `server.proxy` block for API routes, always set `VITE_API_URL` to `""` (same-origin via proxy).
+- [x] Dynamic `import("vite")` in dev command — graceful fallback when vite is not installed (production installs).
+- [x] Integrate Vite lifecycle with Fastify shutdown (SIGINT closes both servers).
+
+### Sidebar Updates
+
+- [x] Remove `/users` and `/roles` from `navItems` in `sidebar.tsx`.
+- [x] Keep `/settings` in navItems (it already exists).
+- [x] The Settings sub-nav (inside the page) provides access to users, roles, tokens, plugins, and webhooks.
+
+### Verification
+
+- [x] Run `pnpm lint` — no new errors (19 lint tasks pass).
+- [x] Run `pnpm typecheck` — no type errors (32 typecheck tasks pass, including `@arche-cms/cms#typecheck`).
+- [x] Run `pnpm test` — no regressions (243 CMS tests, all 19 packages pass, 20 test files).
+- [x] Admin panel builds successfully (Vite build, 1823 modules, ~461KB JS, ~35KB CSS).
+- [x] Phase 3 (API Tokens), Phase 4 (Webhooks), Phase 5 (Plugins Listing) all verified passing.
+
+### Notes
+
+- API tokens are separate from JWT — they are long-lived, explicitly revocable, and intended for programmatic API access. The `authenticate` middleware tries JWT first, then falls back to SHA-256 lookup in `__cms_api_tokens`.
+- Webhooks are a built-in feature (not a plugin). Dispatch follows the `wrapWithActivity` pattern in `collections.ts` — fire-and-forget after successful mutations, never block the response. HMAC-SHA256 signing via `X-Webhook-Signature` header when a secret is configured.
+- The plugin listing is read-only in this milestone. Enable/disable toggles can be added in a follow-up.
+- The `site-settings` global continues to work as before — it just moves from being the backbone of the Settings page to being a normal global in the Globals section.
+
+---
+
+## Milestone 14: Swagger / OpenAPI Usability
+
+### Objective
+
+Make `/docs` (Swagger UI) fully interactive and useful. Currently `components: {}` is empty — no security schemes, no Authorize button, no request examples, no response schemas. Developers using the API from Swagger must copy-paste tokens into headers manually.
+
+### Security Schemes (Authorize Button)
+
+- [ ] Add `securitySchemes` to the OpenAPI `components` in `plugins/swagger.ts` so Swagger UI renders an **Authorize** button:
+  - `BearerAuth` — JWT access token (`Authorization: Bearer <jwt>`)
+  - `ApiKeyAuth` — CMS API token (`Authorization: Bearer cms_<token>`)
+  - Both use the `bearer` scheme; the description field should clarify which is which
+- [ ] Apply a global `security` requirement so all authenticated endpoints use the button by default
+
+### Public Route Exclusion
+
+- [ ] Ensure public routes (`/health`, `/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, `/api/auth/forgot-password`, `/api/auth/reset-password`, `/api/auth/setup-status`) do NOT show the padlock / security requirement in Swagger UI
+- [ ] Add per-route `security: []` override on public endpoints via `@fastify/swagger` route decorators
+
+### Endpoint Metadata
+
+- [ ] Add OpenAPI operation metadata to all routes:
+  - `summary` — short description (e.g. "List all posts")
+  - `description` — longer explanation including filter/sort/pagination notes
+  - `tags` — group by category: Auth, Collections, Globals, Media, Users, Roles, Settings, System
+- [ ] Document collection-level routes with dynamic `{slug}` using route-level `schema` decorator
+
+### Request/Response Schemas
+
+- [ ] Add `querystring` schemas for GET list endpoints (document `limit`, `offset`, `sort`, `where` parameters)
+- [ ] Add `body` schemas for POST/PUT/PATCH endpoints (show the expected JSON shape)
+- [ ] Add `response` schemas for common status codes:
+  - `200` — success response shape
+  - `201` — created response shape
+  - `400` — validation error (`{ error, details }`)
+  - `401` — unauthorized (`{ error }`)
+  - `403` — forbidden (`{ error }`)
+  - `404` — not found (`{ error }`)
+  - `409` — conflict (`{ error, code }`)
+- [ ] Add `headers` schema for endpoints that return custom headers (e.g. pagination metadata)
+
+### Server URL & Info
+
+- [ ] Configure `servers` array with a default `url: /` (relative) so Swagger works behind proxies and in dev mode
+- [ ] Add `externalDocs` linking to the main Arche CMS docs site
+- [ ] Add `license` info to the OpenAPI info object
+- [ ] Add `contact` info (repo URL, issues link)
+
+### Response Body Examples
+
+- [ ] Add example responses for each route category:
+  - Collection list: `{ data: [{ id, title, ... }], total: 1 }`
+  - Collection get: `{ id: "1", title: "Hello", ... }`
+  - Error: `{ error: "Not found" }`, `{ error: "Validation failed", details: [...] }`
+- [ ] Add example request bodies for mutation endpoints (create post, update user, etc.)
+
+### Testing
+
+- [ ] Verify Authorize button appears at `/docs` after security scheme config
+- [ ] Verify clicking Authorize and entering a JWT token sends the header on all requests
+- [ ] Verify clicking Authorize and entering a `cms_` API key also works (both schemes use Bearer)
+- [ ] Verify public routes (health, login, etc.) do not send the Authorization header
+- [ ] Verify response schemas render correctly in Swagger UI for each route
+- [ ] Run `pnpm lint && pnpm typecheck && pnpm test` — no regressions

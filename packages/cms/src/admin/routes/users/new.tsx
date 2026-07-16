@@ -1,94 +1,11 @@
-import { useState, type FormEvent } from "react";
-import { createRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createRoute, redirect } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
-import { useToast } from "@/components/toast-provider";
-import { createUser } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
   path: "/users/new",
-  component: CreateUser,
+  beforeLoad: () => {
+    throw redirect({ to: "/settings/users/new" });
+  },
+  component: () => null,
 });
-
-function CreateUser() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) return;
-    setSaving(true);
-    try {
-      await createUser(email, password);
-      toast("User created", "success");
-      navigate({ to: "/users" });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to create user";
-      setError(msg);
-      toast(msg, "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to="/users" className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create User</h1>
-          <p className="text-muted-foreground">Add a new user to the CMS</p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
-        {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
-
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="user@example.com"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="Minimum 8 characters"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Creating..." : "Create User"}
-          </Button>
-          <Link to="/users">
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-          </Link>
-        </div>
-      </form>
-    </div>
-  );
-}
