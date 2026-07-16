@@ -163,7 +163,6 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
         description: "Returns metadata about all registered collections",
         tags: ["Collections"],
         security: [],
-        response: { 200: { type: "array", items: { type: "object" } } },
       },
     },
     async () => collectionMeta,
@@ -177,7 +176,6 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
         description: "Returns metadata about all registered globals",
         tags: ["Globals"],
         security: [],
-        response: { 200: { type: "array", items: { type: "object" } } },
       },
     },
     async () => globalMeta,
@@ -191,15 +189,6 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
         summary: "List plugins",
         description: "Returns all registered plugins and their status",
         tags: ["System"],
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              data: { type: "array", items: { type: "object" } },
-              total: { type: "integer" },
-            },
-          },
-        },
       },
     },
     async () => {

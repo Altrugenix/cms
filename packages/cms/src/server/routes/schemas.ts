@@ -57,11 +57,6 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
     return result;
   }
 
-  const errResp = {
-    type: "object" as const,
-    properties: { error: { type: "string" as const } },
-  };
-
   // GET /api/schemas — list all schemas
   fastify.get(
     "/api/schemas",
@@ -71,7 +66,6 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
         summary: "List schemas",
         description: "Returns all collection, global, and component schema definitions",
         tags: ["Schemas"],
-        response: { 200: { type: "object", properties: { data: { type: "array" } } } },
       },
     },
     async (_request: FastifyRequest, reply: FastifyReply) => {
@@ -101,7 +95,6 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
             slug: { type: "string" },
           },
         },
-        response: { 200: { type: "object" }, 404: errResp },
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -431,7 +424,6 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
             meta: { type: "object" },
           },
         },
-        response: { 201: { type: "object" }, 400: errResp, 409: errResp },
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -517,7 +509,6 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
             meta: { type: "object" },
           },
         },
-        response: { 200: { type: "object" }, 400: errResp, 404: errResp },
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -583,7 +574,6 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
             slug: { type: "string" },
           },
         },
-        response: { 200: { type: "object" }, 400: errResp, 404: errResp },
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
