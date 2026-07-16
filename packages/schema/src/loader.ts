@@ -16,7 +16,7 @@ import type { CollectionDefinition, GlobalDefinition, ComponentDefinition } from
 
 interface WithSlug {
   slug: string;
-  fields: unknown[];
+  fields?: unknown[];
 }
 
 export interface SchemaLoaderOptions {
@@ -94,23 +94,21 @@ export class SchemaLoader {
     return this.loadFromDir(
       "collections",
       (def): def is CollectionDefinition =>
-        typeof def === "object" && def !== null && "slug" in def && "fields" in def,
+        typeof def === "object" && def !== null && "slug" in def,
     );
   }
 
   private loadGlobals(): Promise<Map<string, GlobalDefinition>> {
     return this.loadFromDir(
       "globals",
-      (def): def is GlobalDefinition =>
-        typeof def === "object" && def !== null && "slug" in def && "fields" in def,
+      (def): def is GlobalDefinition => typeof def === "object" && def !== null && "slug" in def,
     );
   }
 
   private loadComponents(): Promise<Map<string, ComponentDefinition>> {
     return this.loadFromDir(
       "components",
-      (def): def is ComponentDefinition =>
-        typeof def === "object" && def !== null && "slug" in def && "fields" in def,
+      (def): def is ComponentDefinition => typeof def === "object" && def !== null && "slug" in def,
     );
   }
 }

@@ -22,8 +22,15 @@ const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem("cms_user");
-    return stored ? (JSON.parse(stored) as User) : null;
+    try {
+      const stored = localStorage.getItem("cms_user");
+      if (!stored) return null;
+      const parsed = JSON.parse(stored) as User;
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      localStorage.removeItem("cms_user");
+      return null;
+    }
   });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("cms_token"));
   const [isLoading, setIsLoading] = useState(true);
@@ -39,9 +46,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
-          const u = (await res.json()) as User;
-          setUser(u);
-          localStorage.setItem("cms_user", JSON.stringify(u));
+          const u = (await res.json()) as User | null;
+          if (u && typeof u === "object") {
+            setUser(u);
+            localStorage.setItem("cms_user", JSON.stringify(u));
+          } else {
+            logoutCleanup();
+          }
           setIsLoading(false);
           return;
         }

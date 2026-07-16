@@ -107,7 +107,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
     labels: c.labels,
     versions: c.versions,
     // fallow-ignore-next-line complexity
-    fields: c.fields.map((f) => {
+    fields: (c.fields ?? []).map((f) => {
       const base = {
         name: f.name,
         type: f.type,
@@ -129,7 +129,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
     slug: g.slug,
     label: g.label,
     // fallow-ignore-next-line complexity
-    fields: g.fields.map((f) => {
+    fields: (g.fields ?? []).map((f) => {
       const base = {
         name: f.name,
         type: f.type,

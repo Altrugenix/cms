@@ -90,6 +90,32 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
     },
   );
 
+  function validateFields(fields: FieldDefinition[]): string | null {
+    for (let i = 0; i < fields.length; i++) {
+      const f = fields[i];
+      if (!f || !f.name || !f.name.trim()) {
+        return `Field at index ${i} has an empty name`;
+      }
+      if (["array", "object", "group", "repeater"].includes(f.type)) {
+        const nf = f as { fields?: FieldDefinition[] };
+        if (nf.fields) {
+          const nested = validateFields(nf.fields);
+          if (nested) return `Field "${f.name}": ${nested}`;
+        }
+      }
+      if (f.type === "tabs") {
+        const tf = f as { tabs?: Array<{ label: string; fields: FieldDefinition[] }> };
+        if (tf.tabs) {
+          for (const t of tf.tabs) {
+            const nested = validateFields(t.fields);
+            if (nested) return `Tab "${t.label}" > ${nested}`;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   // helpers for code generation
   const FIELD_HELPER_MAP: Record<string, string> = {
     text: "text",
@@ -347,8 +373,9 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
     }
 
     const fieldsCode = fields.map((f) => generateFieldCode(f)).join(",\n    ");
+    const fieldsPart = fields.length > 0 ? ` [\n    ${fieldsCode},\n  ]` : ` []`;
 
-    return `${importStmt}\n\nexport default ${defineFn}({\n  slug: ${JSON.stringify(slug)},${metaProps.length > 0 ? `\n  ${metaProps.join(",\n  ")},` : ""}\n  fields: [\n    ${fieldsCode},\n  ],\n});\n`;
+    return `${importStmt}\n\nexport default ${defineFn}({\n  slug: ${JSON.stringify(slug)},${metaProps.length > 0 ? `\n  ${metaProps.join(",\n  ")},` : ""}\n  fields:${fieldsPart},\n});\n`;
   }
 
   // POST /api/schemas/:type — create a new schema
@@ -391,13 +418,19 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
           return reply.status(409).send({ error: `Schema ${body.slug} already exists` });
         }
 
+        const fields = body.fields ?? [];
+        const fieldErr = validateFields(fields);
+        if (fieldErr) {
+          return reply.status(400).send({ error: fieldErr });
+        }
+
         const label = body.label ?? body.slug;
         const meta: Record<string, unknown> = { ...(body.meta ?? {}), label };
         if (type === "collection") {
           meta.labels = meta.labels ?? { singular: label, plural: `${label}s` };
         }
 
-        const code = generateSchemaCode(type, body.slug, body.fields ?? [], meta);
+        const code = generateSchemaCode(type, body.slug, fields, meta);
         await writeFile(filePath, code, "utf-8");
 
         return reply.status(201).send({ message: "Schema created", slug: body.slug, type });
@@ -435,13 +468,19 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
           return reply.status(404).send({ error: "Schema not found" });
         }
 
+        const fields = body.fields ?? [];
+        const fieldErr = validateFields(fields);
+        if (fieldErr) {
+          return reply.status(400).send({ error: fieldErr });
+        }
+
         const label = body.label ?? slug;
         const meta: Record<string, unknown> = { ...(body.meta ?? {}), label };
         if (type === "collection") {
           meta.labels = meta.labels ?? { singular: label, plural: `${label}s` };
         }
 
-        const code = generateSchemaCode(type, slug, body.fields ?? [], meta);
+        const code = generateSchemaCode(type, slug, fields, meta);
         await writeFile(filePath, code, "utf-8");
 
         return reply.send({ message: "Schema saved", slug, type });
