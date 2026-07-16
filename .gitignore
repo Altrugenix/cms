@@ -27,3 +27,11 @@ coverage/
 *.db
 *.db-shm
 *.db-wal
+
+# Test scaffold artifacts
+/my-cms/
+/my-value/
+/explicit/
+/packages/create-app/explicit/
+/packages/create-app/my-cms/
+/packages/create-app/my-value/
