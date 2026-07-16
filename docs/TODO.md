@@ -647,3 +647,71 @@ Make `/docs` (Swagger UI) fully interactive and useful. Currently `components: {
 - [ ] **Manual:** Verify Authorize with JWT sends `Authorization: Bearer <token>` on protected routes
 - [ ] **Manual:** Verify Authorize with `cms_` API key works via Swagger UI
 - [ ] **Manual:** Verify public routes skip Authorization header via Swagger UI "Try it out"
+
+---
+
+## Milestone 15: TanStack Query Migration (Admin UI Data Fetching)
+
+### Objective
+
+Replace the hand-rolled `DataProvider` React Context (`lib/data.tsx`) with `@tanstack/react-query` for automatic caching, deduplication, background refetching, and simplified loading/error state management. Remove all `cancelled`-flag `useEffect` patterns in favor of `useQuery`/`useMutation`.
+
+### Prerequisites
+
+- `lib/api.ts` already returns typed promises — no changes needed there
+- `lib/data.tsx` (~120 lines) contains `DataProvider`, `useCollections`, `useGlobals`, `useCollection`, `useGlobal` — to be removed
+- Route files use `useEffect` + `cancelled` flag pattern — to be migrated to `useQuery`
+
+### Installation & Setup
+
+- [ ] Install `@tanstack/react-query` via pnpm in `packages/cms/`
+- [ ] Create `QueryClientProvider` wrapper in admin app entry point (e.g. `admin/src/main.tsx`)
+- [ ] Configure `QueryClient` with sensible defaults (staleTime, retry, refetchOnWindowFocus)
+
+### Data Fetching — Hooks Migration
+
+- [ ] Create `useCollections()` hook using `useQuery` (replaces `DataProvider` → `useCollections`)
+- [ ] Create `useGlobals()` hook using `useQuery` (replaces `DataProvider` → `useGlobals`)
+- [ ] Create `useCollection(slug)` hook using `useQuery` with `queryKey: ["collection", slug]`
+- [ ] Create `useGlobal(slug)` hook using `useQuery` with `queryKey: ["global", slug]`
+- [ ] Create `useApiTokens()` hook using `useQuery`
+- [ ] Create `useWebhooks()` hook using `useQuery`
+- [ ] Create `usePlugins()` hook using `useQuery`
+
+### Mutation Hooks
+
+- [ ] Create `useCreateSchema()` mutation (create collection/global — invalidate `["collections"]` or `["globals"]`)
+- [ ] Create `useSaveSchema()` mutation (update collection/global — invalidate single + list)
+- [ ] Create `useDeleteSchema()` mutation (delete collection/global — invalidate list)
+- [ ] Create `useCreateEntry()` mutation (create entry — invalidate collection list + entry)
+- [ ] Create `useUpdateEntry()` mutation (update entry — invalidate single entry + list)
+- [ ] Create `useDeleteEntry()` mutation (delete entry — invalidate collection list)
+- [ ] Create `useCreateApiToken()` / `useDeleteApiToken()` mutations
+- [ ] Create `useCreateWebhook()` / `useUpdateWebhook()` / `useDeleteWebhook()` mutations
+
+### Route Migration — Remove `cancelled` Flag Pattern
+
+- [ ] Migrate `routes/collections/$slug.tsx` — replace `useEffect` + `fetchCollection` + `cancelled` flag with `useQuery`
+- [ ] Migrate `routes/globals/$slug.tsx` — replace `useEffect` + `fetchGlobal` + `cancelled` flag with `useQuery`
+- [ ] Migrate `routes/new.$slug.tsx` — replace `useEffect` + `cancelled` flag with `useQuery`
+- [ ] Migrate `routes/$id_.$slug.edit.tsx` — replace `useEffect` + `cancelled` flag with `useQuery`
+- [ ] Update `routes/index.tsx` (Dashboard) — use `useCollections()` / `useGlobals()` from TanStack Query
+- [ ] Update `components/sidebar.tsx` — use `useCollections()` / `useGlobals()` from TanStack Query
+- [ ] Update `components/command-palette.tsx` — use `useCollections()` / `useGlobals()` from TanStack Query
+- [ ] Update `routes/settings/api-tokens.tsx` — use `useApiTokens()`, `useCreateApiToken()`, `useDeleteApiToken()`
+- [ ] Update `routes/settings/webhooks/*` — use `useWebhooks()`, mutation hooks
+- [ ] Update `routes/settings/plugins.tsx` — use `usePlugins()`
+
+### Cleanup
+
+- [ ] Remove `DataProvider`, `useCollections`, `useGlobals`, `useCollection`, `useGlobal` from `lib/data.tsx`
+- [ ] Remove `lib/data.tsx` entirely
+- [ ] Replace all `setLoading(true)` / `setSaving(true)` / `setError(...)` state variables with `isPending`, `isError`, `error` from TanStack Query hooks
+
+### Verification
+
+- [ ] Run `pnpm lint` — no new errors
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm test` — no regressions
+- [ ] Admin panel builds successfully
+- [ ] Admin UI loads all data with correct loading/error states
