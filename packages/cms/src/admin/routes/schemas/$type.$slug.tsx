@@ -141,7 +141,6 @@ function SchemaEditor() {
     fetchSchema(type, slug)
       .then((s) => {
         if (cancelled) return;
-        setSchema(s);
         setFields(s.fields);
         setMeta(s.meta);
         setLabel(s.label);

@@ -60,7 +60,14 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
   // GET /api/schemas — list all schemas
   fastify.get(
     "/api/schemas",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "List schemas",
+        description: "Returns all collection, global, and component schema definitions",
+        tags: ["Schemas"],
+      },
+    },
     async (_request: FastifyRequest, reply: FastifyReply) => {
       try {
         const schemas = await loadSchemas();
@@ -75,7 +82,21 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
   // GET /api/schemas/:type/:slug — get a single schema
   fastify.get(
     "/api/schemas/:type/:slug",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Get schema",
+        description: "Returns a single schema definition by type and slug",
+        tags: ["Schemas"],
+        params: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["collection", "global", "component"] },
+            slug: { type: "string" },
+          },
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { type, slug } = request.params as { type: string; slug: string };
@@ -89,6 +110,32 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
       }
     },
   );
+
+  function validateFields(fields: FieldDefinition[]): string | null {
+    for (let i = 0; i < fields.length; i++) {
+      const f = fields[i];
+      if (!f || !f.name || !f.name.trim()) {
+        return `Field at index ${i} has an empty name`;
+      }
+      if (["array", "object", "group", "repeater"].includes(f.type)) {
+        const nf = f as { fields?: FieldDefinition[] };
+        if (nf.fields) {
+          const nested = validateFields(nf.fields);
+          if (nested) return `Field "${f.name}": ${nested}`;
+        }
+      }
+      if (f.type === "tabs") {
+        const tf = f as { tabs?: Array<{ label: string; fields: FieldDefinition[] }> };
+        if (tf.tabs) {
+          for (const t of tf.tabs) {
+            const nested = validateFields(t.fields);
+            if (nested) return `Tab "${t.label}" > ${nested}`;
+          }
+        }
+      }
+    }
+    return null;
+  }
 
   // helpers for code generation
   const FIELD_HELPER_MAP: Record<string, string> = {
@@ -347,14 +394,38 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
     }
 
     const fieldsCode = fields.map((f) => generateFieldCode(f)).join(",\n    ");
+    const fieldsPart = fields.length > 0 ? ` [\n    ${fieldsCode},\n  ]` : ` []`;
 
-    return `${importStmt}\n\nexport default ${defineFn}({\n  slug: ${JSON.stringify(slug)},${metaProps.length > 0 ? `\n  ${metaProps.join(",\n  ")},` : ""}\n  fields: [\n    ${fieldsCode},\n  ],\n});\n`;
+    return `${importStmt}\n\nexport default ${defineFn}({\n  slug: ${JSON.stringify(slug)},${metaProps.length > 0 ? `\n  ${metaProps.join(",\n  ")},` : ""}\n  fields:${fieldsPart},\n});\n`;
   }
 
   // POST /api/schemas/:type — create a new schema
   fastify.post(
     "/api/schemas/:type",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Create schema",
+        description: "Create a new collection, global, or component schema as a .ts file on disk",
+        tags: ["Schemas"],
+        params: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["collection", "global", "component"] },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["slug"],
+          properties: {
+            slug: { type: "string" },
+            label: { type: "string" },
+            fields: { type: "array", items: { type: "object" } },
+            meta: { type: "object" },
+          },
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { type } = request.params as { type: string };
@@ -391,13 +462,19 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
           return reply.status(409).send({ error: `Schema ${body.slug} already exists` });
         }
 
+        const fields = body.fields ?? [];
+        const fieldErr = validateFields(fields);
+        if (fieldErr) {
+          return reply.status(400).send({ error: fieldErr });
+        }
+
         const label = body.label ?? body.slug;
         const meta: Record<string, unknown> = { ...(body.meta ?? {}), label };
         if (type === "collection") {
           meta.labels = meta.labels ?? { singular: label, plural: `${label}s` };
         }
 
-        const code = generateSchemaCode(type, body.slug, body.fields ?? [], meta);
+        const code = generateSchemaCode(type, body.slug, fields, meta);
         await writeFile(filePath, code, "utf-8");
 
         return reply.status(201).send({ message: "Schema created", slug: body.slug, type });
@@ -411,7 +488,29 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
   // PUT /api/schemas/:type/:slug — update an existing schema
   fastify.put(
     "/api/schemas/:type/:slug",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Update schema",
+        description: "Overwrite an existing schema definition file on disk",
+        tags: ["Schemas"],
+        params: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["collection", "global", "component"] },
+            slug: { type: "string" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            label: { type: "string" },
+            fields: { type: "array", items: { type: "object" } },
+            meta: { type: "object" },
+          },
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { type, slug } = request.params as { type: string; slug: string };
@@ -435,13 +534,19 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
           return reply.status(404).send({ error: "Schema not found" });
         }
 
+        const fields = body.fields ?? [];
+        const fieldErr = validateFields(fields);
+        if (fieldErr) {
+          return reply.status(400).send({ error: fieldErr });
+        }
+
         const label = body.label ?? slug;
         const meta: Record<string, unknown> = { ...(body.meta ?? {}), label };
         if (type === "collection") {
           meta.labels = meta.labels ?? { singular: label, plural: `${label}s` };
         }
 
-        const code = generateSchemaCode(type, slug, body.fields ?? [], meta);
+        const code = generateSchemaCode(type, slug, fields, meta);
         await writeFile(filePath, code, "utf-8");
 
         return reply.send({ message: "Schema saved", slug, type });
@@ -455,7 +560,22 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
   // DELETE /api/schemas/:type/:slug — delete a schema file
   fastify.delete(
     "/api/schemas/:type/:slug",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Delete schema",
+        description:
+          "Delete a schema definition file from disk (requires manage:schemas permission)",
+        tags: ["Schemas"],
+        params: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["collection", "global", "component"] },
+            slug: { type: "string" },
+          },
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { type, slug } = request.params as { type: string; slug: string };

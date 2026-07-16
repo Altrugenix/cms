@@ -69,6 +69,16 @@ export async function start(options: StartOptions): Promise<void> {
       pluginManager.runRouteHook(name),
     getCustomFields: () => pluginManager.getCustomFields(),
     getAdminPanels: () => pluginManager.getAdminPanels(),
+    getAll: () =>
+      pluginManager.getAll().map((r) => ({
+        plugin: {
+          slug: r.plugin.slug,
+          name: r.plugin.name,
+          description: r.plugin.description,
+          version: r.plugin.version,
+        },
+        enabled: r.enabled,
+      })),
   };
 
   try {

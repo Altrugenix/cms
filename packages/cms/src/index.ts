@@ -74,6 +74,7 @@ function parseArgs(): void {
     dir?: string;
     dbUrl?: string;
     dbAdapter?: string;
+    vite?: boolean;
   } {
     const portIdx = args.indexOf("--port");
     const hostIdx = args.indexOf("--host");
@@ -86,6 +87,7 @@ function parseArgs(): void {
       dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
       dbUrl: dbUrlIdx !== -1 ? args[dbUrlIdx + 1] : undefined,
       dbAdapter: dbAdapterIdx !== -1 ? args[dbAdapterIdx + 1] : undefined,
+      vite: args.includes("--vite"),
     };
   }
 

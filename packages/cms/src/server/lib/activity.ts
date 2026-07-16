@@ -9,7 +9,8 @@ export interface ActivityEntry {
   label?: string;
 }
 
-const TABLE = "__cms_activity";
+const TABLE = process.env.CMS_ACTIVITY_TABLE || "__cms_activity";
+export const ACTIVITY_TABLE = TABLE;
 
 export async function ensureActivityTable(adapter: DatabaseAdapter): Promise<void> {
   await adapter.raw(

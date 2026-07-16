@@ -31,7 +31,10 @@ function EditGlobal() {
   }, [gError]);
 
   useEffect(() => {
-    if (initialized || !globalDef) return;
+    if (initialized || !globalDef) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     async function load() {
       try {
@@ -105,7 +108,7 @@ function EditGlobal() {
     }
   };
 
-  if (!globalDef || gLoading)
+  if (gLoading)
     return (
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="flex items-center gap-4">
@@ -131,7 +134,12 @@ function EditGlobal() {
     );
   if (error)
     return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
-  if (!globalDef) return null;
+  if (!globalDef)
+    return (
+      <div className="rounded-md bg-destructive/10 p-4 text-destructive">
+        Global "{slug}" not found
+      </div>
+    );
 
   if (loading) {
     return (

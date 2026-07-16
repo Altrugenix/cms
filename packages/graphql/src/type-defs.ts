@@ -12,7 +12,7 @@ function generateObjectType(
   collection: CollectionDefinition,
   collections: CollectionDefinition[],
 ): string {
-  const fields = collection.fields.map((f) => fieldToSDL(f, collections)).join("\n");
+  const fields = (collection.fields ?? []).map((f) => fieldToSDL(f, collections)).join("\n");
   const timestamps = `
   createdAt: String
   updatedAt: String`;
@@ -23,7 +23,7 @@ ${fields}${timestamps}
 }
 
 function generateFilterInput(collection: CollectionDefinition): string {
-  const fields = collection.fields
+  const fields = (collection.fields ?? [])
     .map((f) => {
       let inputType = "String";
       if (f.type === "number") inputType = "Float";
@@ -38,14 +38,16 @@ function generateFilterInput(collection: CollectionDefinition): string {
     .join("\n");
 
   return `input ${pascalCase(collection.slug)}Filter {
-${fields}
+${fields || "  _: Boolean"}
 }`;
 }
 
 function generateSortEnum(collection: CollectionDefinition): string {
-  const fields = collection.fields.map((f) => `  ${f.name}_asc\n  ${f.name}_desc`).join("\n");
+  const fields = (collection.fields ?? [])
+    .map((f) => `  ${f.name}_asc\n  ${f.name}_desc`)
+    .join("\n");
   return `enum ${pascalCase(collection.slug)}Sort {
-${fields}
+${fields || "  id_asc\n  id_desc"}
 }`;
 }
 
@@ -53,7 +55,7 @@ function generateCreateInput(
   collection: CollectionDefinition,
   collections: CollectionDefinition[],
 ): string {
-  const fields = collection.fields
+  const fields = (collection.fields ?? [])
     .filter((f) => f.type !== "relation")
     .map((f) => {
       const gqlType = fieldToGraphQLType(f, collections);
@@ -63,7 +65,7 @@ function generateCreateInput(
     .join("\n");
 
   return `input ${pascalCase(collection.slug)}CreateInput {
-${fields}
+${fields || "  _: String"}
 }`;
 }
 
@@ -71,7 +73,7 @@ function generateUpdateInput(
   collection: CollectionDefinition,
   collections: CollectionDefinition[],
 ): string {
-  const fields = collection.fields
+  const fields = (collection.fields ?? [])
     .filter((f) => f.type !== "relation")
     .map((f) => {
       const gqlType = fieldToGraphQLType(f, collections);
@@ -80,7 +82,7 @@ function generateUpdateInput(
     .join("\n");
 
   return `input ${pascalCase(collection.slug)}UpdateInput {
-${fields}
+${fields || "  _: String"}
 }`;
 }
 
@@ -94,12 +96,10 @@ export function generateTypeDefs(collections: CollectionDefinition[]): string {
   }
 
   for (const collection of collections) {
-    if (collection.fields.length > 0) {
-      parts.push(generateFilterInput(collection));
-      parts.push(generateSortEnum(collection));
-      parts.push(generateCreateInput(collection, collections));
-      parts.push(generateUpdateInput(collection, collections));
-    }
+    parts.push(generateFilterInput(collection));
+    parts.push(generateSortEnum(collection));
+    parts.push(generateCreateInput(collection, collections));
+    parts.push(generateUpdateInput(collection, collections));
   }
 
   const queryFields = collections

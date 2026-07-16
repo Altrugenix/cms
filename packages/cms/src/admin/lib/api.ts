@@ -67,6 +67,13 @@ export async function saveSchema(
   });
 }
 
+export async function bulkDelete(path: string, ids: string[]): Promise<void> {
+  await apiFetch(`/api/${path}/bulk-delete`, {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+}
+
 export async function deleteSchema(type: string, slug: string): Promise<void> {
   await apiFetch(`/api/schemas/${type}/${slug}`, { method: "DELETE" });
 }
@@ -250,18 +257,10 @@ export async function deleteRole(id: string): Promise<void> {
 }
 
 export async function createUser(email: string, password: string): Promise<void> {
-  const token = localStorage.getItem("cms_token");
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  const res = await fetch(`${API_URL}/api/auth/register`, {
+  await apiFetch("/api/users", {
     method: "POST",
-    headers,
     body: JSON.stringify({ email, password }),
   });
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error ?? "Failed to create user");
-  }
 }
 
 export async function updateUser(
@@ -400,4 +399,100 @@ export type ActivityEntry = {
 
 export async function fetchActivity(): Promise<{ data: ActivityEntry[]; total: number }> {
   return apiFetch("/api/activity");
+}
+
+export type ApiTokenMeta = {
+  id: string;
+  name: string;
+  lastFour: string;
+  description: string;
+  createdAt: string;
+  createdBy: string;
+  lastUsedAt: string | null;
+};
+
+export async function fetchApiTokens(): Promise<{ data: ApiTokenMeta[]; total: number }> {
+  return apiFetch("/api/settings/api-tokens");
+}
+
+export async function createApiToken(data: {
+  name: string;
+  description?: string;
+}): Promise<{ token: ApiTokenMeta; rawToken: string }> {
+  return apiFetch("/api/settings/api-tokens", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteApiToken(id: string): Promise<void> {
+  await apiFetch(`/api/settings/api-tokens/${id}`, { method: "DELETE" });
+}
+
+export type WebhookMeta = {
+  id: string;
+  name: string;
+  url: string;
+  events: string[];
+  collection: string;
+  enabled: boolean;
+  hasSecret: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function fetchWebhooks(): Promise<{ data: WebhookMeta[]; total: number }> {
+  return apiFetch("/api/settings/webhooks");
+}
+
+export async function fetchWebhook(id: string): Promise<WebhookMeta> {
+  return apiFetch(`/api/settings/webhooks/${id}`);
+}
+
+export async function createWebhook(data: {
+  name: string;
+  url: string;
+  events: string[];
+  collection?: string;
+  secret?: string;
+}): Promise<WebhookMeta> {
+  return apiFetch("/api/settings/webhooks", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateWebhook(
+  id: string,
+  data: Partial<{
+    name: string;
+    url: string;
+    events: string[];
+    collection: string;
+    enabled: boolean;
+    secret: string;
+  }>,
+): Promise<WebhookMeta> {
+  return apiFetch(`/api/settings/webhooks/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteWebhook(id: string): Promise<void> {
+  await apiFetch(`/api/settings/webhooks/${id}`, { method: "DELETE" });
+}
+
+export type PluginMeta = {
+  plugin: {
+    slug: string;
+    name: string;
+    description?: string;
+    version?: string;
+  };
+  enabled: boolean;
+};
+
+export async function fetchPlugins(): Promise<{ data: PluginMeta[]; total: number }> {
+  return apiFetch("/api/plugins");
 }

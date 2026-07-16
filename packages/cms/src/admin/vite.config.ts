@@ -6,7 +6,9 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ mode }) => ({
+const proxyTarget = process.env.VITE_PROXY_TARGET ?? "http://localhost:3000";
+
+export default defineConfig(({ mode: _mode }) => ({
   root: __dirname,
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -18,5 +20,15 @@ export default defineConfig(({ mode }) => ({
     outDir: path.resolve(__dirname, "../../dist/admin"),
     emptyOutDir: true,
   },
-  define: mode === "production" ? { "import.meta.env.VITE_API_URL": '""' } : undefined,
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": proxyTarget,
+      "/graphql": proxyTarget,
+      "/graphiql": proxyTarget,
+      "/health": proxyTarget,
+      "/docs": proxyTarget,
+    },
+  },
+  define: { "import.meta.env.VITE_API_URL": '""' },
 }));

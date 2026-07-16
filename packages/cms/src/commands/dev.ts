@@ -9,6 +9,7 @@ import type { SchemaChangeEvent } from "@arche-cms/schema";
 import { SQLiteAdapter, createPostgresAdapter } from "@arche-cms/database";
 import { PluginManager, seoPlugin, discoverPlugins } from "@arche-cms/plugins";
 import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
+import type { ViteDevServer } from "vite";
 import { loadConfig } from "../server/config.js";
 import {
   ensureDevAuthSecret,
@@ -27,6 +28,37 @@ export interface DevOptions {
   host?: string;
   dbUrl?: string;
   dbAdapter?: string;
+  vite?: boolean;
+}
+
+async function startViteDevServer(
+  port: number,
+  logger: ReturnType<typeof createLogger>,
+): Promise<ViteDevServer> {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const adminDir = resolve(currentDir, "../../src/admin");
+
+  const { createServer } = await import("vite");
+
+  logger.info(`Starting Vite dev server for admin panel...`);
+  const server = await createServer({
+    configFile: resolve(adminDir, "vite.config.ts"),
+    root: adminDir,
+    server: {
+      port: 5173,
+      proxy: {
+        "/api": `http://localhost:${port}`,
+        "/graphql": `http://localhost:${port}`,
+        "/graphiql": `http://localhost:${port}`,
+        "/health": `http://localhost:${port}`,
+        "/docs": `http://localhost:${port}`,
+      },
+    },
+    define: { "import.meta.env.VITE_API_URL": '""' },
+  });
+
+  await server.listen();
+  return server;
 }
 
 export function printDevHelp(): void {
@@ -41,6 +73,7 @@ Options:
   --host <addr>      Server host (default: 0.0.0.0)
   --db-url <url>     Database URL (default: file:./cms.db)
   --db-adapter <type> Database adapter: sqlite | postgres (default: sqlite)
+  --vite             Start Vite dev server for admin HMR (default: false)
   --help             Show this help
 `);
   process.exit(0);
@@ -75,7 +108,15 @@ export async function dev(options: DevOptions): Promise<void> {
 
   ensureDevAuthSecret(logger);
   applyCliOverrides(options);
-  ensureAdminBuild(logger);
+
+  let viteServer: ViteDevServer | null = null;
+
+  if (options.vite) {
+    viteServer = await startViteDevServer(options.port ?? 3000, logger);
+    logger.info(`Admin dev server at http://localhost:5173`);
+  } else {
+    ensureAdminBuild(logger);
+  }
 
   const config = loadConfig();
   const schemaDir = config.schema.baseDir;
@@ -106,6 +147,16 @@ export async function dev(options: DevOptions): Promise<void> {
       pluginManager.runRouteHook(name),
     getCustomFields: () => pluginManager.getCustomFields(),
     getAdminPanels: () => pluginManager.getAdminPanels(),
+    getAll: () =>
+      pluginManager.getAll().map((r) => ({
+        plugin: {
+          slug: r.plugin.slug,
+          name: r.plugin.name,
+          description: r.plugin.description,
+          version: r.plugin.version,
+        },
+        enabled: r.enabled,
+      })),
   };
 
   let currentServer: ServerInstance | null = null;
@@ -167,6 +218,7 @@ export async function dev(options: DevOptions): Promise<void> {
     logger.info("Shutting down...");
     await watcher.stop();
     if (currentServer) await currentServer.stop();
+    if (viteServer) await viteServer.close();
     await adapter.disconnect();
     process.exit(0);
   });

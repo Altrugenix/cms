@@ -18,8 +18,37 @@ export async function registerSwagger(
         title: options.title,
         version: options.version,
         description: options.description,
+        license: {
+          name: "MIT",
+          url: "https://opensource.org/licenses/MIT",
+        },
+        contact: {
+          name: "Arche CMS",
+          url: "https://github.com/arche-cms/arche-cms",
+        },
       },
-      components: {},
+      servers: [{ url: "/" }],
+      externalDocs: {
+        description: "Documentation",
+        url: "https://arche-cms.dev/docs",
+      },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+            description: "JWT access token from /api/auth/login",
+          },
+          apiKeyAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "cms_<token>",
+            description: "CMS API token (cms_<64 hex chars>)",
+          },
+        },
+      },
+      security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
     },
   });
 

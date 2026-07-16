@@ -90,13 +90,12 @@ export class MigrationGenerator {
     for (const collection of collections) {
       const tableName = collectionTableName(collection.slug);
       const existingColumns = existing.tables.get(tableName) ?? [];
+      const fields = collection.fields ?? [];
 
       if (!existing.tables.has(tableName)) {
-        migrations.push(this.createTableMigration(collection, tableName, now));
+        migrations.push(this.createTableMigration(collection, fields, tableName, now));
       } else {
-        const newColumns = collection.fields.filter(
-          (f) => !existingColumns.includes(fieldColumnName(f.name)),
-        );
+        const newColumns = fields.filter((f) => !existingColumns.includes(fieldColumnName(f.name)));
         const missingDraftColumns = hasDrafts(collection)
           ? draftColumns().filter((c) => !existingColumns.includes(c))
           : [];
@@ -130,11 +129,12 @@ export class MigrationGenerator {
     if (globals) {
       for (const globalDef of globals) {
         const tableName = collectionTableName(globalDef.slug);
+        const fields = globalDef.fields ?? [];
         if (!existing.tables.has(tableName)) {
-          migrations.push(this.createGlobalTableMigration(globalDef, tableName, now));
+          migrations.push(this.createGlobalTableMigration(globalDef, fields, tableName, now));
         } else {
           const existingColumns = existing.tables.get(tableName) ?? [];
-          const newColumns = globalDef.fields.filter(
+          const newColumns = fields.filter(
             (f) => !existingColumns.includes(fieldColumnName(f.name)),
           );
           if (newColumns.length > 0) {
@@ -149,12 +149,11 @@ export class MigrationGenerator {
 
   private createGlobalTableMigration(
     globalDef: GlobalDefinition,
+    fields: FieldDefinition[],
     tableName: string,
     timestamp: string,
   ): Migration {
-    const columns = globalDef.fields.map(
-      (f) => `  ${fieldColumnName(f.name)} ${sqlTypeForField(f)}`,
-    );
+    const columns = fields.map((f) => `  ${fieldColumnName(f.name)} ${sqlTypeForField(f)}`);
     const columnsStr = columns.length > 0 ? `,\n${columns.join(",\n")}` : "";
     const up = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT${columnsStr}\n);`;
     const down = `DROP TABLE IF EXISTS "${tableName}";`;
@@ -190,12 +189,11 @@ export class MigrationGenerator {
 
   private createTableMigration(
     collection: CollectionDefinition,
+    fields: FieldDefinition[],
     tableName: string,
     timestamp: string,
   ): Migration {
-    const columns = collection.fields.map(
-      (f) => `  ${fieldColumnName(f.name)} ${sqlTypeForField(f)}`,
-    );
+    const columns = fields.map((f) => `  ${fieldColumnName(f.name)} ${sqlTypeForField(f)}`);
     if (hasDrafts(collection)) {
       columns.push("  _status TEXT DEFAULT 'draft'");
       columns.push("  _publishedAt TEXT");

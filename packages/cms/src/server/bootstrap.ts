@@ -22,6 +22,10 @@ export interface PluginHooks {
     component: string;
     plugin: string;
   }>;
+  getAll(): Array<{
+    plugin: { slug: string; name: string; description?: string; version?: string };
+    enabled: boolean;
+  }>;
 }
 
 export interface ServerInstance {

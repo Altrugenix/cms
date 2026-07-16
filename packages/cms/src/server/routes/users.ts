@@ -12,16 +12,55 @@ export function registerUserRoutes(
 
   fastify.get(
     "/api/users",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "List users",
+        description: "Returns all registered users",
+        tags: ["Users"],
+      },
+    },
     async (_request: FastifyRequest, reply: FastifyReply) => {
       const users = await authService.listUsers();
       return reply.send({ data: users, total: users.length });
     },
   );
 
+  fastify.post(
+    "/api/users",
+    {
+      preHandler: [fastify.authenticate, fastify.requirePermission("create", "users")],
+      schema: {
+        summary: "Create user",
+        description: "Create a new user account (requires create:users permission)",
+        tags: ["Users"],
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const body = request.body as { email: string; password: string; role?: string };
+      if (!body.email || !body.password) {
+        return reply.status(400).send({ error: "Email and password are required" });
+      }
+      try {
+        const user = await authService.register(body);
+        return reply.status(201).send({ user: user.user });
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "User creation failed";
+        return reply.status(400).send({ error: msg });
+      }
+    },
+  );
+
   fastify.get(
     "/api/users/:id",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        summary: "Get user",
+        description: "Returns a single user by ID",
+        tags: ["Users"],
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
       const user = await authService.getUser(id);
@@ -32,7 +71,14 @@ export function registerUserRoutes(
 
   fastify.patch(
     "/api/users/:id",
-    { preHandler: [fastify.authenticate, fastify.requirePermission("update", "users")] },
+    {
+      preHandler: [fastify.authenticate, fastify.requirePermission("update", "users")],
+      schema: {
+        summary: "Update user",
+        description: "Update a user's email, role, or password (requires update:users permission)",
+        tags: ["Users"],
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
       const body = request.body as { email?: string; role?: string; password?: string };
@@ -44,7 +90,14 @@ export function registerUserRoutes(
 
   fastify.delete(
     "/api/users/:id",
-    { preHandler: [fastify.authenticate, fastify.requirePermission("delete", "users")] },
+    {
+      preHandler: [fastify.authenticate, fastify.requirePermission("delete", "users")],
+      schema: {
+        summary: "Delete user",
+        description: "Delete a user account (requires delete:users permission)",
+        tags: ["Users"],
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
       const deleted = await authService.deleteUser(id);

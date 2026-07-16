@@ -47,12 +47,12 @@ describe("type-defs branch coverage", () => {
     expect(sdl).toContain('"Title Field"');
   });
 
-  it("generates filter input for empty fields collection is skipped", () => {
+  it("generates filter/sort/create/update types for fieldless collections", () => {
     const sdl = generateTypeDefs([emptyFieldsCollection]);
-    expect(sdl).not.toContain("input EmptyFilter");
-    expect(sdl).not.toContain("enum EmptySort");
-    expect(sdl).not.toContain("input EmptyCreateInput");
-    expect(sdl).not.toContain("input EmptyUpdateInput");
+    expect(sdl).toContain("input EmptyFilter");
+    expect(sdl).toContain("enum EmptySort");
+    expect(sdl).toContain("input EmptyCreateInput");
+    expect(sdl).toContain("input EmptyUpdateInput");
   });
 
   it("generates filter input for checkbox type as Boolean", () => {

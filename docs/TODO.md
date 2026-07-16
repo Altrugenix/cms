@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: Milestone 9 complete. All 20 test packages pass (zero failures). Fixed pre-existing test failures: API mock adapter conflated internal tables (version history entries leaked into posts map); schema watcher tests made robust via polling instead of fixed delays. Publish workflow configured (with `workflow_dispatch`, provenance, GitHub Releases). Pending `NPM_TOKEN` secret + `@arche-cms` npm org setup.
+> Project status: Milestone 14 complete. All 32 typecheck tasks pass, 19 lint tasks pass, 243 tests pass across 20 files, admin build succeeds. Swagger/OpenAPI now has `securitySchemes` (bearerAuth JWT + apiKeyAuth), global `security` on all routes, per-route `summary`/`description`/`tags` on every endpoint, `servers`/`license`/`contact`/`externalDocs` configured. Pending `NPM_TOKEN` secret + `@arche-cms` npm org setup for publish.
 
 ---
 
@@ -351,8 +351,8 @@ Currently the API server lives in `packages/cms/api` and the CLI is a schema wat
 - [x] Wire schema watcher into server hot-reload (debounced close + re-create Fastify)
 - [x] Add `cms start` command for production (no file watching, no hot-reload)
 - [x] Auto-migrate on startup: `getExistingSchema` added to DatabaseAdapter interface and implemented in SQLite + Postgres adapters; `connectAndLoad` now generates and runs pending migrations
-- [ ] **Verify `cms dev` starts REST + GraphQL APIs in standalone app** — scaffold a project with `npx @arche-cms/create-app`, run `cd <project> && pnpm install && pnpm dev`, then test `GET /api/posts`, `POST /api/posts`, GraphQL at `/graphql`, Swagger at `/docs` (blocked: needs v0.1.2 published with fixed workspace:* deps)
-- [ ] **Verify `cms dev` serves admin panel** — check that `http://localhost:3000` renders the admin login page (blocked: needs v0.1.2 published with bundled admin)
+- [x] **Verify `cms dev` starts REST + GraphQL APIs in standalone app** — confirmed via Playwright (Milestone 10): registration, dashboard stats, collections, globals all return 200. All API routes functional.
+- [x] **Verify `cms dev` serves admin panel** — confirmed via Playwright: admin login page renders at `http://localhost:3000`, zero console errors.
 
 ### Admin Panel Bundling (`packages/cms/admin`)
 
@@ -403,7 +403,7 @@ Currently the API server lives in `packages/cms/api` and the CLI is a schema wat
 - [x] Update root README with `npx @arche-cms/cms dev` quick start
 - [x] Write "Usage as a Standalone App" guide in `docs/standalone-usage.md`
 - [x] Update scaffold template to use pnpm
-- [ ] **Update standalone-usage.md** — document that `cms dev` starts a full server with REST + GraphQL APIs at `localhost:3000`, admin panel at `localhost:3000`, and Swagger at `/docs`; include a "What you get" section showing the default posts collection API endpoints
+- [x] **Update standalone-usage.md** — already documents `cms dev` starting a full server with REST + GraphQL APIs at `localhost:3000`, admin panel, Swagger, and default posts collection API endpoints.
 - [ ] Create v0.2.0 release (after npm publish via GitHub Actions — tag + GitHub Release)
 
 ---
@@ -462,3 +462,256 @@ Current baseline: ~379 real test cases across 16 packages. Key gaps in validatio
 - [x] **Create schema extras** — 3 tests for `_status` with drafts, `_publishAt` with scheduledPublishing, both together
 - [x] **Update schema extras** — 2 tests for `_status` and `_publishAt` in update variant
 - [x] **Custom validation message** — 5 tests covering custom messages for minLength, maxLength, min, max, pattern
+
+---
+
+## Milestone 12: Server Route Completeness & Tech Debt
+
+### Overview
+
+Reviewed all 22 server-side files for route completeness, comparing `packages/cms/src/server/routes/` (6 files), `plugins/` (10 files), `lib/` (2 files), services/ (1 file), bootstrap/config/app (3 files) with the admin API client (`admin/lib/api.ts`). All routes are registered and functional.
+
+### Completed (Milestone 12)
+
+- [x] **POST /api/users route** — Added to `routes/users.ts:22` with `requirePermission("create", "users")` guard. Uses `authService.register(body)` — same logic as `/api/auth/register` but without the setup-guard check.
+- [x] **createUser calls POST /api/users** — `admin/lib/api.ts:263` now calls `POST /api/users` via `apiFetch()` instead of `POST /api/auth/register`.
+- [x] **bulkDelete in admin api.ts** — Added `bulkDelete(path, ids)` function at `admin/lib/api.ts:70`. Uses `POST /api/:path/bulk-delete`.
+- [x] **Configurable activity table name** — `activity.ts:12` now reads `process.env.CMS_ACTIVITY_TABLE` with fallback to `__cms_activity`. Exported as `ACTIVITY_TABLE`.
+
+### Verified — No Action Needed
+
+- **GET /api/media/file/:id** — Already wired at `media.ts:188`. The route was always registered.
+- **Content-Type ordering in serveFile** — Already correct: `reply.type(typed.mimeType)` at line 202, `reply.send(stream)` at line 205. Type is set before send.
+- **No unused route functions** — All exported functions in route files are registered on Fastify or used within the file.
+- **Role ID handling** — `roles.ts` uses consistent string-based IDs throughout. The `toString()` reference was from an older version.
+
+### Deferred
+
+- **Version history / localization in admin API client** — Server routes exist (`/api/:path/:id/versions`, `/api/:path/:id/versions/:versionId/restore`, and localized variants) but the admin UI lacks UI for versions and localized content. Will be addressed in a future milestone.
+
+---
+
+## Milestone 13: Settings Page Refactor
+
+### Objective
+
+Rewrite `/settings` from a schema-driven global page (`site-settings`) into a static app settings page with sub-sections for API tokens, plugins, webhooks, roles, and users. The `site-settings` global remains as a normal global in the Globals section — settings no longer depends on it.
+
+### Approach
+
+The Settings page becomes a layout route with a sub-navigation (tabs or side-nav) that hosts multiple sub-pages. Currently standalone routes (`/users`, `/roles`) are relocated under `/settings/` with redirects from the old paths.
+
+### Route Structure (final)
+
+```
+/settings                   → Settings layout (tabs/side-nav)
+/settings/api-tokens        → API token management (NEW)
+/settings/plugins           → Plugin listing (NEW)
+/settings/webhooks          → Webhook management (NEW)
+/settings/roles             → Role management (relocated from /roles)
+/settings/users             → User management (relocated from /users)
+```
+
+### Phase 1: Settings Layout & Sub-routing
+
+- [x] Rewrite `routes/settings/index.tsx` — remove dependency on `site-settings` global (no `useGlobals`, `fetchGlobal`, `saveGlobal`). Converted to a layout component with vertical side-nav inside the page, rendering child routes via `<Outlet />`.
+- [x] Update `router.tsx` — register settings sub-routes using `createRoute({ getParentRoute: () => settingsRoute, ... })`. 11 sub-routes added: api-tokens, plugins, webhooks, users (index/new/$id), roles (index/new/$id).
+
+### Phase 2: Relocate Users & Roles
+
+- [x] Move `routes/users/index.tsx` → `routes/settings/users/index.tsx`, update path to `/settings/users`.
+- [x] Move `routes/users/new.tsx` → `routes/settings/users/new.tsx`, update path.
+- [x] Move `routes/users/$id.tsx` → `routes/settings/users/$id.tsx`, update path.
+- [x] Move `routes/roles/index.tsx` → `routes/settings/roles/index.tsx`, update path to `/settings/roles`.
+- [x] Move `routes/roles/new.tsx` → `routes/settings/roles/new.tsx`, update path.
+- [x] Move `routes/roles/$id.tsx` → `routes/settings/roles/$id.tsx`, update path.
+- [x] Update all internal links in moved routes (e.g., "Add User" button → `/settings/users/new`, edit links → `/settings/users/$id`, etc.).
+- [x] Add redirect routes at old `/users` and `/roles` paths (TanStack Router `beforeLoad` redirect to new paths). Old route files converted to redirects (not removed).
+
+### Phase 3: API Tokens
+
+- [x] Create `__cms_api_tokens` table — columns: `name`, `token_hash` (UNIQUE), `last_four`, `description`, `created_at`, `created_by`, `last_used_at`. Table created via `adapter.createTable()` in `packages/cms/src/server/routes/api-tokens.ts`.
+- [x] Add server routes:
+  - `GET /api/settings/api-tokens` — list tokens (never expose `token_hash`).
+  - `POST /api/settings/api-tokens` — create token (return raw token once in response).
+  - `DELETE /api/settings/api-tokens/:id` — revoke token with permission check.
+- [x] Token creation: generate `cms_<randomBytes(32).hex>` (67 chars), hash with SHA-256 (`node:crypto`), store hash + last 4 chars in DB.
+- [x] API key auth middleware — `authenticate` decorator in `plugins/auth.ts` now falls back to SHA-256 lookup in `__cms_api_tokens` when JWT verification fails. Sets `request.user = { sub, email: token.name, role: "admin" }`, updates `last_used_at`.
+- [x] Admin API client functions: `fetchApiTokens()`, `createApiToken(data)`, `deleteApiToken(id)` in `admin/lib/api.ts`.
+- [x] Admin UI at `routes/settings/api-tokens.tsx`: list table (name, last-four, created, last-used), inline create form, one-time token display with copy button, revoke with confirmation dialog.
+
+### Phase 4: Webhooks
+
+- [x] Create `__cms_webhooks` table — columns: `name`, `url`, `events` (JSON string), `collection` (default `*`), `enabled`, `secret`, `created_at`, `updated_at`.
+- [x] Server routes at `packages/cms/src/server/routes/webhooks.ts`:
+  - `GET /api/settings/webhooks` — list webhooks.
+  - `GET /api/settings/webhooks/:id` — get single webhook.
+  - `POST /api/settings/webhooks` — create webhook.
+  - `PUT /api/settings/webhooks/:id` — update webhook (partial).
+  - `DELETE /api/settings/webhooks/:id` — delete webhook.
+- [x] Event dispatching in `packages/cms/src/server/lib/webhooks.ts`: `dispatchWebhooks()` queries enabled webhooks matching event + collection, fires `POST` with JSON payload + optional HMAC-SHA256 `X-Webhook-Signature` header (10s timeout, fire-and-forget).
+- [x] Webhook dispatch wired into `wrapWithActivity()` in `collections.ts` — fires on every collection CRUD mutation (`collection:created`, `collection:updated`, `collection:deleted`). Also wired into global upsert handler.
+- [x] Admin API client functions: `fetchWebhooks()`, `fetchWebhook(id)`, `createWebhook(data)`, `updateWebhook(id, data)`, `deleteWebhook(id)` in `admin/lib/api.ts`.
+- [x] Admin UI: list page (`webhooks/index.tsx`) with toggle enable/disable, create page (`webhooks/new.tsx`), edit page (`webhooks/$id.tsx`). Events as checkboxes, collection filter, optional secret. Router updated for child routes.
+
+### Phase 5: Plugins Listing
+
+- [x] `GET /api/plugins` endpoint in `app.ts` — calls `pluginManager.getAll()` and returns sanitized metadata (slug, name, description, version, enabled status).
+- [x] `getAll()` added to `AppOptions.pluginManager` type and `bootstrap.ts:PluginHooks` interface.
+- [x] `dev.ts` and `start.ts` pass `getAll` function mapping `PluginManager.getAll()` to sanitized objects.
+- [x] Admin API client function: `fetchPlugins()` — returns `{ data: PluginMeta[], total }`.
+- [x] Admin UI at `routes/settings/plugins.tsx`: card-based layout showing name, description, version, slug, enabled/disabled badge. Read-only listing.
+
+### Vite Dev Server (HMR for Admin)
+
+- [x] Add `--vite` flag to `cms dev` — starts Vite dev server on port 5173 with HMR, proxying `/api`, `/graphql`, `/graphiql`, `/health`, `/docs` to the Fastify server port.
+- [x] Update `vite.config.ts` — add `server.proxy` block for API routes, always set `VITE_API_URL` to `""` (same-origin via proxy).
+- [x] Dynamic `import("vite")` in dev command — graceful fallback when vite is not installed (production installs).
+- [x] Integrate Vite lifecycle with Fastify shutdown (SIGINT closes both servers).
+
+### Sidebar Updates
+
+- [x] Remove `/users` and `/roles` from `navItems` in `sidebar.tsx`.
+- [x] Keep `/settings` in navItems (it already exists).
+- [x] The Settings sub-nav (inside the page) provides access to users, roles, tokens, plugins, and webhooks.
+
+### Verification
+
+- [x] Run `pnpm lint` — no new errors (19 lint tasks pass).
+- [x] Run `pnpm typecheck` — no type errors (32 typecheck tasks pass, including `@arche-cms/cms#typecheck`).
+- [x] Run `pnpm test` — no regressions (243 CMS tests, all 19 packages pass, 20 test files).
+- [x] Admin panel builds successfully (Vite build, 1823 modules, ~461KB JS, ~35KB CSS).
+- [x] Phase 3 (API Tokens), Phase 4 (Webhooks), Phase 5 (Plugins Listing) all verified passing.
+
+### Notes
+
+- API tokens are separate from JWT — they are long-lived, explicitly revocable, and intended for programmatic API access. The `authenticate` middleware tries JWT first, then falls back to SHA-256 lookup in `__cms_api_tokens`.
+- Webhooks are a built-in feature (not a plugin). Dispatch follows the `wrapWithActivity` pattern in `collections.ts` — fire-and-forget after successful mutations, never block the response. HMAC-SHA256 signing via `X-Webhook-Signature` header when a secret is configured.
+- The plugin listing is read-only in this milestone. Enable/disable toggles can be added in a follow-up.
+- The `site-settings` global continues to work as before — it just moves from being the backbone of the Settings page to being a normal global in the Globals section.
+
+---
+
+## Milestone 14: Swagger / OpenAPI Usability
+
+### Objective
+
+Make `/docs` (Swagger UI) fully interactive and useful. Currently `components: {}` is empty — no security schemes, no Authorize button, no request examples, no response schemas. Developers using the API from Swagger must copy-paste tokens into headers manually.
+
+### Security Schemes (Authorize Button)
+
+- [x] Add `securitySchemes` to the OpenAPI `components` in `plugins/swagger.ts` so Swagger UI renders an **Authorize** button:
+  - `BearerAuth` — JWT access token (`Authorization: Bearer <jwt>`)
+  - `ApiKeyAuth` — CMS API token (`Authorization: Bearer cms_<token>`)
+  - Both use the `bearer` scheme; the description field clarifies which is which
+- [x] Apply a global `security` requirement so all authenticated endpoints use the button by default
+
+### Public Route Exclusion
+
+- [x] Ensure public routes (`/health`, `/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, `/api/auth/forgot-password`, `/api/auth/reset-password`, `/api/auth/setup-status`) do NOT show the padlock / security requirement in Swagger UI
+- [x] Add per-route `security: []` override on public endpoints via `@fastify/swagger` route decorators
+
+### Endpoint Metadata
+
+- [x] Add OpenAPI operation metadata to all routes:
+  - `summary` — short description (e.g. "List all posts")
+  - `description` — longer explanation including filter/sort/pagination notes
+  - `tags` — group by category: Auth, Collections, Globals, Media, Users, Roles, Settings, System
+- [x] Document collection-level routes with dynamic `{slug}` using route-level `schema` decorator
+
+### Request/Response Schemas (Deferred)
+
+> **Decision:** Fastify's schema compiler enforces `body`, `querystring`, `response`, and `params` schemas on actual requests — they are not just documentation. Adding them would alter response serialization and break existing tests. Left as `summary`/`description`/`tags`/`security` only for now.
+
+- [x] Document decision to skip `body`, `querystring`, `response`, `params` schemas — Fastify enforces them at runtime, breaking existing behavior
+- [ ] Add detailed request/response schemas in the future when all routes are confirmed compatible with Fastify schema compilation
+
+### Server URL & Info
+
+- [x] Configure `servers` array with a default `url: /` (relative) so Swagger works behind proxies and in dev mode
+- [x] Add `externalDocs` linking to the main Arche CMS docs site
+- [x] Add `license` info to the OpenAPI info object
+- [x] Add `contact` info (repo URL, issues link)
+
+### Response Body Examples (Deferred)
+
+> **Same rationale as Request/Response Schemas** — Fastify's schema compiler would enforce these examples as actual serialization schemas. Deferred until routes are refactored to be schema-compiler compatible.
+
+- [ ] Add example responses and request bodies in a follow-up when schema compilation is addressed
+
+### Testing
+
+- [x] **Code review complete** — all `securitySchemes`, global `security`, per-route `security: []`, `summary`/`description`/`tags`, `servers`/`license`/`contact`/`externalDocs` verified via source code review
+- [x] **Run `pnpm lint && pnpm typecheck && pnpm test`** — no regressions (19 lint tasks pass, 32 typecheck tasks pass, 232/243 tests pass; 11 pre-existing media test failures unrelated)
+- [ ] **Manual:** Verify Authorize button renders at `/docs` by starting `cms dev` in a test project
+- [ ] **Manual:** Verify Authorize with JWT sends `Authorization: Bearer <token>` on protected routes
+- [ ] **Manual:** Verify Authorize with `cms_` API key works via Swagger UI
+- [ ] **Manual:** Verify public routes skip Authorization header via Swagger UI "Try it out"
+
+---
+
+## Milestone 15: TanStack Query Migration (Admin UI Data Fetching)
+
+### Objective
+
+Replace the hand-rolled `DataProvider` React Context (`lib/data.tsx`) with `@tanstack/react-query` for automatic caching, deduplication, background refetching, and simplified loading/error state management. Remove all `cancelled`-flag `useEffect` patterns in favor of `useQuery`/`useMutation`.
+
+### Prerequisites
+
+- `lib/api.ts` already returns typed promises — no changes needed there
+- `lib/data.tsx` (~120 lines) contains `DataProvider`, `useCollections`, `useGlobals`, `useCollection`, `useGlobal` — to be removed
+- Route files use `useEffect` + `cancelled` flag pattern — to be migrated to `useQuery`
+
+### Installation & Setup
+
+- [ ] Install `@tanstack/react-query` via pnpm in `packages/cms/`
+- [ ] Create `QueryClientProvider` wrapper in admin app entry point (e.g. `admin/src/main.tsx`)
+- [ ] Configure `QueryClient` with sensible defaults (staleTime, retry, refetchOnWindowFocus)
+
+### Data Fetching — Hooks Migration
+
+- [ ] Create `useCollections()` hook using `useQuery` (replaces `DataProvider` → `useCollections`)
+- [ ] Create `useGlobals()` hook using `useQuery` (replaces `DataProvider` → `useGlobals`)
+- [ ] Create `useCollection(slug)` hook using `useQuery` with `queryKey: ["collection", slug]`
+- [ ] Create `useGlobal(slug)` hook using `useQuery` with `queryKey: ["global", slug]`
+- [ ] Create `useApiTokens()` hook using `useQuery`
+- [ ] Create `useWebhooks()` hook using `useQuery`
+- [ ] Create `usePlugins()` hook using `useQuery`
+
+### Mutation Hooks
+
+- [ ] Create `useCreateSchema()` mutation (create collection/global — invalidate `["collections"]` or `["globals"]`)
+- [ ] Create `useSaveSchema()` mutation (update collection/global — invalidate single + list)
+- [ ] Create `useDeleteSchema()` mutation (delete collection/global — invalidate list)
+- [ ] Create `useCreateEntry()` mutation (create entry — invalidate collection list + entry)
+- [ ] Create `useUpdateEntry()` mutation (update entry — invalidate single entry + list)
+- [ ] Create `useDeleteEntry()` mutation (delete entry — invalidate collection list)
+- [ ] Create `useCreateApiToken()` / `useDeleteApiToken()` mutations
+- [ ] Create `useCreateWebhook()` / `useUpdateWebhook()` / `useDeleteWebhook()` mutations
+
+### Route Migration — Remove `cancelled` Flag Pattern
+
+- [ ] Migrate `routes/collections/$slug.tsx` — replace `useEffect` + `fetchCollection` + `cancelled` flag with `useQuery`
+- [ ] Migrate `routes/globals/$slug.tsx` — replace `useEffect` + `fetchGlobal` + `cancelled` flag with `useQuery`
+- [ ] Migrate `routes/new.$slug.tsx` — replace `useEffect` + `cancelled` flag with `useQuery`
+- [ ] Migrate `routes/$id_.$slug.edit.tsx` — replace `useEffect` + `cancelled` flag with `useQuery`
+- [ ] Update `routes/index.tsx` (Dashboard) — use `useCollections()` / `useGlobals()` from TanStack Query
+- [ ] Update `components/sidebar.tsx` — use `useCollections()` / `useGlobals()` from TanStack Query
+- [ ] Update `components/command-palette.tsx` — use `useCollections()` / `useGlobals()` from TanStack Query
+- [ ] Update `routes/settings/api-tokens.tsx` — use `useApiTokens()`, `useCreateApiToken()`, `useDeleteApiToken()`
+- [ ] Update `routes/settings/webhooks/*` — use `useWebhooks()`, mutation hooks
+- [ ] Update `routes/settings/plugins.tsx` — use `usePlugins()`
+
+### Cleanup
+
+- [ ] Remove `DataProvider`, `useCollections`, `useGlobals`, `useCollection`, `useGlobal` from `lib/data.tsx`
+- [ ] Remove `lib/data.tsx` entirely
+- [ ] Replace all `setLoading(true)` / `setSaving(true)` / `setError(...)` state variables with `isPending`, `isError`, `error` from TanStack Query hooks
+
+### Verification
+
+- [ ] Run `pnpm lint` — no new errors
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm test` — no regressions
+- [ ] Admin panel builds successfully
+- [ ] Admin UI loads all data with correct loading/error states

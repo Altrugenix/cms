@@ -97,7 +97,7 @@ export class SchemaWatcher extends EventEmitter {
       url.searchParams.set("t", String(Date.now()));
       const mod = await import(url.href);
       const def = mod.default ?? mod;
-      if (def && typeof def === "object" && "slug" in def && "fields" in def) {
+      if (def && typeof def === "object" && "slug" in def) {
         this.emit("change", {
           type: "changed",
           category,
