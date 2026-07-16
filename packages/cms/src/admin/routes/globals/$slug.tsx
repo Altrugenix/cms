@@ -31,7 +31,10 @@ function EditGlobal() {
   }, [gError]);
 
   useEffect(() => {
-    if (initialized || !globalDef) return;
+    if (initialized || !globalDef) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     async function load() {
       try {
