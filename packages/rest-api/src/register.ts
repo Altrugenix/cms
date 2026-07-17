@@ -24,14 +24,12 @@ export interface RouterAdapter {
 export function registerRoutes(router: RouterAdapter, routes: RouteDefinition[]): void {
   for (const route of routes) {
     router.route({
-      method: route.method,
-      url: route.path,
       handler: (request, reply) => {
         const context: RouteHandlerContext = {
-          params: request.params,
-          query: request.query,
           body: request.body,
           headers: request.headers,
+          params: request.params,
+          query: request.query,
         };
 
         route
@@ -49,6 +47,8 @@ export function registerRoutes(router: RouterAdapter, routes: RouteDefinition[])
             reply.status(500).send({ error: err.message ?? "Internal server error" });
           });
       },
+      method: route.method,
+      url: route.path,
     });
   }
 }

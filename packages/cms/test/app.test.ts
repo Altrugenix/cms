@@ -1,12 +1,15 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import type { FastifyInstance } from "fastify";
 import type { DatabaseAdapter, CollectionDefinition } from "@arche-cms/types";
-import { createApp } from "../src/server/app.js";
+import type { FastifyInstance } from "fastify";
+
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 import type { ServerConfig } from "../src/server/config.js";
+
+import { createApp } from "../src/server/app.js";
 
 function createMockAdapter(): DatabaseAdapter {
   const posts = new Map<string, Record<string, unknown>>();
-  posts.set("1", { id: "1", title: "Hello", body: "World" });
+  posts.set("1", { body: "World", id: "1", title: "Hello" });
   let nextPostId = 2;
 
   const users = new Map<string, Record<string, unknown>>();
@@ -29,10 +32,19 @@ function createMockAdapter(): DatabaseAdapter {
   }
 
   return {
-    findOne: async (_table: string, id: string) => {
+    connect: async () => {},
+    create: async (_table: string, data: Record<string, unknown>) => {
       const store = tableStore(_table);
-      return store?.get(id) ?? null;
+      const id = nextId(_table)();
+      const record = { id, ...data };
+      store?.set(id, record);
+      return record;
     },
+    createTable: async () => {},
+    delete: async () => true,
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
     findMany: async (_table: string, options) => {
       const store = tableStore(_table);
       if (!store) return { data: [], total: 0 };
@@ -43,55 +55,46 @@ function createMockAdapter(): DatabaseAdapter {
       }
       return { data: all.slice(0, options?.limit ?? 100), total: all.length };
     },
-    create: async (_table: string, data: Record<string, unknown>) => {
+    findOne: async (_table: string, id: string) => {
       const store = tableStore(_table);
-      const id = nextId(_table)();
-      const record = { id, ...data };
-      store?.set(id, record);
-      return record;
+      return store?.get(id) ?? null;
     },
-    update: async () => null,
-    delete: async () => true,
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
     getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
+    update: async () => null,
   };
 }
 
 const collection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "body", type: "richText" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 const testConfig: ServerConfig = {
-  port: 0,
-  host: "localhost",
-  logger: { level: "silent" },
-  cors: { origin: "*" },
-  rateLimit: { max: 1000, timeWindow: "1 minute" },
-  swagger: {
-    title: "Test API",
-    version: "1.0.0",
-    description: "Test",
-  },
-  schema: { baseDir: "./cms" },
-  database: { adapter: "sqlite", url: ":memory:" },
   auth: {
-    secret: "test-secret-at-least-32-chars-long-for-security!!",
     accessTokenExpiresIn: "15m",
     refreshTokenExpiresIn: "7d",
+    secret: "test-secret-at-least-32-chars-long-for-security!!",
   },
+  cors: { origin: "*" },
+  database: { adapter: "sqlite", url: ":memory:" },
+  host: "localhost",
+  logger: { level: "silent" },
+  port: 0,
+  rateLimit: { max: 1000, timeWindow: "1 minute" },
+  schema: { baseDir: "./cms" },
   storage: { baseDir: "./uploads" },
+  swagger: {
+    description: "Test",
+    title: "Test API",
+    version: "1.0.0",
+  },
 };
 
 describe("CMS API Server", () => {
@@ -102,15 +105,15 @@ describe("CMS API Server", () => {
   beforeAll(async () => {
     adapter = createMockAdapter();
     app = await createApp({
-      config: testConfig,
       adapter,
       collections: [collection],
+      config: testConfig,
     });
     // Register a user and get an auth token for CRUD tests
     const regRes = await app.inject({
+      body: { email: "crud@example.com", password: "password123" },
       method: "POST",
       url: "/api/auth/register",
-      body: { email: "crud@example.com", password: "password123" },
     });
     authToken = JSON.parse(regRes.body).accessToken;
   });
@@ -142,9 +145,9 @@ describe("CMS API Server", () => {
 
   it("serves collection list endpoint", async () => {
     const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
       method: "GET",
       url: "/api/posts",
-      headers: { authorization: `Bearer ${authToken}` },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -154,9 +157,9 @@ describe("CMS API Server", () => {
 
   it("serves collection get endpoint", async () => {
     const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
       method: "GET",
       url: "/api/posts/1",
-      headers: { authorization: `Bearer ${authToken}` },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -165,29 +168,29 @@ describe("CMS API Server", () => {
 
   it("serves collection create endpoint", async () => {
     const res = await app.inject({
+      body: { body: "Content", title: "New Post" },
+      headers: { authorization: `Bearer ${authToken}` },
       method: "POST",
       url: "/api/posts",
-      headers: { authorization: `Bearer ${authToken}` },
-      body: { title: "New Post", body: "Content" },
     });
     expect(res.statusCode).toBe(201);
   });
 
   it("serves collection update endpoint", async () => {
     const res = await app.inject({
+      body: { body: "Content", title: "Updated" },
+      headers: { authorization: `Bearer ${authToken}` },
       method: "PATCH",
       url: "/api/posts/1",
-      headers: { authorization: `Bearer ${authToken}` },
-      body: { title: "Updated", body: "Content" },
     });
     expect(res.statusCode).toBe(404);
   });
 
   it("serves collection delete endpoint", async () => {
     const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
       method: "DELETE",
       url: "/api/posts/1",
-      headers: { authorization: `Bearer ${authToken}` },
     });
     expect(res.statusCode).toBe(200);
   });
@@ -202,10 +205,10 @@ describe("CMS API Server", () => {
 
   it("handles validation for missing body on POST", async () => {
     const res = await app.inject({
+      body: null,
+      headers: { authorization: `Bearer ${authToken}` },
       method: "POST",
       url: "/api/posts",
-      headers: { authorization: `Bearer ${authToken}` },
-      body: null,
     });
     expect(res.statusCode).toBe(400);
   });
@@ -213,9 +216,9 @@ describe("CMS API Server", () => {
   describe("auth endpoints", () => {
     it("registers a new user", async () => {
       const res = await app.inject({
+        body: { email: "test@example.com", password: "password123" },
         method: "POST",
         url: "/api/auth/register",
-        body: { email: "test@example.com", password: "password123" },
       });
       expect(res.statusCode).toBe(201);
       const body = JSON.parse(res.body);
@@ -226,18 +229,18 @@ describe("CMS API Server", () => {
 
     it("rejects duplicate registration", async () => {
       const res = await app.inject({
+        body: { email: "test@example.com", password: "password123" },
         method: "POST",
         url: "/api/auth/register",
-        body: { email: "test@example.com", password: "password123" },
       });
       expect(res.statusCode).toBe(400);
     });
 
     it("logs in with valid credentials", async () => {
       const res = await app.inject({
+        body: { email: "test@example.com", password: "password123" },
         method: "POST",
         url: "/api/auth/login",
-        body: { email: "test@example.com", password: "password123" },
       });
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
@@ -247,18 +250,18 @@ describe("CMS API Server", () => {
 
     it("rejects login with wrong password", async () => {
       const res = await app.inject({
+        body: { email: "test@example.com", password: "wrong" },
         method: "POST",
         url: "/api/auth/login",
-        body: { email: "test@example.com", password: "wrong" },
       });
       expect(res.statusCode).toBe(401);
     });
 
     it("rejects register with invalid email format", async () => {
       const res = await app.inject({
+        body: { email: "notanemail", password: "password123" },
         method: "POST",
         url: "/api/auth/register",
-        body: { email: "notanemail", password: "password123" },
       });
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(res.body).code).toBe("VALIDATION_ERROR");
@@ -266,9 +269,9 @@ describe("CMS API Server", () => {
 
     it("rejects register with short password", async () => {
       const res = await app.inject({
+        body: { email: "valid@example.com", password: "short" },
         method: "POST",
         url: "/api/auth/register",
-        body: { email: "valid@example.com", password: "short" },
       });
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(res.body).code).toBe("VALIDATION_ERROR");
@@ -276,27 +279,27 @@ describe("CMS API Server", () => {
 
     it("handles forgot-password endpoint", async () => {
       const res = await app.inject({
+        body: { email: "test@example.com" },
         method: "POST",
         url: "/api/auth/forgot-password",
-        body: { email: "test@example.com" },
       });
       expect(res.statusCode).toBe(200);
     });
 
     it("rejects forgot-password with invalid email", async () => {
       const res = await app.inject({
+        body: { email: "bad" },
         method: "POST",
         url: "/api/auth/forgot-password",
-        body: { email: "bad" },
       });
       expect(res.statusCode).toBe(400);
     });
 
     it("handles reset-password endpoint (will fail gracefully)", async () => {
       const res = await app.inject({
+        body: { password: "newpassword123", token: "invalid" },
         method: "POST",
         url: "/api/auth/reset-password",
-        body: { token: "invalid", password: "newpassword123" },
       });
       expect(res.statusCode).toBe(400);
     });
@@ -313,16 +316,16 @@ describe("CMS API Server", () => {
 
     it("returns user from /me with valid token", async () => {
       const loginRes = await app.inject({
+        body: { email: "test@example.com", password: "password123" },
         method: "POST",
         url: "/api/auth/login",
-        body: { email: "test@example.com", password: "password123" },
       });
       const { accessToken } = JSON.parse(loginRes.body);
 
       const meRes = await app.inject({
+        headers: { authorization: `Bearer ${accessToken}` },
         method: "GET",
         url: "/api/auth/me",
-        headers: { authorization: `Bearer ${accessToken}` },
       });
       expect(meRes.statusCode).toBe(200);
       const meBody = JSON.parse(meRes.body);
@@ -339,16 +342,16 @@ describe("CMS API Server", () => {
 
     it("refreshes tokens", async () => {
       const loginRes = await app.inject({
+        body: { email: "test@example.com", password: "password123" },
         method: "POST",
         url: "/api/auth/login",
-        body: { email: "test@example.com", password: "password123" },
       });
       const { refreshToken } = JSON.parse(loginRes.body);
 
       const refreshRes = await app.inject({
+        body: { refreshToken },
         method: "POST",
         url: "/api/auth/refresh",
-        body: { refreshToken },
       });
       expect(refreshRes.statusCode).toBe(200);
       const body = JSON.parse(refreshRes.body);
@@ -362,18 +365,18 @@ describe("CMS API Server", () => {
 
     beforeAll(async () => {
       const res = await app.inject({
+        body: { email: "test@example.com", password: "password123" },
         method: "POST",
         url: "/api/auth/login",
-        body: { email: "test@example.com", password: "password123" },
       });
       authToken = JSON.parse(res.body).accessToken;
     });
 
     it("serves GraphiQL at /graphiql", async () => {
       const res = await app.inject({
+        headers: { authorization: `Bearer ${authToken}` },
         method: "GET",
         url: "/graphiql",
-        headers: { authorization: `Bearer ${authToken}` },
       });
       expect(res.statusCode).toBe(200);
       expect(res.body).toContain("graphiql");
@@ -381,10 +384,10 @@ describe("CMS API Server", () => {
 
     it("executes listPosts query", async () => {
       const res = await app.inject({
+        body: { query: "{ listPosts { id title } }" },
+        headers: { authorization: `Bearer ${authToken}` },
         method: "POST",
         url: "/graphql",
-        headers: { authorization: `Bearer ${authToken}` },
-        body: { query: "{ listPosts { id title } }" },
       });
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
@@ -395,10 +398,10 @@ describe("CMS API Server", () => {
 
     it("executes posts query by id", async () => {
       const res = await app.inject({
+        body: { query: '{ posts(id: "1") { id title } }' },
+        headers: { authorization: `Bearer ${authToken}` },
         method: "POST",
         url: "/graphql",
-        headers: { authorization: `Bearer ${authToken}` },
-        body: { query: '{ posts(id: "1") { id title } }' },
       });
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
@@ -408,10 +411,10 @@ describe("CMS API Server", () => {
 
     it("executes createPosts mutation", async () => {
       const res = await app.inject({
+        body: { query: 'mutation { createPosts(data: { title: "New" }) { id title } }' },
+        headers: { authorization: `Bearer ${authToken}` },
         method: "POST",
         url: "/graphql",
-        headers: { authorization: `Bearer ${authToken}` },
-        body: { query: 'mutation { createPosts(data: { title: "New" }) { id title } }' },
       });
       const body = JSON.parse(res.body);
       expect(body.data).toBeDefined();
@@ -420,12 +423,12 @@ describe("CMS API Server", () => {
 
     it("executes updatePosts mutation", async () => {
       const res = await app.inject({
-        method: "POST",
-        url: "/graphql",
-        headers: { authorization: `Bearer ${authToken}` },
         body: {
           query: 'mutation { updatePosts(id: "1", data: { title: "Updated" }) { id title } }',
         },
+        headers: { authorization: `Bearer ${authToken}` },
+        method: "POST",
+        url: "/graphql",
       });
       const body = JSON.parse(res.body);
       expect(body.errors).toBeDefined();
@@ -434,10 +437,10 @@ describe("CMS API Server", () => {
 
     it("executes deletePosts mutation", async () => {
       const res = await app.inject({
+        body: { query: 'mutation { deletePosts(id: "1") }' },
+        headers: { authorization: `Bearer ${authToken}` },
         method: "POST",
         url: "/graphql",
-        headers: { authorization: `Bearer ${authToken}` },
-        body: { query: 'mutation { deletePosts(id: "1") }' },
       });
       const body = JSON.parse(res.body);
       expect(body.data?.deletePosts).toBe(true);
@@ -449,29 +452,29 @@ describe("CMS API Server", () => {
 
     beforeAll(async () => {
       metaApp = await createApp({
-        config: testConfig,
         adapter: createMockAdapter(),
         collections: [
           {
-            slug: "products",
-            labels: { singular: "Product", plural: "Products" },
             fields: [
               { name: "title", type: "text" },
-              { name: "category", type: "select", options: [{ label: "A", value: "a" }, "b"] },
-              { name: "tags", type: "multiSelect", options: ["x", "y"] },
-              { name: "color", type: "radio", options: ["red", "blue"] },
+              { name: "category", options: [{ label: "A", value: "a" }, "b"], type: "select" },
+              { name: "tags", options: ["x", "y"], type: "multiSelect" },
+              { name: "color", options: ["red", "blue"], type: "radio" },
             ],
+            labels: { plural: "Products", singular: "Product" },
+            slug: "products",
           },
         ],
+        config: testConfig,
         globals: [
           {
-            slug: "settings",
-            label: "Settings",
             fields: [
               { name: "siteName", type: "text" },
-              { name: "logo", type: "relation", to: "media" },
-              { name: "theme", type: "select", options: ["light", "dark"] },
+              { name: "logo", to: "media", type: "relation" },
+              { name: "theme", options: ["light", "dark"], type: "select" },
             ],
+            label: "Settings",
+            slug: "settings",
           },
         ],
       });
@@ -513,9 +516,9 @@ describe("CMS API Server", () => {
   describe("permissions and error handling", () => {
     it("returns 401 for roles endpoint without auth", async () => {
       const res = await app.inject({
+        body: { name: "test" },
         method: "POST",
         url: "/api/roles",
-        body: { name: "test" },
       });
       expect(res.statusCode).toBe(401);
     });
@@ -534,9 +537,9 @@ describe("CMS API Server", () => {
         return origRaw(...args);
       };
       const degradedApp = await createApp({
-        config: testConfig,
         adapter,
         collections: [collection],
+        config: testConfig,
       });
       const res = await degradedApp.inject({ method: "GET", url: "/health" });
       const body = JSON.parse(res.body);

@@ -1,21 +1,23 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { generateTypes, generateTypesToFile } from "../src/typegen.js";
 import type { CollectionDefinition, ComponentDefinition } from "@arche-cms/types";
+
 import { mkdtemp, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { describe, it, expect, afterEach } from "vitest";
+
+import { generateTypes, generateTypesToFile } from "../src/typegen.js";
 
 describe("generateTypes", () => {
   it("generates interface for a basic collection", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [
           { name: "title", type: "text" },
           { name: "body", type: "richText" },
           { name: "published", type: "boolean", validation: { required: true } },
         ],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
     ];
 
@@ -32,12 +34,12 @@ describe("generateTypes", () => {
   it("generates interface for a collection with slug field", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
         fields: [
           { name: "title", type: "text" },
-          { name: "path", type: "slug", source: "title" },
+          { name: "path", source: "title", type: "slug" },
         ],
+        labels: { plural: "Pages", singular: "Page" },
+        slug: "pages",
       },
     ];
 
@@ -49,12 +51,12 @@ describe("generateTypes", () => {
   it("generates interface for a global", () => {
     const globals = [
       {
-        slug: "site-settings",
-        label: "Site Settings",
         fields: [
           { name: "siteName", type: "text" },
           { name: "logo", type: "media" },
         ],
+        label: "Site Settings",
+        slug: "site-settings",
       },
     ];
 
@@ -67,12 +69,12 @@ describe("generateTypes", () => {
   it("generates interface for a component", () => {
     const components: ComponentDefinition[] = [
       {
-        slug: "seo",
-        label: "SEO",
         fields: [
           { name: "title", type: "text" },
           { name: "description", type: "textarea" },
         ],
+        label: "SEO",
+        slug: "seo",
       },
     ];
 
@@ -85,13 +87,13 @@ describe("generateTypes", () => {
   it("handles relation fields", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "articles",
-        labels: { singular: "Article", plural: "Articles" },
         fields: [
           { name: "title", type: "text" },
-          { name: "author", type: "relation", to: "users" },
-          { name: "tags", type: "relation", to: "tags", kind: "manyToMany" },
+          { name: "author", to: "users", type: "relation" },
+          { kind: "manyToMany", name: "tags", to: "tags", type: "relation" },
         ],
+        labels: { plural: "Articles", singular: "Article" },
+        slug: "articles",
       },
     ];
 
@@ -103,14 +105,14 @@ describe("generateTypes", () => {
   it("generates for multiple collections", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
       {
-        slug: "users",
-        labels: { singular: "User", plural: "Users" },
         fields: [{ name: "email", type: "email" }],
+        labels: { plural: "Users", singular: "User" },
+        slug: "users",
       },
     ];
 
@@ -122,9 +124,9 @@ describe("generateTypes", () => {
   it("includes createdAt/updatedAt based on timestamps config", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "no-timestamps",
-        labels: { singular: "No Timestamp", plural: "No Timestamps" },
         fields: [{ name: "name", type: "text" }],
+        labels: { plural: "No Timestamps", singular: "No Timestamp" },
+        slug: "no-timestamps",
         timestamps: { createdAt: false, updatedAt: false },
       },
     ];
@@ -137,12 +139,12 @@ describe("generateTypes", () => {
   it("marks optional fields correctly", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "items",
-        labels: { singular: "Item", plural: "Items" },
         fields: [
           { name: "required_field", type: "text", validation: { required: true } },
           { name: "optional_field", type: "text" },
         ],
+        labels: { plural: "Items", singular: "Item" },
+        slug: "items",
       },
     ];
 
@@ -154,9 +156,9 @@ describe("generateTypes", () => {
   it("handles component fields", () => {
     const collections: CollectionDefinition[] = [
       {
+        fields: [{ component: "seo", name: "seo", type: "component" }],
+        labels: { plural: "Pages", singular: "Page" },
         slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
-        fields: [{ name: "seo", type: "component", component: "seo" }],
       },
     ];
 
@@ -167,9 +169,9 @@ describe("generateTypes", () => {
   it("handles repeatable component fields", () => {
     const collections: CollectionDefinition[] = [
       {
+        fields: [{ component: "block", name: "blocks", repeatable: true, type: "component" }],
+        labels: { plural: "Pages", singular: "Page" },
         slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
-        fields: [{ name: "blocks", type: "component", component: "block", repeatable: true }],
       },
     ];
 
@@ -180,9 +182,9 @@ describe("generateTypes", () => {
   it("handles dynamicZone fields", () => {
     const collections: CollectionDefinition[] = [
       {
+        fields: [{ components: ["hero", "text-block"], name: "content", type: "dynamicZone" }],
+        labels: { plural: "Pages", singular: "Page" },
         slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
-        fields: [{ name: "content", type: "dynamicZone", components: ["hero", "text-block"] }],
       },
     ];
 
@@ -193,18 +195,18 @@ describe("generateTypes", () => {
   it("handles array fields", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
         fields: [
           {
-            name: "items",
-            type: "array",
             fields: [
               { name: "label", type: "text" },
               { name: "count", type: "number" },
             ],
+            name: "items",
+            type: "array",
           },
         ],
+        labels: { plural: "Pages", singular: "Page" },
+        slug: "pages",
       },
     ];
 
@@ -215,12 +217,12 @@ describe("generateTypes", () => {
   it("handles object and group fields", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
         fields: [
-          { name: "metadata", type: "object", fields: [{ name: "key", type: "text" }] },
-          { name: "group", type: "group", fields: [{ name: "val", type: "number" }] },
+          { fields: [{ name: "key", type: "text" }], name: "metadata", type: "object" },
+          { fields: [{ name: "val", type: "number" }], name: "group", type: "group" },
         ],
+        labels: { plural: "Pages", singular: "Page" },
+        slug: "pages",
       },
     ];
 
@@ -232,9 +234,9 @@ describe("generateTypes", () => {
   it("handles repeater fields", () => {
     const collections: CollectionDefinition[] = [
       {
+        fields: [{ fields: [{ name: "name", type: "text" }], name: "items", type: "repeater" }],
+        labels: { plural: "Pages", singular: "Page" },
         slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
-        fields: [{ name: "items", type: "repeater", fields: [{ name: "name", type: "text" }] }],
       },
     ];
 
@@ -245,23 +247,23 @@ describe("generateTypes", () => {
   it("handles tabs fields", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
         fields: [
           {
             name: "tab_fields",
-            type: "tabs",
             tabs: [
               {
-                label: "Content",
                 fields: [
                   { name: "title", type: "text" },
                   { name: "body", type: "richText" },
                 ],
+                label: "Content",
               },
             ],
+            type: "tabs",
           },
         ],
+        labels: { plural: "Pages", singular: "Page" },
+        slug: "pages",
       },
     ];
 
@@ -272,9 +274,9 @@ describe("generateTypes", () => {
   it("handles unknown field type via default", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "test",
-        labels: { singular: "Test", plural: "Tests" },
         fields: [{ name: "custom", type: "unknown-type" as never }],
+        labels: { plural: "Tests", singular: "Test" },
+        slug: "test",
       },
     ];
 
@@ -285,13 +287,13 @@ describe("generateTypes", () => {
   it("handles localized fields", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
         fields: [
-          { name: "title", type: "text", localized: true },
-          { name: "body", type: "richText", localized: true },
-          { name: "count", type: "number", localized: true },
+          { localized: true, name: "title", type: "text" },
+          { localized: true, name: "body", type: "richText" },
+          { localized: true, name: "count", type: "number" },
         ],
+        labels: { plural: "Pages", singular: "Page" },
+        slug: "pages",
       },
     ];
 
@@ -304,9 +306,9 @@ describe("generateTypes", () => {
   it("handles localized relation field via switch path", () => {
     const collections: CollectionDefinition[] = [
       {
+        fields: [{ localized: true, name: "author", to: "users", type: "relation" }],
+        labels: { plural: "Pages", singular: "Page" },
         slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
-        fields: [{ name: "author", type: "relation", to: "users", localized: true }],
       },
     ];
 
@@ -317,9 +319,9 @@ describe("generateTypes", () => {
   it("handles localized component field via switch path", () => {
     const collections: CollectionDefinition[] = [
       {
+        fields: [{ component: "seo", localized: true, name: "seo", type: "component" }],
+        labels: { plural: "Pages", singular: "Page" },
         slug: "pages",
-        labels: { singular: "Page", plural: "Pages" },
-        fields: [{ name: "seo", type: "component", component: "seo", localized: true }],
       },
     ];
 
@@ -330,9 +332,9 @@ describe("generateTypes", () => {
   it("handles manyToOne relation", () => {
     const collections: CollectionDefinition[] = [
       {
+        fields: [{ kind: "manyToOne", name: "author", to: "users", type: "relation" }],
+        labels: { plural: "Posts", singular: "Post" },
         slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
-        fields: [{ name: "author", type: "relation", to: "users", kind: "manyToOne" }],
       },
     ];
 
@@ -345,7 +347,7 @@ describe("generateTypesToFile", () => {
   let tmpDir: string;
 
   afterEach(async () => {
-    if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
+    if (tmpDir) await rm(tmpDir, { force: true, recursive: true });
   });
 
   it("writes generated types to a file", async () => {
@@ -354,9 +356,9 @@ describe("generateTypesToFile", () => {
 
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
     ];
 

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
-import { SchemaLoader } from "@arche-cms/schema";
 import { generateTypesToFile } from "@arche-cms/generators";
+import { SchemaLoader } from "@arche-cms/schema";
 
 export interface TypegenOptions {
   dir?: string;
@@ -35,7 +35,7 @@ export async function typegen(options: TypegenOptions): Promise<void> {
   const globals = [...schemas.globals.values()];
   const components = [...schemas.components.values()];
 
-  await generateTypesToFile({ collections, globals, components, outputPath: outPath });
+  await generateTypesToFile({ collections, components, globals, outputPath: outPath });
 
   console.log(`[cms] Types generated to ${outPath}`);
 }

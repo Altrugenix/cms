@@ -1,52 +1,54 @@
-import { describe, it, expect } from "vitest";
-import type { CollectionDefinition } from "@arche-cms/types";
 import type { DatabaseAdapter } from "@arche-cms/database";
+import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
 import { generateResolvers } from "../src/resolvers.js";
 
 const mockAdapter: DatabaseAdapter = {
-  findOne: async () => null,
-  findMany: async () => ({ data: [], total: 0 }),
-  create: async () => ({}),
-  update: async () => null,
-  delete: async () => true,
   connect: async () => {},
-  disconnect: async () => {},
-  transaction: async <T>(fn: () => Promise<T>) => fn(),
-  raw: async () => [],
+  create: async () => ({}),
   createTable: async () => {},
+  delete: async () => true,
+  deleteMany: async () => 0,
+  disconnect: async () => {},
   dropTable: async () => {},
-  runMigration: async () => {},
+  findMany: async () => ({ data: [], total: 0 }),
+  findOne: async () => null,
   getExecutedMigrations: async () => [],
   getExistingSchema: async () => ({ tables: new Map() }),
-  deleteMany: async () => 0,
+  raw: async () => [],
+  runMigration: async () => {},
+  transaction: async <T>(fn: () => Promise<T>) => fn(),
+  update: async () => null,
 };
 
 const localizedCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
-    { name: "title", type: "text", localized: true },
+    { localized: true, name: "title", type: "text" },
     { name: "body", type: "text" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
   localization: {
-    locales: ["en", "fr"],
     defaultLocale: "en",
+    locales: ["en", "fr"],
   },
+  slug: "posts",
 };
 
 const collectionWithArrayRelation: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text" },
-    { name: "tags", type: "relation", to: "tags" },
+    { name: "tags", to: "tags", type: "relation" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 const tagsCollection: CollectionDefinition = {
-  slug: "tags",
-  labels: { singular: "Tag", plural: "Tags" },
   fields: [{ name: "name", type: "text" }],
+  labels: { plural: "Tags", singular: "Tag" },
+  slug: "tags",
 };
 
 describe("resolvers - localization", () => {
@@ -56,9 +58,9 @@ describe("resolvers - localization", () => {
       findMany: async () => ({
         data: [
           {
+            body: "Static body",
             id: "1",
             title: { en: "Hello EN", fr: "Hello FR" },
-            body: "Static body",
           },
         ],
         total: 1,
@@ -83,9 +85,9 @@ describe("resolvers - localization", () => {
       findMany: async () => ({
         data: [
           {
+            body: "Body",
             id: "1",
             title: { en: "Hello EN" },
-            body: "Body",
           },
         ],
         total: 1,
@@ -109,9 +111,9 @@ describe("resolvers - localization", () => {
       findMany: async () => ({
         data: [
           {
+            body: "Body",
             id: "1",
             title: { de: "Hallo DE" },
-            body: "Body",
           },
         ],
         total: 1,
@@ -135,9 +137,9 @@ describe("resolvers - localization", () => {
       findMany: async () => ({
         data: [
           {
+            body: "Body",
             id: "1",
             title: "Plain title",
-            body: "Body",
           },
         ],
         total: 1,
@@ -156,9 +158,9 @@ describe("resolvers - localization", () => {
     const adapter = {
       ...mockAdapter,
       findOne: async () => ({
+        body: "Body",
         id: "1",
         title: { en: "Title EN", fr: "Title FR" },
-        body: "Body",
       }),
     };
 
@@ -177,9 +179,9 @@ describe("resolvers - localization", () => {
     const adapter = {
       ...mockAdapter,
       findOne: async () => ({
+        body: "Body",
         id: "1",
         title: "Plain",
-        body: "Body",
       }),
     };
 
@@ -193,9 +195,9 @@ describe("resolvers - localization", () => {
 
   it("single get with locale but no localized fields does not modify data", async () => {
     const nonLocalizedCollection: CollectionDefinition = {
-      slug: "items",
-      labels: { singular: "Item", plural: "Items" },
       fields: [{ name: "name", type: "text" }],
+      labels: { plural: "Items", singular: "Item" },
+      slug: "items",
     };
 
     const adapter = {
@@ -233,8 +235,8 @@ describe("resolvers - relation with array value", () => {
 
     const result = await resolvers.Posts.tags({
       id: "1",
-      title: "Post",
       tags: ["tag-1", "tag-2"],
+      title: "Post",
     });
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(2);
@@ -242,9 +244,9 @@ describe("resolvers - relation with array value", () => {
 
   it("resolves missing target collection relation as undefined", () => {
     const orphanCollection: CollectionDefinition = {
+      fields: [{ name: "ref", to: "nonexistent", type: "relation" }],
+      labels: { plural: "Orphans", singular: "Orphan" },
       slug: "orphans",
-      labels: { singular: "Orphan", plural: "Orphans" },
-      fields: [{ name: "ref", type: "relation", to: "nonexistent" }],
     };
 
     const resolvers = generateResolvers([orphanCollection], mockAdapter);
@@ -313,21 +315,21 @@ describe("resolvers - normalizeLocaleData", () => {
     let capturedData: unknown;
     const adapter = {
       ...mockAdapter,
-      findOne: async () => ({ id: "1", title: "old", body: "old" }),
       create: async (_table: string, data: unknown) => {
         capturedData = data;
         return { id: "1", ...(data as Record<string, unknown>) };
       },
+      findOne: async () => ({ body: "old", id: "1", title: "old" }),
     };
 
     const resolvers = generateResolvers([localizedCollection], adapter) as {
       Mutation: Record<string, (...args: unknown[]) => unknown>;
     };
 
-    await resolvers.Mutation.createPosts({}, { data: { title: { en: "Hello" }, body: "World" } });
+    await resolvers.Mutation.createPosts({}, { data: { body: "World", title: { en: "Hello" } } });
     expect(capturedData).toEqual({
-      title: { en: "Hello" },
       body: "World",
+      title: { en: "Hello" },
     });
   });
 
@@ -335,7 +337,7 @@ describe("resolvers - normalizeLocaleData", () => {
     let capturedData: unknown;
     const adapter = {
       ...mockAdapter,
-      findOne: async () => ({ id: "1", title: "old", body: "old" }),
+      findOne: async () => ({ body: "old", id: "1", title: "old" }),
       update: async (_table: string, _id: string, data: unknown) => {
         capturedData = data;
         return { id: "1", ...(data as Record<string, unknown>) };
@@ -346,7 +348,7 @@ describe("resolvers - normalizeLocaleData", () => {
       Mutation: Record<string, (...args: unknown[]) => unknown>;
     };
 
-    await resolvers.Mutation.updatePosts({}, { id: "1", data: { title: { en: "Updated" } } });
+    await resolvers.Mutation.updatePosts({}, { data: { title: { en: "Updated" } }, id: "1" });
     expect(capturedData).toEqual(
       expect.objectContaining({
         title: { en: "Updated" },
@@ -369,11 +371,11 @@ describe("resolvers - normalizeLocaleData", () => {
 
     await resolvers.Mutation.createPosts(
       {},
-      { data: { title: { en: "Already object" }, body: "x" } },
+      { data: { body: "x", title: { en: "Already object" } } },
     );
     expect(capturedData).toEqual({
-      title: { en: "Already object" },
       body: "x",
+      title: { en: "Already object" },
     });
   });
 
@@ -394,9 +396,9 @@ describe("resolvers - filterLocale with primitive values", () => {
       findMany: async () => ({
         data: [
           {
+            body: "Body",
             id: "1",
             title: "Plain string title",
-            body: "Body",
           },
         ],
         total: 1,
@@ -418,9 +420,9 @@ describe("resolvers - filterLocale with primitive values", () => {
     const adapter = {
       ...mockAdapter,
       findOne: async () => ({
+        body: "Body",
         id: "1",
         title: 42,
-        body: "Body",
       }),
     };
 
@@ -441,9 +443,9 @@ describe("resolvers - filterLocale with primitive values", () => {
       findMany: async () => ({
         data: [
           {
+            body: "Body",
             id: "1",
             title: ["a", "b"],
-            body: "Body",
           },
         ],
         total: 1,
@@ -462,16 +464,16 @@ describe("resolvers - filterLocale with primitive values", () => {
   });
 });
 
-describe("resolvers - filterLocale with primitive values", () => {
+describe("resolvers - filterLocale with nested arrays", () => {
   it("returns primitive localized field as-is when queried with locale", async () => {
     const adapter = {
       ...mockAdapter,
       findMany: async () => ({
         data: [
           {
+            body: "Body",
             id: "1",
             title: "Plain string title",
-            body: "Body",
           },
         ],
         total: 1,
@@ -493,9 +495,9 @@ describe("resolvers - filterLocale with primitive values", () => {
     const adapter = {
       ...mockAdapter,
       findOne: async () => ({
+        body: "Body",
         id: "1",
         title: 42,
-        body: "Body",
       }),
     };
 
@@ -512,16 +514,16 @@ describe("resolvers - filterLocale with primitive values", () => {
 
   it("returns boolean localized field as-is when queried with locale", async () => {
     const boolCollection: CollectionDefinition = {
+      fields: [{ localized: true, name: "active", type: "boolean" }],
+      labels: { plural: "Flags", singular: "Flag" },
+      localization: { defaultLocale: "en", locales: ["en", "fr"] },
       slug: "flags",
-      labels: { singular: "Flag", plural: "Flags" },
-      fields: [{ name: "active", type: "boolean", localized: true }],
-      localization: { locales: ["en", "fr"], defaultLocale: "en" },
     };
 
     const adapter = {
       ...mockAdapter,
       findMany: async () => ({
-        data: [{ id: "1", active: true }],
+        data: [{ active: true, id: "1" }],
         total: 1,
       }),
     };

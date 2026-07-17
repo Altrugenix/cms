@@ -1,12 +1,14 @@
-import { writeFile, unlink, mkdir } from "node:fs/promises";
-import { resolve } from "node:path";
-import { existsSync } from "node:fs";
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import type { ServerConfig } from "../config.js";
-import { SchemaLoader } from "@arche-cms/schema";
-import { MigrationGenerator, MigrationRunner } from "@arche-cms/database";
 import type { DatabaseAdapter } from "@arche-cms/database";
 import type { FieldDefinition, CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+
+import { MigrationGenerator, MigrationRunner } from "@arche-cms/database";
+import { SchemaLoader } from "@arche-cms/schema";
+import { existsSync } from "node:fs";
+import { writeFile, unlink, mkdir } from "node:fs/promises";
+import { resolve } from "node:path";
+
+import type { ServerConfig } from "../config.js";
 
 interface SchemaInfo {
   slug: string;
@@ -45,14 +47,14 @@ function normalizeOptions(opts: unknown[]): string[] {
 
 function buildFieldMeta(f: FieldDefinition): Record<string, unknown> {
   const base: Record<string, unknown> = {
-    name: f.name,
-    type: f.type,
-    label: f.label ?? f.name,
-    required: f.validation?.required ?? false,
-    localized: f.localized,
-    validation: f.validation,
     admin: f.admin,
     defaultValue: f.defaultValue,
+    label: f.label ?? f.name,
+    localized: f.localized,
+    name: f.name,
+    required: f.validation?.required ?? false,
+    type: f.type,
+    validation: f.validation,
   };
   const rf = f as unknown as Record<string, unknown>;
   if ("to" in rf) base.to = rf.to;
@@ -72,8 +74,8 @@ function buildFieldMeta(f: FieldDefinition): Record<string, unknown> {
   }
   if ("tabs" in rf && Array.isArray(rf.tabs)) {
     base.tabs = (rf.tabs as Array<{ label: string; fields: FieldDefinition[] }>).map((t) => ({
-      label: t.label,
       fields: t.fields.map(buildFieldMeta),
+      label: t.label,
     }));
   }
   return base;
@@ -81,19 +83,19 @@ function buildFieldMeta(f: FieldDefinition): Record<string, unknown> {
 
 function buildCollectionMeta(collections: CollectionDefinition[]): CollectionMeta[] {
   return collections.map((c) => ({
-    slug: c.slug,
+    fields: (c.fields ?? []).map(buildFieldMeta) as CollectionMeta["fields"],
     label: c.labels?.plural ?? c.slug,
     labels: c.labels,
+    slug: c.slug,
     versions: c.versions,
-    fields: (c.fields ?? []).map(buildFieldMeta) as CollectionMeta["fields"],
   }));
 }
 
 function buildGlobalMeta(globals: GlobalDefinition[]): GlobalMeta[] {
   return globals.map((g) => ({
-    slug: g.slug,
-    label: g.label,
     fields: (g.fields ?? []).map(buildFieldMeta) as GlobalMeta["fields"],
+    label: g.label,
+    slug: g.slug,
   }));
 }
 
@@ -143,33 +145,33 @@ export function registerSchemaRoutes(
       const d = def as unknown as Record<string, unknown>;
       const labels = d.labels as { singular?: string; plural?: string } | undefined;
       result.push({
-        slug: def.slug,
-        label: labels?.singular ?? def.slug,
-        type: "collection",
         fields: def.fields,
+        label: labels?.singular ?? def.slug,
         meta: { labels, timestamps: d.timestamps },
+        slug: def.slug,
+        type: "collection",
       });
     }
     for (const [, def] of loaded.globals) {
       const d = def as unknown as Record<string, unknown>;
       const label = d.label as string | undefined;
       result.push({
-        slug: def.slug,
-        label: label ?? def.slug,
-        type: "global",
         fields: def.fields,
+        label: label ?? def.slug,
         meta: { label },
+        slug: def.slug,
+        type: "global",
       });
     }
     for (const [, def] of loaded.components) {
       const d = def as unknown as Record<string, unknown>;
       const label = d.label as string | undefined;
       result.push({
-        slug: def.slug,
-        label: label ?? def.slug,
-        type: "component",
         fields: def.fields,
+        label: label ?? def.slug,
         meta: { label },
+        slug: def.slug,
+        type: "component",
       });
     }
     return result;
@@ -181,8 +183,8 @@ export function registerSchemaRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "List schemas",
         description: "Returns all collection, global, and component schema definitions",
+        summary: "List schemas",
         tags: ["Schemas"],
       },
     },
@@ -203,21 +205,21 @@ export function registerSchemaRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Get schema",
         description: "Returns a single schema definition by type and slug",
-        tags: ["Schemas"],
         params: {
-          type: "object",
           properties: {
-            type: { type: "string", enum: ["collection", "global", "component"] },
             slug: { type: "string" },
+            type: { enum: ["collection", "global", "component"], type: "string" },
           },
+          type: "object",
         },
+        summary: "Get schema",
+        tags: ["Schemas"],
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { type, slug } = request.params as { type: string; slug: string };
+        const { slug, type } = request.params as { type: string; slug: string };
         const schemas = await loadSchemas();
         const schema = schemas.find((s) => s.type === type && s.slug === slug);
         if (!schema) return reply.status(404).send({ error: "Schema not found" });
@@ -257,35 +259,35 @@ export function registerSchemaRoutes(
 
   // helpers for code generation
   const FIELD_HELPER_MAP: Record<string, string> = {
-    text: "text",
-    textarea: "textarea",
-    number: "number",
+    array: "array",
     boolean: "boolean",
-    date: "date",
-    datetime: "datetime",
-    email: "email",
-    password: "password",
-    url: "url",
-    json: "json",
-    richText: "richText",
-    markdown: "markdown",
+    checkbox: "checkbox",
     code: "code",
     color: "color",
-    media: "media",
-    upload: "upload",
-    select: "select",
-    multiSelect: "multiSelect",
-    radio: "radio",
-    checkbox: "checkbox",
-    relation: "relation",
     component: "component",
+    date: "date",
+    datetime: "datetime",
     dynamicZone: "dynamicZone",
-    slug: "slug",
-    array: "array",
-    object: "object",
+    email: "email",
     group: "group",
+    json: "json",
+    markdown: "markdown",
+    media: "media",
+    multiSelect: "multiSelect",
+    number: "number",
+    object: "object",
+    password: "password",
+    radio: "radio",
+    relation: "relation",
     repeater: "repeater",
+    richText: "richText",
+    select: "select",
+    slug: "slug",
     tabs: "tabs",
+    text: "text",
+    textarea: "textarea",
+    upload: "upload",
+    url: "url",
   };
 
   function serializeValidation(val: Record<string, unknown> | undefined): string {
@@ -323,14 +325,16 @@ export function registerSchemaRoutes(
   }
 
   const TYPE_SERIALIZERS: Record<string, (f: FieldDefinition) => string> = {
-    relation(f) {
-      const rf = f as { to?: string; kind?: string };
-      return [
-        rf.to && `to: ${JSON.stringify(rf.to)}`,
-        rf.kind && `kind: ${JSON.stringify(rf.kind)}`,
-      ]
-        .filter(Boolean)
-        .join(", ");
+    array(f) {
+      return serializeNested(f);
+    },
+    code(f) {
+      const cf = f as { language?: string };
+      return cf.language ? `language: ${JSON.stringify(cf.language)}` : "";
+    },
+    color(f) {
+      const cf = f as { format?: string };
+      return cf.format ? `format: ${JSON.stringify(cf.format)}` : "";
     },
     component(f) {
       const cf = f as { component?: string; repeatable?: boolean };
@@ -345,28 +349,38 @@ export function registerSchemaRoutes(
       const df = f as { components?: string[] };
       return df.components ? `components: ${JSON.stringify(df.components)}` : "";
     },
-    slug(f) {
-      const sf = f as { source?: string; unique?: boolean };
-      return [
-        sf.source && `source: ${JSON.stringify(sf.source)}`,
-        sf.unique !== undefined && `unique: ${String(sf.unique)}`,
-      ]
-        .filter(Boolean)
-        .join(", ");
-    },
-    code(f) {
-      const cf = f as { language?: string };
-      return cf.language ? `language: ${JSON.stringify(cf.language)}` : "";
-    },
-    color(f) {
-      const cf = f as { format?: string };
-      return cf.format ? `format: ${JSON.stringify(cf.format)}` : "";
+    group(f) {
+      return serializeNested(f);
     },
     media(f) {
       const mf = f as { multiple?: boolean; allowedTypes?: string[] };
       return [
         mf.multiple !== undefined && `multiple: ${String(mf.multiple)}`,
         mf.allowedTypes && `allowedTypes: ${JSON.stringify(mf.allowedTypes)}`,
+      ]
+        .filter(Boolean)
+        .join(", ");
+    },
+    object(f) {
+      return serializeNested(f);
+    },
+    relation(f) {
+      const rf = f as { to?: string; kind?: string };
+      return [
+        rf.to && `to: ${JSON.stringify(rf.to)}`,
+        rf.kind && `kind: ${JSON.stringify(rf.kind)}`,
+      ]
+        .filter(Boolean)
+        .join(", ");
+    },
+    repeater(f) {
+      return serializeNested(f);
+    },
+    slug(f) {
+      const sf = f as { source?: string; unique?: boolean };
+      return [
+        sf.source && `source: ${JSON.stringify(sf.source)}`,
+        sf.unique !== undefined && `unique: ${String(sf.unique)}`,
       ]
         .filter(Boolean)
         .join(", ");
@@ -379,18 +393,6 @@ export function registerSchemaRoutes(
       ]
         .filter(Boolean)
         .join(", ");
-    },
-    array(f) {
-      return serializeNested(f);
-    },
-    object(f) {
-      return serializeNested(f);
-    },
-    group(f) {
-      return serializeNested(f);
-    },
-    repeater(f) {
-      return serializeNested(f);
     },
   };
 
@@ -523,25 +525,25 @@ export function registerSchemaRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Create schema",
-        description: "Create a new collection, global, or component schema as a .ts file on disk",
-        tags: ["Schemas"],
-        params: {
-          type: "object",
-          properties: {
-            type: { type: "string", enum: ["collection", "global", "component"] },
-          },
-        },
         body: {
-          type: "object",
-          required: ["slug"],
           properties: {
-            slug: { type: "string" },
+            fields: { items: { type: "object" }, type: "array" },
             label: { type: "string" },
-            fields: { type: "array", items: { type: "object" } },
             meta: { type: "object" },
+            slug: { type: "string" },
           },
+          required: ["slug"],
+          type: "object",
         },
+        description: "Create a new collection, global, or component schema as a .ts file on disk",
+        params: {
+          properties: {
+            type: { enum: ["collection", "global", "component"], type: "string" },
+          },
+          type: "object",
+        },
+        summary: "Create schema",
+        tags: ["Schemas"],
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -563,8 +565,8 @@ export function registerSchemaRoutes(
 
         const dirMap: Record<string, string> = {
           collection: "collections",
-          global: "globals",
           component: "components",
+          global: "globals",
         };
         const dir = dirMap[type];
         if (!dir) {
@@ -589,7 +591,7 @@ export function registerSchemaRoutes(
         const label = body.label ?? body.slug;
         const meta: Record<string, unknown> = { ...(body.meta ?? {}), label };
         if (type === "collection") {
-          meta.labels = meta.labels ?? { singular: label, plural: `${label}s` };
+          meta.labels = meta.labels ?? { plural: `${label}s`, singular: label };
         }
 
         const code = generateSchemaCode(type, body.slug, fields, meta);
@@ -613,29 +615,29 @@ export function registerSchemaRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Update schema",
-        description: "Overwrite an existing schema definition file on disk",
-        tags: ["Schemas"],
-        params: {
-          type: "object",
-          properties: {
-            type: { type: "string", enum: ["collection", "global", "component"] },
-            slug: { type: "string" },
-          },
-        },
         body: {
-          type: "object",
           properties: {
+            fields: { items: { type: "object" }, type: "array" },
             label: { type: "string" },
-            fields: { type: "array", items: { type: "object" } },
             meta: { type: "object" },
           },
+          type: "object",
         },
+        description: "Overwrite an existing schema definition file on disk",
+        params: {
+          properties: {
+            slug: { type: "string" },
+            type: { enum: ["collection", "global", "component"], type: "string" },
+          },
+          type: "object",
+        },
+        summary: "Update schema",
+        tags: ["Schemas"],
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { type, slug } = request.params as { type: string; slug: string };
+        const { slug, type } = request.params as { type: string; slug: string };
         const body = request.body as {
           fields?: FieldDefinition[];
           meta?: Record<string, unknown>;
@@ -644,8 +646,8 @@ export function registerSchemaRoutes(
 
         const dirMap: Record<string, string> = {
           collection: "collections",
-          global: "globals",
           component: "components",
+          global: "globals",
         };
         const dir = dirMap[type];
         if (!dir) {
@@ -665,7 +667,7 @@ export function registerSchemaRoutes(
         const label = body.label ?? slug;
         const meta: Record<string, unknown> = { ...(body.meta ?? {}), label };
         if (type === "collection") {
-          meta.labels = meta.labels ?? { singular: label, plural: `${label}s` };
+          meta.labels = meta.labels ?? { plural: `${label}s`, singular: label };
         }
 
         const code = generateSchemaCode(type, slug, fields, meta);
@@ -689,26 +691,26 @@ export function registerSchemaRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Delete schema",
         description:
           "Delete a schema definition file from disk (requires manage:schemas permission)",
-        tags: ["Schemas"],
         params: {
-          type: "object",
           properties: {
-            type: { type: "string", enum: ["collection", "global", "component"] },
             slug: { type: "string" },
+            type: { enum: ["collection", "global", "component"], type: "string" },
           },
+          type: "object",
         },
+        summary: "Delete schema",
+        tags: ["Schemas"],
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { type, slug } = request.params as { type: string; slug: string };
+        const { slug, type } = request.params as { type: string; slug: string };
         const dirMap: Record<string, string> = {
           collection: "collections",
-          global: "globals",
           component: "components",
+          global: "globals",
         };
         const dir = dirMap[type];
         if (!dir) {

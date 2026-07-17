@@ -1,8 +1,9 @@
+import type { CollectionDefinition, GlobalDefinition, ComponentDefinition } from "@arche-cms/types";
+
+import { EventEmitter } from "node:events";
 import { watch, existsSync, mkdirSync } from "node:fs";
 import { resolve, relative } from "node:path";
 import { pathToFileURL } from "node:url";
-import { EventEmitter } from "node:events";
-import type { CollectionDefinition, GlobalDefinition, ComponentDefinition } from "@arche-cms/types";
 
 type SchemaCategory = "collections" | "globals" | "components";
 type SchemaDefinition = CollectionDefinition | GlobalDefinition | ComponentDefinition;
@@ -99,18 +100,18 @@ export class SchemaWatcher extends EventEmitter {
       const def = mod.default ?? mod;
       if (def && typeof def === "object" && "slug" in def) {
         this.emit("change", {
-          type: "changed",
           category,
-          slug: def.slug ?? slug,
           definition: def as SchemaDefinition,
+          slug: def.slug ?? slug,
+          type: "changed",
         } satisfies SchemaChangeEvent);
       }
     } catch {
       // File may have been deleted or contains errors
       this.emit("change", {
-        type: "removed",
         category,
         slug,
+        type: "removed",
       } satisfies SchemaChangeEvent);
     }
   }

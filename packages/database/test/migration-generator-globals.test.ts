@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { MigrationGenerator } from "../src/migration-generator.js";
+
 import type { CollectionDefinition, GlobalDefinition, ExistingSchema } from "../src/index.js";
+
+import { MigrationGenerator } from "../src/migration-generator.js";
 
 const emptySchema: ExistingSchema = {
   tables: new Map([
@@ -13,12 +15,12 @@ describe("MigrationGenerator - globals", () => {
     const generator = new MigrationGenerator();
     const globals: GlobalDefinition[] = [
       {
-        slug: "site-settings",
-        label: "Site Settings",
         fields: [
           { name: "siteName", type: "text", validation: { required: true } },
           { name: "logo", type: "media" },
         ],
+        label: "Site Settings",
+        slug: "site-settings",
       },
     ];
 
@@ -38,12 +40,12 @@ describe("MigrationGenerator - globals", () => {
     const generator = new MigrationGenerator();
     const globals: GlobalDefinition[] = [
       {
-        slug: "site-settings",
-        label: "Site Settings",
         fields: [
           { name: "siteName", type: "text" },
           { name: "newField", type: "text" },
         ],
+        label: "Site Settings",
+        slug: "site-settings",
       },
     ];
 
@@ -66,9 +68,9 @@ describe("MigrationGenerator - globals", () => {
     const generator = new MigrationGenerator();
     const globals: GlobalDefinition[] = [
       {
-        slug: "site-settings",
-        label: "Site Settings",
         fields: [{ name: "siteName", type: "text" }],
+        label: "Site Settings",
+        slug: "site-settings",
       },
     ];
 
@@ -99,9 +101,9 @@ describe("MigrationGenerator - globals", () => {
     const generator = new MigrationGenerator();
     const globals: GlobalDefinition[] = [
       {
-        slug: "empty-global",
-        label: "Empty Global",
         fields: [],
+        label: "Empty Global",
+        slug: "empty-global",
       },
     ];
 
@@ -116,9 +118,9 @@ describe("MigrationGenerator - globals", () => {
     const generator = new MigrationGenerator();
     const globals: GlobalDefinition[] = [
       {
-        slug: "site-settings",
-        label: "Site Settings",
         fields: [{ name: "siteName", type: "text" }],
+        label: "Site Settings",
+        slug: "site-settings",
       },
     ];
 
@@ -137,16 +139,16 @@ describe("MigrationGenerator - globals", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
     ];
     const globals: GlobalDefinition[] = [
       {
-        slug: "settings",
-        label: "Settings",
         fields: [{ name: "key", type: "text" }],
+        label: "Settings",
+        slug: "settings",
       },
     ];
 

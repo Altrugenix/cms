@@ -1,25 +1,26 @@
-import { useState } from "react";
 import { createRoute } from "@tanstack/react-router";
-import { Route as settingsRoute } from "@/routes/settings/index";
+import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
+import { useState } from "react";
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
-import { type ApiTokenMeta } from "@/lib/api";
-import { useApiTokensList, useCreateApiToken, useDeleteApiToken } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
+import { type ApiTokenMeta } from "@/lib/api";
+import { useApiTokensList, useCreateApiToken, useDeleteApiToken } from "@/lib/hooks";
+import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  component: ApiTokensPage,
   getParentRoute: () => settingsRoute,
   path: "api-tokens",
-  component: ApiTokensPage,
 });
 
 function ApiTokensPage() {
   const { toast } = useToast();
-  const { data: tokensData, isLoading: loading, error } = useApiTokensList();
+  const { data: tokensData, error, isLoading: loading } = useApiTokensList();
   const createApiToken = useCreateApiToken();
   const deleteApiToken = useDeleteApiToken();
   const tokens: ApiTokenMeta[] = tokensData?.data ?? [];
@@ -39,8 +40,8 @@ function ApiTokensPage() {
     if (!newName.trim()) return;
     try {
       const result = await createApiToken.mutateAsync({
-        name: newName.trim(),
         description: newDescription.trim() || undefined,
+        name: newName.trim(),
       });
       setCreatedToken({ name: result.token.name, rawToken: result.rawToken });
       setNewName("");

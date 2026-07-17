@@ -27,8 +27,8 @@ export class Container {
   registerInstance<T>(name: string, instance: T): void {
     this.registrations.set(name, {
       factory: () => instance,
-      singleton: true,
       instance,
+      singleton: true,
     });
   }
 

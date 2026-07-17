@@ -1,29 +1,31 @@
+/* eslint-disable no-secrets/no-secrets */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 vi.mock("bcryptjs", () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue("$2b$12$hashedpasswordvalue1234567890abcde"),
-    compare: vi.fn().mockImplementation((pw: string, hash: string) => {
-      return Promise.resolve(
-        pw === "correct-password" || (hash.startsWith("$2b$") && pw !== "wrong-password"),
-      );
-    }),
-  },
-  hash: vi.fn().mockResolvedValue("$2b$12$hashedpasswordvalue1234567890abcde"),
   compare: vi.fn().mockImplementation((pw: string, hash: string) => {
     return Promise.resolve(
       pw === "correct-password" || (hash.startsWith("$2b$") && pw !== "wrong-password"),
     );
   }),
+  default: {
+    compare: vi.fn().mockImplementation((pw: string, hash: string) => {
+      return Promise.resolve(
+        pw === "correct-password" || (hash.startsWith("$2b$") && pw !== "wrong-password"),
+      );
+    }),
+    hash: vi.fn().mockResolvedValue("$2b$12$hashedpasswordvalue1234567890abcde"),
+  },
+  hash: vi.fn().mockResolvedValue("$2b$12$hashedpasswordvalue1234567890abcde"),
 }));
 
 import type { DatabaseAdapter } from "@arche-cms/database";
+
 import { AuthService } from "../src/service.js";
 
 const config = {
-  secret: "test-secret-at-least-32-chars-long-for-security!!",
   accessTokenExpiresIn: "15m",
   refreshTokenExpiresIn: "7d",
+  secret: "test-secret-at-least-32-chars-long-for-security!!",
 };
 
 function createMockAdapter(): DatabaseAdapter {
@@ -32,10 +34,30 @@ function createMockAdapter(): DatabaseAdapter {
   let nextId = 1;
 
   return {
-    findOne: async (collection, id) => {
-      if (collection === "__cms_users") return users.get(id) ?? null;
-      return null;
+    connect: async () => {},
+    create: async (collection, data) => {
+      if (collection === "__cms_users") {
+        const id = String(nextId++);
+        const record = { id, ...data };
+        users.set(id, record);
+        return record;
+      }
+      if (collection === "__cms_password_resets") {
+        const record = { id: String(nextId++), ...data };
+        resetTokens.push(record);
+        return record;
+      }
+      return data;
     },
+    createTable: async () => {},
+    delete: async (_collection, id) => {
+      const existed = users.has(id);
+      users.delete(id);
+      return existed;
+    },
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
     findMany: async (collection, options) => {
       if (collection === "__cms_users") {
         const all = [...users.values()];
@@ -51,20 +73,15 @@ function createMockAdapter(): DatabaseAdapter {
       }
       return { data: [], total: 0 };
     },
-    create: async (collection, data) => {
-      if (collection === "__cms_users") {
-        const id = String(nextId++);
-        const record = { id, ...data };
-        users.set(id, record);
-        return record;
-      }
-      if (collection === "__cms_password_resets") {
-        const record = { id: String(nextId++), ...data };
-        resetTokens.push(record);
-        return record;
-      }
-      return data;
+    findOne: async (collection, id) => {
+      if (collection === "__cms_users") return users.get(id) ?? null;
+      return null;
     },
+    getExecutedMigrations: async () => [],
+    getExistingSchema: async () => ({ tables: new Map() }),
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_collection, id, data) => {
       const existing = users.get(id);
       if (!existing) return null;
@@ -72,21 +89,6 @@ function createMockAdapter(): DatabaseAdapter {
       users.set(id, updated);
       return updated;
     },
-    delete: async (_collection, id) => {
-      const existed = users.has(id);
-      users.delete(id);
-      return existed;
-    },
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
-    getExistingSchema: async () => ({ tables: new Map() }),
   };
 }
 
@@ -183,7 +185,7 @@ describe("AuthService extra coverage", () => {
 
   describe("refresh with deleted user", () => {
     it("throws when user no longer exists", async () => {
-      const { user, tokens } = await service.register({
+      const { tokens, user } = await service.register({
         email: "gone@example.com",
         password: "pass",
       });
@@ -240,7 +242,7 @@ describe("AuthService extra coverage", () => {
     it("skips non-string tokens in reset search", async () => {
       await service.register({ email: "rp@example.com", password: "old" });
       await expect(
-        service.resetPassword({ token: "invalid-token-string", password: "new" }),
+        service.resetPassword({ password: "new", token: "invalid-token-string" }),
       ).rejects.toThrow("Invalid or expired reset token");
     });
   });

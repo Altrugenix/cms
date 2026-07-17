@@ -1,18 +1,19 @@
 import { createRoute } from "@tanstack/react-router";
-import { Route as settingsRoute } from "@/routes/settings/index";
+import { Puzzle } from "lucide-react";
+
 import { Skeleton } from "@/components/skeleton";
 import { type PluginMeta } from "@/lib/api";
 import { usePluginsList } from "@/lib/hooks";
-import { Puzzle } from "lucide-react";
+import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  component: PluginsPage,
   getParentRoute: () => settingsRoute,
   path: "plugins",
-  component: PluginsPage,
 });
 
 function PluginsPage() {
-  const { data: pluginsData, isLoading: loading, error } = usePluginsList();
+  const { data: pluginsData, error, isLoading: loading } = usePluginsList();
   const plugins: PluginMeta[] = pluginsData?.data ?? [];
   const total = pluginsData?.total ?? 0;
 

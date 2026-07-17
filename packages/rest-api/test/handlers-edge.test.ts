@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
 import type { CollectionDefinition, GlobalDefinition, DatabaseAdapter } from "@arche-cms/database";
+
+import { describe, it, expect, vi } from "vitest";
+
 import {
   createGlobalGetHandler,
   createGlobalUpsertHandler,
@@ -17,67 +19,67 @@ import {
 function createGlobalAdapter(): DatabaseAdapter {
   let globalStore: Record<string, unknown> | null = null;
   return {
-    findOne: async (_collection, id) => (id === "1" ? globalStore : null),
-    findMany: async () => ({ data: [], total: 0 }),
+    connect: async () => {},
     create: async (_collection, data) => {
       globalStore = { ...data };
       return globalStore;
     },
+    createTable: async () => {},
+    delete: async () => false,
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
+    findMany: async () => ({ data: [], total: 0 }),
+    findOne: async (_collection, id) => (id === "1" ? globalStore : null),
+    getExecutedMigrations: async () => [],
+    getTableName: () => "",
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_collection, id, data) => {
       if (id !== "1") return null;
       globalStore = { ...globalStore, ...data };
       return globalStore;
     },
-    delete: async () => false,
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
-    getTableName: () => "",
   };
 }
 
 function createMockAdapter(): DatabaseAdapter {
   return {
-    findOne: vi.fn(),
-    findMany: vi.fn(),
+    connect: vi.fn(),
     create: vi.fn(),
-    update: vi.fn(),
+    createTable: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),
-    connect: vi.fn(),
     disconnect: vi.fn(),
-    transaction: vi.fn(),
-    raw: vi.fn(),
-    createTable: vi.fn(),
     dropTable: vi.fn(),
-    runMigration: vi.fn(),
+    findMany: vi.fn(),
+    findOne: vi.fn(),
     getExecutedMigrations: vi.fn(),
     getTableName: vi.fn(),
+    raw: vi.fn(),
+    runMigration: vi.fn(),
+    transaction: vi.fn(),
+    update: vi.fn(),
   };
 }
 
 const globalDef: GlobalDefinition = {
-  slug: "site-settings",
-  label: "Site Settings",
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "description", type: "textarea" },
   ],
+  label: "Site Settings",
+  slug: "site-settings",
 };
 
 const collection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "slug", type: "slug", validation: { required: true } },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 describe("global handlers", () => {
@@ -85,7 +87,7 @@ describe("global handlers", () => {
     it("returns empty object when no record exists", async () => {
       const adapter = createGlobalAdapter();
       const handler = createGlobalGetHandler(globalDef, adapter);
-      const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+      const result = await handler({ body: null, headers: {}, params: {}, query: {} });
       expect(result.statusCode).toBe(200);
       expect(result.body).toEqual({});
     });
@@ -94,7 +96,7 @@ describe("global handlers", () => {
       const adapter = createGlobalAdapter();
       await adapter.create("__cms_site_settings", { title: "My Site" });
       const handler = createGlobalGetHandler(globalDef, adapter);
-      const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+      const result = await handler({ body: null, headers: {}, params: {}, query: {} });
       expect(result.statusCode).toBe(200);
       const body = result.body as Record<string, unknown>;
       expect(body.title).toBe("My Site");
@@ -106,10 +108,10 @@ describe("global handlers", () => {
       const adapter = createGlobalAdapter();
       const handler = createGlobalUpsertHandler(globalDef, adapter);
       const result = await handler({
-        params: {},
-        query: {},
         body: { title: "New Settings" },
         headers: {},
+        params: {},
+        query: {},
       });
       expect(result.statusCode).toBe(200);
       const body = result.body as Record<string, unknown>;
@@ -121,10 +123,10 @@ describe("global handlers", () => {
       await adapter.create("__cms_site_settings", { title: "Old" });
       const handler = createGlobalUpsertHandler(globalDef, adapter);
       const result = await handler({
-        params: {},
-        query: {},
         body: { title: "Updated" },
         headers: {},
+        params: {},
+        query: {},
       });
       expect(result.statusCode).toBe(200);
       const body = result.body as Record<string, unknown>;
@@ -134,7 +136,7 @@ describe("global handlers", () => {
     it("returns 400 for missing body", async () => {
       const adapter = createGlobalAdapter();
       const handler = createGlobalUpsertHandler(globalDef, adapter);
-      const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+      const result = await handler({ body: null, headers: {}, params: {}, query: {} });
       expect(result.statusCode).toBe(400);
     });
 
@@ -142,10 +144,10 @@ describe("global handlers", () => {
       const adapter = createAdapterWithUniqueError();
       const handler = createGlobalUpsertHandler(globalDef, adapter);
       const result = await handler({
-        params: {},
-        query: {},
         body: { title: "Test" },
         headers: {},
+        params: {},
+        query: {},
       });
       expect(result.statusCode).toBe(409);
       expect(result.body).toHaveProperty("code", "CONFLICT");
@@ -155,48 +157,48 @@ describe("global handlers", () => {
 
 function createAdapterWithUniqueError(): DatabaseAdapter {
   return {
-    findOne: async () => null,
-    findMany: async () => ({ data: [], total: 0 }),
+    connect: async () => {},
     create: async () => {
       throw new Error("UNIQUE constraint failed");
     },
+    createTable: async () => {},
+    delete: async () => false,
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
+    findMany: async () => ({ data: [], total: 0 }),
+    findOne: async () => null,
+    getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async () => {
       throw new Error("UNIQUE constraint failed");
     },
-    delete: async () => false,
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
   };
 }
 
 describe("unique constraint error handling", () => {
   function createAdapterWithUniqueError(): DatabaseAdapter {
     return {
-      findOne: async () => null,
-      findMany: async () => ({ data: [], total: 0 }),
+      connect: async () => {},
       create: async () => {
         throw new Error("UNIQUE constraint failed: posts.slug");
       },
+      createTable: async () => {},
+      delete: async () => false,
+      deleteMany: async () => 0,
+      disconnect: async () => {},
+      dropTable: async () => {},
+      findMany: async () => ({ data: [], total: 0 }),
+      findOne: async () => null,
+      getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
       update: async () => {
         throw new Error("UNIQUE constraint failed: posts.slug");
       },
-      delete: async () => false,
-      deleteMany: async () => 0,
-      connect: async () => {},
-      disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
-      dropTable: async () => {},
-      runMigration: async () => {},
-      getExecutedMigrations: async () => [],
     };
   }
 
@@ -204,10 +206,10 @@ describe("unique constraint error handling", () => {
     const adapter = createAdapterWithUniqueError();
     const handler = createCreateHandler(collection, adapter);
     const result = await handler({
+      body: { slug: "test", title: "Test" },
+      headers: {},
       params: {},
       query: {},
-      body: { title: "Test", slug: "test" },
-      headers: {},
     });
     expect(result.statusCode).toBe(409);
     expect(result.body).toHaveProperty("code", "CONFLICT");
@@ -217,10 +219,10 @@ describe("unique constraint error handling", () => {
     const adapter = createAdapterWithUniqueError();
     const handler = createUpdateHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: { slug: "taken" },
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(409);
     expect(result.body).toHaveProperty("code", "CONFLICT");
@@ -231,25 +233,25 @@ describe("getHandler with locale", () => {
   it("resolves to fallback locale when specified locale has no value", async () => {
     const adapter = createDraftAdapter();
     await adapter.create("__cms_posts", {
-      title: "Hello",
-      body: { es: "Hola" },
       _status: "published",
+      body: { es: "Hola" },
+      title: "Hello",
     });
     const localizedCollection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
-        { name: "title", type: "text", localized: true },
-        { name: "body", type: "text", localized: true },
+        { localized: true, name: "title", type: "text" },
+        { localized: true, name: "body", type: "text" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
       localization: { defaultLocale: "en", locales: ["en", "es"] },
+      slug: "posts",
     };
     const handler = createGetHandler(localizedCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { locale: "es" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { locale: "es" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -259,21 +261,21 @@ describe("getHandler with locale", () => {
   it("falls back to first key when neither locale nor default locale match", async () => {
     const adapter = createDraftAdapter();
     await adapter.create("__cms_posts", {
-      title: { de: "Hallo" },
       _status: "published",
+      title: { de: "Hallo" },
     });
     const localizedCollection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
-      fields: [{ name: "title", type: "text", localized: true }],
+      fields: [{ localized: true, name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
       localization: { defaultLocale: "en", locales: ["de"] },
+      slug: "posts",
     };
     const handler = createGetHandler(localizedCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { locale: "fr" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { locale: "fr" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -285,21 +287,21 @@ describe("getHandler with locale (filterLocale fallback)", () => {
   it("falls back to first key when neither locale nor default locale match", async () => {
     const adapter = createDraftAdapter();
     await adapter.create("__cms_posts", {
-      title: { de: "Hallo" },
       _status: "published",
+      title: { de: "Hallo" },
     });
     const localizedCollection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
-      fields: [{ name: "title", type: "text", localized: true }],
+      fields: [{ localized: true, name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
       localization: { defaultLocale: "en", locales: ["de"] },
+      slug: "posts",
     };
     const handler = createGetHandler(localizedCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { locale: "fr" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { locale: "fr" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -309,25 +311,25 @@ describe("getHandler with locale (filterLocale fallback)", () => {
   it("resolves to fallback locale when no locale param given", async () => {
     const adapter = createDraftAdapter();
     await adapter.create("__cms_posts", {
-      title: "Hello",
-      body: "World",
       _status: "published",
+      body: "World",
+      title: "Hello",
     });
     const localizedCollection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
-        { name: "title", type: "text", localized: true },
-        { name: "body", type: "text", localized: true },
+        { localized: true, name: "title", type: "text" },
+        { localized: true, name: "body", type: "text" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
       localization: { defaultLocale: "en", locales: ["en"] },
+      slug: "posts",
     };
     const handler = createGetHandler(localizedCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -337,21 +339,21 @@ describe("getHandler with locale (filterLocale fallback)", () => {
   it("returns record without modification when locale not specified", async () => {
     const adapter = createDraftAdapter();
     await adapter.create("__cms_posts", {
-      title: { en: "Hello" },
       _status: "published",
+      title: { en: "Hello" },
     });
     const localizedCollection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
-      fields: [{ name: "title", type: "text", localized: true }],
+      fields: [{ localized: true, name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
       localization: { defaultLocale: "en", locales: ["en"] },
+      slug: "posts",
     };
     const handler = createGetHandler(localizedCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -361,39 +363,39 @@ describe("getHandler with locale (filterLocale fallback)", () => {
 
 function createFailingAdapter(): DatabaseAdapter {
   return {
-    findOne: async () => {
-      throw new Error("DB connection failed");
-    },
-    findMany: async () => {
-      throw new Error("DB connection failed");
-    },
+    connect: async () => {},
     create: async () => {
       throw new Error("DB connection failed");
     },
-    update: async () => {
-      throw new Error("DB connection failed");
-    },
+    createTable: async () => {},
     delete: async () => {
       throw new Error("DB connection failed");
     },
     deleteMany: async () => {
       throw new Error("DB connection failed");
     },
-    connect: async () => {},
     disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
     dropTable: async () => {},
-    runMigration: async () => {},
+    findMany: async () => {
+      throw new Error("DB connection failed");
+    },
+    findOne: async () => {
+      throw new Error("DB connection failed");
+    },
     getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
+    update: async () => {
+      throw new Error("DB connection failed");
+    },
   };
 }
 
 it("listHandler returns 500 on adapter error", async () => {
   const adapter = createFailingAdapter();
   const handler = createListHandler(collection, adapter, 100, 10);
-  const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+  const result = await handler({ body: null, headers: {}, params: {}, query: {} });
   expect(result.statusCode).toBe(500);
   expect(result.body).toHaveProperty("error", "Internal server error");
 });
@@ -401,7 +403,7 @@ it("listHandler returns 500 on adapter error", async () => {
 it("getHandler returns 500 on adapter error", async () => {
   const adapter = createFailingAdapter();
   const handler = createGetHandler(collection, adapter);
-  const result = await handler({ params: { id: "1" }, query: {}, body: null, headers: {} });
+  const result = await handler({ body: null, headers: {}, params: { id: "1" }, query: {} });
   expect(result.statusCode).toBe(500);
   expect(result.body).toHaveProperty("error", "Internal server error");
 });
@@ -410,10 +412,10 @@ it("createHandler returns 500 on adapter error", async () => {
   const adapter = createFailingAdapter();
   const handler = createCreateHandler(collection, adapter);
   const result = await handler({
+    body: { slug: "test", title: "Test" },
+    headers: {},
     params: {},
     query: {},
-    body: { title: "Test", slug: "test" },
-    headers: {},
   });
   expect(result.statusCode).toBe(500);
 });
@@ -422,10 +424,10 @@ it("updateHandler returns 500 on adapter error", async () => {
   const adapter = createFailingAdapter();
   const handler = createUpdateHandler(collection, adapter);
   const result = await handler({
-    params: { id: "1" },
-    query: {},
     body: { title: "Test" },
     headers: {},
+    params: { id: "1" },
+    query: {},
   });
   expect(result.statusCode).toBe(500);
 });
@@ -433,20 +435,20 @@ it("updateHandler returns 500 on adapter error", async () => {
 it("globalGetHandler returns 500 on adapter error", async () => {
   const adapter = createFailingAdapter();
   const handler = createGlobalGetHandler(
-    { slug: "settings", label: "Settings", fields: [] },
+    { fields: [], label: "Settings", slug: "settings" },
     adapter,
   );
-  const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+  const result = await handler({ body: null, headers: {}, params: {}, query: {} });
   expect(result.statusCode).toBe(500);
 });
 
 it("globalUpsertHandler returns 500 on adapter error", async () => {
   const adapter = createFailingAdapter();
   const handler = createGlobalUpsertHandler(
-    { slug: "settings", label: "Settings", fields: [] },
+    { fields: [], label: "Settings", slug: "settings" },
     adapter,
   );
-  const result = await handler({ params: {}, query: {}, body: { title: "Test" }, headers: {} });
+  const result = await handler({ body: { title: "Test" }, headers: {}, params: {}, query: {} });
   expect(result.statusCode).toBe(500);
 });
 
@@ -455,10 +457,10 @@ describe("query validation edge cases", () => {
     const adapter = createGlobalAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { limit: "invalid" },
       body: null,
       headers: {},
+      params: {},
+      query: { limit: "invalid" },
     });
     expect(result.statusCode).toBe(400);
     expect(result.body).toHaveProperty("error");
@@ -468,10 +470,10 @@ describe("query validation edge cases", () => {
     const adapter = createGlobalAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { limit: "-5" },
       body: null,
       headers: {},
+      params: {},
+      query: { limit: "-5" },
     });
     expect(result.statusCode).toBe(400);
   });
@@ -480,10 +482,10 @@ describe("query validation edge cases", () => {
     const adapter = createGlobalAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { offset: "abc" },
       body: null,
       headers: {},
+      params: {},
+      query: { offset: "abc" },
     });
     expect(result.statusCode).toBe(400);
   });
@@ -492,10 +494,10 @@ describe("query validation edge cases", () => {
     const adapter = createGlobalAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { sort: "" },
       body: null,
       headers: {},
+      params: {},
+      query: { sort: "" },
     });
     expect(result.statusCode).toBe(400);
   });
@@ -504,10 +506,10 @@ describe("query validation edge cases", () => {
     const adapter = createGlobalAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { offset: "-1" },
       body: null,
       headers: {},
+      params: {},
+      query: { offset: "-1" },
     });
     expect(result.statusCode).toBe(400);
   });
@@ -516,10 +518,10 @@ describe("query validation edge cases", () => {
     const adapter = createGlobalAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { limit: "1.5" },
       body: null,
       headers: {},
+      params: {},
+      query: { limit: "1.5" },
     });
     expect(result.statusCode).toBe(400);
   });
@@ -528,10 +530,10 @@ describe("query validation edge cases", () => {
     const adapter = createGlobalAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { offset: "1.5" },
       body: null,
       headers: {},
+      params: {},
+      query: { offset: "1.5" },
     });
     expect(result.statusCode).toBe(400);
   });
@@ -542,10 +544,10 @@ describe("updateHandler edge cases", () => {
     const adapter = createDraftAdapter();
     const handler = createUpdateHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { title: "Updated" },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -554,10 +556,10 @@ describe("updateHandler edge cases", () => {
     const adapter = createDraftAdapter();
     const handler = createUpdateHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -566,10 +568,10 @@ describe("updateHandler edge cases", () => {
     const adapter = createDraftAdapter();
     const handler = createUpdateHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: "string body",
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -578,10 +580,10 @@ describe("updateHandler edge cases", () => {
     const adapter = createDraftAdapter();
     const handler = createUpdateHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: { title: 123 },
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(400);
     const body = result.body as Record<string, unknown>;
@@ -594,10 +596,10 @@ describe("createHandler edge cases", () => {
     const adapter = createDraftAdapter();
     const handler = createCreateHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: "string body",
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -607,21 +609,21 @@ describe("listHandler locale and sort edge cases", () => {
   it("applies locale to localized fields", async () => {
     const adapter = createDraftAdapter();
     await adapter.create("__cms_posts", {
-      title: { en: "Hello", fr: "Bonjour" },
       _status: "published",
+      title: { en: "Hello", fr: "Bonjour" },
     });
     const localizedCollection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
-      fields: [{ name: "title", type: "text", localized: true }],
+      fields: [{ localized: true, name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
       localization: { defaultLocale: "en", locales: ["en", "fr"] },
+      slug: "posts",
     };
     const handler = createListHandler(localizedCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { locale: "fr" },
       body: null,
       headers: {},
+      params: {},
+      query: { locale: "fr" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[] };
@@ -630,14 +632,14 @@ describe("listHandler locale and sort edge cases", () => {
 
   it("sorts by field without direction (defaults to asc)", async () => {
     const adapter = createDraftAdapter();
-    await adapter.create("__cms_posts", { title: "Banana", _status: "published" });
-    await adapter.create("__cms_posts", { title: "Apple", _status: "published" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Banana" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Apple" });
     const handler = createListHandler(draftCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { sort: "title" },
       body: null,
       headers: {},
+      params: {},
+      query: { sort: "title" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[] };
@@ -647,14 +649,14 @@ describe("listHandler locale and sort edge cases", () => {
 
   it("sorts by field with asc direction", async () => {
     const adapter = createDraftAdapter();
-    await adapter.create("__cms_posts", { title: "Banana", _status: "published" });
-    await adapter.create("__cms_posts", { title: "Apple", _status: "published" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Banana" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Apple" });
     const handler = createListHandler(draftCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { sort: "title:asc" },
       body: null,
       headers: {},
+      params: {},
+      query: { sort: "title:asc" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[] };
@@ -666,10 +668,10 @@ describe("listHandler locale and sort edge cases", () => {
     const adapter = createDraftAdapter();
     const handler = createListHandler(draftCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { sort: ["title", "desc"] as never },
       body: null,
       headers: {},
+      params: {},
+      query: { sort: ["title", "desc"] as never },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -678,10 +680,10 @@ describe("listHandler locale and sort edge cases", () => {
     const adapter = createDraftAdapter();
     const handler = createListHandler(draftCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { select: ["title"] as never },
       body: null,
       headers: {},
+      params: {},
+      query: { select: ["title"] as never },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -690,36 +692,36 @@ describe("listHandler locale and sort edge cases", () => {
     const adapter = createDraftAdapter();
     const handler = createListHandler(draftCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { populate: ["author"] as never },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: ["author"] as never },
     });
     expect(result.statusCode).toBe(200);
   });
 
   it("populates with empty select fields", async () => {
     const adapter = createDraftAdapter();
-    await adapter.create("__cms_posts", { title: "Test", _status: "published" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Test" });
     const handler = createListHandler(draftCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { select: ",,," },
       body: null,
       headers: {},
+      params: {},
+      query: { select: ",,," },
     });
     expect(result.statusCode).toBe(200);
   });
 
   it("populates with empty populate fields", async () => {
     const adapter = createDraftAdapter();
-    await adapter.create("__cms_posts", { title: "Test", _status: "published" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Test" });
     const handler = createListHandler(draftCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { populate: ",,," },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: ",,," },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -728,15 +730,15 @@ describe("listHandler locale and sort edge cases", () => {
     const adapter = createSoftDeleteAdapter();
     await adapter.create("__cms_posts", { title: "Active" });
     await adapter.create("__cms_posts", {
-      title: "Deleted",
       _deletedAt: "2024-01-01T00:00:00.000Z",
+      title: "Deleted",
     });
     const handler = createListHandler(softDeleteCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { deleted: "only" },
       body: null,
       headers: {},
+      params: {},
+      query: { deleted: "only" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[]; total: number };
@@ -748,7 +750,17 @@ function createDraftAdapter(): DatabaseAdapter {
   const store: Record<string, unknown>[] = [];
   let nextId = 1;
   return {
-    findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
+    connect: async () => {},
+    create: async (_c, d) => {
+      const record = { id: nextId++, ...d } as Record<string, unknown>;
+      store.push(record);
+      return record;
+    },
+    createTable: async () => {},
+    delete: async () => false,
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
     findMany: async (_c, opts) => {
       let data = [...store];
       if (opts?.where) {
@@ -763,34 +775,24 @@ function createDraftAdapter(): DatabaseAdapter {
       const total = data.length;
       return { data, total };
     },
-    create: async (_c, d) => {
-      const record = { id: nextId++, ...d } as Record<string, unknown>;
-      store.push(record);
-      return record;
-    },
+    findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
+    getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_c, id, d) => {
       const idx = store.findIndex((r) => String(r.id) === id);
       if (idx === -1) return null;
       store[idx] = { ...store[idx], ...d } as Record<string, unknown>;
       return store[idx];
     },
-    delete: async () => false,
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
   };
 }
 
 const draftCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [{ name: "title", type: "text", validation: { required: true } }],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
   versions: { drafts: true },
 };
 
@@ -799,10 +801,10 @@ describe("draft/publish handlers", () => {
     const adapter = createDraftAdapter();
     const handler = createCreateHandler(draftCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { title: "Test" },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(201);
     const body = result.body as Record<string, unknown>;
@@ -813,10 +815,10 @@ describe("draft/publish handlers", () => {
     const adapter = createDraftAdapter();
     const handler = createCreateHandler(draftCollection, adapter);
     const result = await handler({
+      body: { _status: "published", title: "Test" },
+      headers: {},
       params: {},
       query: {},
-      body: { title: "Test", _status: "published" },
-      headers: {},
     });
     expect(result.statusCode).toBe(201);
     const body = result.body as Record<string, unknown>;
@@ -826,12 +828,12 @@ describe("draft/publish handlers", () => {
 
   it("listHandler filters to published by default for draft-enabled collections", async () => {
     const adapter = createDraftAdapter();
-    await adapter.create("__cms_posts", { title: "Draft 1", _status: "draft" });
-    await adapter.create("__cms_posts", { title: "Pub 1", _status: "published" });
-    await adapter.create("__cms_posts", { title: "Pub 2", _status: "published" });
+    await adapter.create("__cms_posts", { _status: "draft", title: "Draft 1" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Pub 1" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Pub 2" });
 
     const handler = createListHandler(draftCollection, adapter, 100, 10);
-    const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+    const result = await handler({ body: null, headers: {}, params: {}, query: {} });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[]; total: number };
     expect(body.total).toBe(2);
@@ -840,15 +842,15 @@ describe("draft/publish handlers", () => {
 
   it("listHandler respects explicit _status filter", async () => {
     const adapter = createDraftAdapter();
-    await adapter.create("__cms_posts", { title: "Draft 1", _status: "draft" });
-    await adapter.create("__cms_posts", { title: "Pub 1", _status: "published" });
+    await adapter.create("__cms_posts", { _status: "draft", title: "Draft 1" });
+    await adapter.create("__cms_posts", { _status: "published", title: "Pub 1" });
 
     const handler = createListHandler(draftCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { "where[_status]": "draft" },
       body: null,
       headers: {},
+      params: {},
+      query: { "where[_status]": "draft" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[]; total: number };
@@ -858,13 +860,13 @@ describe("draft/publish handlers", () => {
 
   it("publishHandler sets _status to published", async () => {
     const adapter = createDraftAdapter();
-    const created = await adapter.create("__cms_posts", { title: "Test", _status: "draft" });
+    const created = await adapter.create("__cms_posts", { _status: "draft", title: "Test" });
     const handler = createPublishHandler(draftCollection, adapter);
     const result = await handler({
-      params: { id: String(created.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -875,16 +877,16 @@ describe("draft/publish handlers", () => {
   it("unpublishHandler sets _status to draft", async () => {
     const adapter = createDraftAdapter();
     const created = await adapter.create("__cms_posts", {
-      title: "Test",
-      _status: "published",
       _publishedAt: "2024-01-01T00:00:00.000Z",
+      _status: "published",
+      title: "Test",
     });
     const handler = createUnpublishHandler(draftCollection, adapter);
     const result = await handler({
-      params: { id: String(created.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -896,10 +898,10 @@ describe("draft/publish handlers", () => {
     const adapter = createDraftAdapter();
     const handler = createUnpublishHandler(draftCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -908,10 +910,10 @@ describe("draft/publish handlers", () => {
     const adapter = createDraftAdapter();
     const handler = createUnpublishHandler(draftCollection, adapter);
     const result = await handler({
-      params: { id: "999" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
@@ -920,10 +922,10 @@ describe("draft/publish handlers", () => {
     const adapter = createDraftAdapter();
     const handler = createPublishHandler(draftCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -932,10 +934,10 @@ describe("draft/publish handlers", () => {
     const adapter = createFailingAdapter();
     const handler = createUnpublishHandler(draftCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(500);
   });
@@ -944,10 +946,10 @@ describe("draft/publish handlers", () => {
     const adapter = createFailingAdapter();
     const handler = createPublishHandler(draftCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(500);
   });
@@ -956,23 +958,23 @@ describe("draft/publish handlers", () => {
     const adapter = createDraftAdapter();
     const handler = createPublishHandler(draftCollection, adapter);
     const result = await handler({
-      params: { id: "999" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
 
   it("updateHandler strips system fields from body", async () => {
     const adapter = createDraftAdapter();
-    const created = await adapter.create("__cms_posts", { title: "Original", _status: "draft" });
+    const created = await adapter.create("__cms_posts", { _status: "draft", title: "Original" });
     const handler = createUpdateHandler(draftCollection, adapter);
     const result = await handler({
+      body: { _status: "published", title: "Updated" },
+      headers: {},
       params: { id: String(created.id) },
       query: {},
-      body: { title: "Updated", _status: "published" },
-      headers: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -985,7 +987,23 @@ function createSoftDeleteAdapter(): DatabaseAdapter {
   const store: Record<string, unknown>[] = [];
   let nextId = 1;
   return {
-    findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
+    create: async (_c, d) => {
+      const record = { id: nextId++, ...d } as Record<string, unknown>;
+      store.push(record);
+      return record;
+    },
+    delete: async (_c, id) => {
+      const idx = store.findIndex((r) => String(r.id) === id);
+      if (idx === -1) return false;
+      store.splice(idx, 1);
+      return true;
+    },
+    deleteMany: async (_c, ids) => {
+      const before = store.length;
+      const idSet = new Set(ids);
+      store = store.filter((r) => !idSet.has(String(r.id)));
+      return before - store.length;
+    },
     findMany: async (_c, opts) => {
       let data = [...store];
       if (opts?.where) {
@@ -1002,36 +1020,20 @@ function createSoftDeleteAdapter(): DatabaseAdapter {
       const total = data.length;
       return { data, total };
     },
-    create: async (_c, d) => {
-      const record = { id: nextId++, ...d } as Record<string, unknown>;
-      store.push(record);
-      return record;
-    },
+    findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
     update: async (_c, id, d) => {
       const idx = store.findIndex((r) => String(r.id) === id);
       if (idx === -1) return null;
       store[idx] = { ...store[idx], ...d } as Record<string, unknown>;
       return store[idx];
     },
-    delete: async (_c, id) => {
-      const idx = store.findIndex((r) => String(r.id) === id);
-      if (idx === -1) return false;
-      store.splice(idx, 1);
-      return true;
-    },
-    deleteMany: async (_c, ids) => {
-      const before = store.length;
-      const idSet = new Set(ids);
-      store = store.filter((r) => !idSet.has(String(r.id)));
-      return before - store.length;
-    },
   };
 }
 
 const softDeleteCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [{ name: "title", type: "text", validation: { required: true } }],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
   versions: { softDelete: true },
 };
 
@@ -1041,10 +1043,10 @@ describe("soft delete handlers", () => {
     const created = await adapter.create("__cms_posts", { title: "Test" });
     const handler = createDeleteHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: { id: String(created.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -1060,10 +1062,10 @@ describe("soft delete handlers", () => {
     const handler = createDeleteHandler(collection, adapter);
     const created = await adapter.create("__cms_posts", { title: "Test" });
     const result = await handler({
-      params: { id: String(created.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
 
@@ -1075,13 +1077,13 @@ describe("soft delete handlers", () => {
     const adapter = createSoftDeleteAdapter();
     await adapter.create("__cms_posts", { title: "Active" });
     await adapter.create("__cms_posts", {
-      title: "Deleted",
       _deletedAt: "2024-01-01T00:00:00.000Z",
+      title: "Deleted",
     });
     await adapter.create("__cms_posts", { title: "Another Active" });
 
     const handler = createListHandler(softDeleteCollection, adapter, 100, 10);
-    const result = await handler({ params: {}, query: {}, body: null, headers: {} });
+    const result = await handler({ body: null, headers: {}, params: {}, query: {} });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[]; total: number };
     expect(body.total).toBe(2);
@@ -1092,16 +1094,16 @@ describe("soft delete handlers", () => {
     const adapter = createSoftDeleteAdapter();
     await adapter.create("__cms_posts", { title: "Active" });
     await adapter.create("__cms_posts", {
-      title: "Deleted",
       _deletedAt: "2024-01-01T00:00:00.000Z",
+      title: "Deleted",
     });
 
     const handler = createListHandler(softDeleteCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { deleted: "true" },
       body: null,
       headers: {},
+      params: {},
+      query: { deleted: "true" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[]; total: number };
@@ -1111,15 +1113,15 @@ describe("soft delete handlers", () => {
   it("restoreHandler clears _deletedAt", async () => {
     const adapter = createSoftDeleteAdapter();
     const created = await adapter.create("__cms_posts", {
-      title: "Deleted",
       _deletedAt: "2024-01-01T00:00:00.000Z",
+      title: "Deleted",
     });
     const handler = createRestoreHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: { id: String(created.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -1130,10 +1132,10 @@ describe("soft delete handlers", () => {
     const adapter = createSoftDeleteAdapter();
     const handler = createRestoreHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: { id: "999" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
@@ -1144,10 +1146,10 @@ describe("soft delete handlers", () => {
     const b = await adapter.create("__cms_posts", { title: "B" });
     const handler = createBulkDeleteHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { ids: [String(a.id), String(b.id)] },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { deleted: number };
@@ -1163,10 +1165,10 @@ describe("soft delete handlers", () => {
     const adapter = createSoftDeleteAdapter();
     const handler = createDeleteHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: { id: "999" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
@@ -1175,10 +1177,10 @@ describe("soft delete handlers", () => {
     const adapter = createSoftDeleteAdapter();
     const handler = createDeleteHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -1187,10 +1189,10 @@ describe("soft delete handlers", () => {
     const adapter = createFailingAdapter();
     const handler = createDeleteHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(500);
   });
@@ -1199,10 +1201,10 @@ describe("soft delete handlers", () => {
     const adapter = createFailingAdapter();
     const handler = createBulkDeleteHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { ids: ["1", "2"] },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(500);
   });
@@ -1211,10 +1213,10 @@ describe("soft delete handlers", () => {
     const adapter = createSoftDeleteAdapter();
     const handler = createBulkDeleteHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { ids: "not-an-array" },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -1223,10 +1225,10 @@ describe("soft delete handlers", () => {
     const adapter = createSoftDeleteAdapter();
     const handler = createBulkDeleteHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -1235,10 +1237,10 @@ describe("soft delete handlers", () => {
     const adapter = createSoftDeleteAdapter();
     const handler = createRestoreHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -1247,19 +1249,19 @@ describe("soft delete handlers", () => {
     const adapter = createFailingAdapter();
     const handler = createRestoreHandler(softDeleteCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(500);
   });
 });
 
 const scheduledCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [{ name: "title", type: "text", validation: { required: true } }],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
   versions: { drafts: true, scheduledPublishing: true },
 };
 
@@ -1268,10 +1270,10 @@ describe("scheduled publishing handlers", () => {
     const adapter = createDraftAdapter();
     const handler = createCreateHandler(scheduledCollection, adapter);
     const result = await handler({
+      body: { _publishAt: "2099-01-01T00:00:00.000Z", title: "Scheduled" },
+      headers: {},
       params: {},
       query: {},
-      body: { title: "Scheduled", _publishAt: "2099-01-01T00:00:00.000Z" },
-      headers: {},
     });
     expect(result.statusCode).toBe(201);
     const body = result.body as Record<string, unknown>;
@@ -1283,10 +1285,10 @@ describe("scheduled publishing handlers", () => {
     const adapter = createDraftAdapter();
     const handler = createCreateHandler(scheduledCollection, adapter);
     const result = await handler({
+      body: { _publishAt: "2099-01-01T00:00:00.000Z", _status: "published", title: "Publish Now" },
+      headers: {},
       params: {},
       query: {},
-      body: { title: "Publish Now", _status: "published", _publishAt: "2099-01-01T00:00:00.000Z" },
-      headers: {},
     });
     expect(result.statusCode).toBe(201);
     const body = result.body as Record<string, unknown>;
@@ -1297,16 +1299,16 @@ describe("scheduled publishing handlers", () => {
   it("updateHandler preserves _publishAt in update", async () => {
     const adapter = createDraftAdapter();
     const created = await adapter.create("__cms_posts", {
-      title: "Test",
-      _status: "draft",
       _publishAt: "2099-01-01T00:00:00.000Z",
+      _status: "draft",
+      title: "Test",
     });
     const handler = createUpdateHandler(scheduledCollection, adapter);
     const result = await handler({
-      params: { id: String(created.id) },
-      query: {},
       body: { title: "Updated" },
       headers: {},
+      params: { id: String(created.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -1319,21 +1321,21 @@ describe("filterLocale — fallback locale branch (line 265)", () => {
   it("resolves to fallback locale when requested locale is missing but fallback exists", async () => {
     const adapter = createDraftAdapter();
     await adapter.create("__cms_posts", {
-      title: { en: "Hello in English" },
       _status: "published",
+      title: { en: "Hello in English" },
     });
     const localizedCollection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
-      fields: [{ name: "title", type: "text", localized: true }],
+      fields: [{ localized: true, name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
       localization: { defaultLocale: "en", locales: ["en", "fr"] },
+      slug: "posts",
     };
     const handler = createGetHandler(localizedCollection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { locale: "fr" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { locale: "fr" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -1345,21 +1347,21 @@ describe("applyLocaleToRecord — no locale branch (line 278)", () => {
   it("returns record unmodified when no locale param is passed on localized list", async () => {
     const adapter = createDraftAdapter();
     await adapter.create("__cms_posts", {
-      title: { en: "Hello", fr: "Bonjour" },
       _status: "published",
+      title: { en: "Hello", fr: "Bonjour" },
     });
     const localizedCollection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
-      fields: [{ name: "title", type: "text", localized: true }],
+      fields: [{ localized: true, name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
       localization: { defaultLocale: "en", locales: ["en", "fr"] },
+      slug: "posts",
     };
     const handler = createListHandler(localizedCollection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[] };
@@ -1372,10 +1374,10 @@ describe("updateHandler — draft 404 branch (line 485)", () => {
     const adapter = createDraftAdapter();
     const handler = createUpdateHandler(draftCollection, adapter);
     const result = await handler({
-      params: { id: "999" },
-      query: {},
       body: { title: "Updated" },
       headers: {},
+      params: { id: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
@@ -1384,30 +1386,30 @@ describe("updateHandler — draft 404 branch (line 485)", () => {
 describe("globalUpsertHandler — update returns null fallback (line 534)", () => {
   it("falls back to empty object when adapter.update returns null for existing global", async () => {
     const adapter: DatabaseAdapter = {
+      connect: async () => {},
+      create: async (_collection, data) => ({ ...data }),
+      createTable: async () => {},
+      delete: async () => false,
+      deleteMany: async () => 0,
+      disconnect: async () => {},
+      dropTable: async () => {},
+      findMany: async () => ({ data: [], total: 0 }),
       findOne: async (_collection, id) => {
         if (id === "1") return { id: 1, title: "Old" };
         return null;
       },
-      findMany: async () => ({ data: [], total: 0 }),
-      create: async (_collection, data) => ({ ...data }),
-      update: async () => null,
-      delete: async () => false,
-      deleteMany: async () => 0,
-      connect: async () => {},
-      disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
-      dropTable: async () => {},
-      runMigration: async () => {},
       getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
+      update: async () => null,
     };
     const handler = createGlobalUpsertHandler(globalDef, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { title: "Updated" },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     expect(result.body).toEqual({});
@@ -1416,18 +1418,18 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
   it("falls back to en when defaultLocale is not set in collection", async () => {
     const col: CollectionDefinition = {
       ...collection,
+      fields: [{ localized: true, name: "title", type: "text" }],
       localization: { locales: ["en", "fr"] },
-      fields: [{ name: "title", type: "text", localized: true }],
     };
     const adapter = createMockAdapter();
     const handler = createGetHandler(col, adapter);
     const record = { id: "1", title: { en: "Hello", fr: "Bonjour" } };
     adapter.findOne.mockResolvedValue(record);
     const result = await handler({
-      params: { id: "1" },
-      query: { locale: "de" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { locale: "de" },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -1437,21 +1439,21 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
       ...collection,
       fields: [
         { name: "title", type: "text" },
-        { name: "author", type: "relation", to: "users" },
+        { name: "author", to: "users", type: "relation" },
       ],
     };
     const adapter = createMockAdapter();
     adapter.getTableName.mockReturnValue("users");
     adapter.findMany.mockResolvedValue({
-      data: [{ id: "1", title: "Post", author: "nonexistent" }],
+      data: [{ author: "nonexistent", id: "1", title: "Post" }],
       total: 1,
     });
     const handler = createListHandler(col, adapter);
     const result = await handler({
-      params: {},
-      query: { populate: "author" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "author" },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -1461,7 +1463,7 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
       ...collection,
       fields: [
         { name: "title", type: "text" },
-        { name: "author", type: "relation", to: "users" },
+        { name: "author", to: "users", type: "relation" },
       ],
     };
     const adapter = createMockAdapter();
@@ -1469,10 +1471,10 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
     adapter.findMany.mockResolvedValue({ data: [], total: 0 });
     const handler = createListHandler(col, adapter);
     const result = await handler({
-      params: {},
-      query: { populate: "author" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "author" },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -1480,17 +1482,17 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
   it("filterLocale handles null field value", async () => {
     const col: CollectionDefinition = {
       ...collection,
+      fields: [{ localized: true, name: "title", type: "text" }],
       localization: { defaultLocale: "en", locales: ["en"] },
-      fields: [{ name: "title", type: "text", localized: true }],
     };
     const adapter = createMockAdapter();
     adapter.findOne.mockResolvedValue({ id: "1", title: null });
     const handler = createGetHandler(col, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { locale: "en" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { locale: "en" },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -1500,21 +1502,21 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
       ...collection,
       fields: [
         { name: "title", type: "text" },
-        { name: "author", type: "relation", to: "users" },
+        { name: "author", to: "users", type: "relation" },
       ],
     };
     const adapter = createMockAdapter();
     adapter.getTableName.mockReturnValue("users");
     adapter.findMany.mockResolvedValue({
-      data: [{ id: "1", title: "Post", author: "1" }],
+      data: [{ author: "1", id: "1", title: "Post" }],
       total: 1,
     });
     const handler = createListHandler(col, adapter);
     const result = await handler({
-      params: {},
-      query: { populate: "title" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "title" },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -1524,7 +1526,7 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
       ...collection,
       fields: [
         { name: "title", type: "text" },
-        { name: "tags", type: "relation", to: "tags", multiple: true },
+        { multiple: true, name: "tags", to: "tags", type: "relation" },
       ],
     };
     const adapter = createMockAdapter();
@@ -1532,34 +1534,34 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
     adapter.findMany.mockResolvedValue({ data: [], total: 0 });
     const handler = createListHandler(col, adapter);
     const result = await handler({
-      params: {},
-      query: { populate: "tags" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "tags" },
     });
     expect(result.statusCode).toBe(200);
   });
 
-  it("populate with array relation maps missing IDs to null", async () => {
+  it("populate with array relation resolves existing and nullifies missing IDs", async () => {
     const col: CollectionDefinition = {
       ...collection,
       fields: [
         { name: "title", type: "text" },
-        { name: "tags", type: "relation", to: "tags", multiple: true },
+        { multiple: true, name: "tags", to: "tags", type: "relation" },
       ],
     };
     const adapter = createMockAdapter();
     adapter.getTableName.mockReturnValue("tags");
     adapter.findMany.mockResolvedValue({
-      data: [{ id: "1", title: "Post", tags: ["existing", "missing"] }],
+      data: [{ id: "1", tags: ["existing", "missing"], title: "Post" }],
       total: 1,
     });
     const handler = createListHandler(col, adapter);
     const result = await handler({
-      params: {},
-      query: { populate: "tags" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "tags" },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -1569,24 +1571,24 @@ describe("globalUpsertHandler — update returns null fallback (line 534)", () =
       ...collection,
       fields: [
         { name: "title", type: "text" },
-        { name: "author", type: "relation", to: "users" },
+        { name: "author", to: "users", type: "relation" },
       ],
     };
     const adapter = createMockAdapter();
     adapter.getTableName.mockReturnValue("users");
     adapter.findMany.mockResolvedValue({
       data: [
-        { id: "1", title: "Post 1", author: "user1" },
-        { id: "2", title: "Post 2", author: null },
+        { author: "user1", id: "1", title: "Post 1" },
+        { author: null, id: "2", title: "Post 2" },
       ],
       total: 2,
     });
     const handler = createListHandler(col, adapter);
     const result = await handler({
-      params: {},
-      query: { populate: "author" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "author" },
     });
     expect(result.statusCode).toBe(200);
   });

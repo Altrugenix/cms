@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+
 import rateLimit from "@fastify/rate-limit";
 
 export interface RateLimitOptions {

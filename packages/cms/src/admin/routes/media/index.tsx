@@ -1,8 +1,21 @@
-import { useEffect, useState, useRef, useCallback } from "react";
 import { createRoute } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
+import {
+  Trash2,
+  Upload,
+  UploadCloud,
+  Pencil,
+  Folder,
+  FolderPlus,
+  ChevronRight,
+  Home,
+} from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   fetchMedia,
   fetchFolders,
@@ -14,24 +27,12 @@ import {
   type MediaMeta,
   type MediaFolder,
 } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import {
-  Trash2,
-  Upload,
-  UploadCloud,
-  Pencil,
-  Folder,
-  FolderPlus,
-  ChevronRight,
-  Home,
-} from "lucide-react";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: MediaLibrary,
   getParentRoute: () => rootRoute,
   path: "/media",
-  component: MediaLibrary,
 });
 
 interface BreadcrumbItem {
@@ -233,8 +234,8 @@ function MediaLibrary() {
     }
     try {
       const updated = await updateMedia(id, {
-        originalName: trimmedName,
         alt: trimmedAlt,
+        originalName: trimmedName,
       });
       setMedia((prev) => prev.map((m) => (m.id === id ? { ...m, ...updated } : m)));
       setEditingId(null);

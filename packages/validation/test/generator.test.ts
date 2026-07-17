@@ -1,5 +1,7 @@
-import { describe, it, expect } from "vitest";
 import type { FieldDefinition, CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
 import {
   fieldToZodSchema,
   collectionToCreateSchema,
@@ -45,11 +47,11 @@ describe("fieldToZodSchema", () => {
   it("maps select to enum", () => {
     const field: FieldDefinition = {
       name: "status",
-      type: "select",
       options: [
         { label: "Draft", value: "draft" },
         { label: "Published", value: "published" },
       ],
+      type: "select",
     };
     const schema = fieldToZodSchema(field);
     expect(schema.parse("draft")).toBe("draft");
@@ -60,8 +62,8 @@ describe("fieldToZodSchema", () => {
   it("maps multiSelect to string array", () => {
     const field: FieldDefinition = {
       name: "tags",
-      type: "multiSelect",
       options: [{ label: "News", value: "news" }],
+      type: "multiSelect",
     };
     const schema = fieldToZodSchema(field);
     expect(schema.parse(["news"])).toEqual(["news"]);
@@ -146,23 +148,23 @@ describe("fieldToZodSchema", () => {
   });
 
   it("maps relation to string (optional)", () => {
-    const field: FieldDefinition = { name: "author", type: "relation", to: "users" };
+    const field: FieldDefinition = { name: "author", to: "users", type: "relation" };
     const schema = fieldToZodSchema(field);
     expect(schema.parse("abc123")).toBe("abc123");
     expect(schema.parse(undefined)).toBeUndefined();
   });
 
   it("maps component to record", () => {
-    const field: FieldDefinition = { name: "seo", type: "component", component: "seo" };
+    const field: FieldDefinition = { component: "seo", name: "seo", type: "component" };
     const schema = fieldToZodSchema(field);
     expect(schema.parse({ title: "Test" })).toEqual({ title: "Test" });
   });
 
   it("maps dynamicZone to array", () => {
     const field: FieldDefinition = {
+      components: ["hero", "cta"],
       name: "blocks",
       type: "dynamicZone",
-      components: ["hero", "cta"],
     };
     const schema = fieldToZodSchema(field);
     expect(schema.parse([{ type: "hero" }])).toEqual([{ type: "hero" }]);
@@ -171,12 +173,12 @@ describe("fieldToZodSchema", () => {
 
   it("maps array field with sub-fields", () => {
     const field: FieldDefinition = {
-      name: "items",
-      type: "array",
       fields: [
         { name: "name", type: "text" },
         { name: "quantity", type: "number" },
       ],
+      name: "items",
+      type: "array",
     };
     const schema = fieldToZodSchema(field);
     const valid = [{ name: "foo", quantity: 2 }];
@@ -185,12 +187,12 @@ describe("fieldToZodSchema", () => {
 
   it("maps object field with sub-fields", () => {
     const field: FieldDefinition = {
-      name: "address",
-      type: "object",
       fields: [
         { name: "street", type: "text" },
         { name: "zip", type: "text" },
       ],
+      name: "address",
+      type: "object",
     };
     const schema = fieldToZodSchema(field);
     const valid = { street: "123 Main", zip: "12345" };
@@ -201,15 +203,15 @@ describe("fieldToZodSchema", () => {
 describe("collectionToCreateSchema", () => {
   it("generates schema with required and optional fields", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
         { name: "title", type: "text", validation: { required: true } },
         { name: "body", type: "richText" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     };
     const schema = collectionToCreateSchema(collection);
-    const valid = { title: "Hello", body: "World" };
+    const valid = { body: "World", title: "Hello" };
     expect(schema.parse(valid)).toEqual(valid);
     expect(() => schema.parse({ body: "World" })).toThrow();
     expect(schema.parse({ title: "Hello" })).toEqual({ title: "Hello" });
@@ -241,11 +243,11 @@ describe("fieldToZodSchema — additional field type coverage", () => {
   it("maps radio with options to enum", () => {
     const field: FieldDefinition = {
       name: "choice",
-      type: "radio",
       options: [
         { label: "Yes", value: "yes" },
         { label: "No", value: "no" },
       ],
+      type: "radio",
     };
     const schema = fieldToZodSchema(field);
     expect(schema.parse("yes")).toBe("yes");
@@ -285,16 +287,16 @@ describe("fieldToZodSchema — additional field type coverage", () => {
   it("maps tabs with sub-fields to object", () => {
     const field: FieldDefinition = {
       name: "seo",
-      type: "tabs",
       tabs: [
-        { label: "General", fields: [{ name: "title", type: "text" }] },
-        { label: "Social", fields: [{ name: "image", type: "text" }] },
+        { fields: [{ name: "title", type: "text" }], label: "General" },
+        { fields: [{ name: "image", type: "text" }], label: "Social" },
       ],
+      type: "tabs",
     };
     const schema = fieldToZodSchema(field);
-    expect(schema.parse({ title: "Hello", image: "img.png" })).toEqual({
-      title: "Hello",
+    expect(schema.parse({ image: "img.png", title: "Hello" })).toEqual({
       image: "img.png",
+      title: "Hello",
     });
   });
 
@@ -306,12 +308,12 @@ describe("fieldToZodSchema — additional field type coverage", () => {
 
   it("maps group with sub-fields to object", () => {
     const field: FieldDefinition = {
-      name: "address",
-      type: "group",
       fields: [
         { name: "street", type: "text" },
         { name: "zip", type: "text" },
       ],
+      name: "address",
+      type: "group",
     };
     const schema = fieldToZodSchema(field);
     expect(schema.parse({ street: "123 Main", zip: "12345" })).toEqual({
@@ -331,7 +333,7 @@ describe("fieldToZodSchema — additional field type coverage", () => {
 
 describe("fieldToZodSchema — localization", () => {
   it("wraps localized field in record when localize=true", () => {
-    const field: FieldDefinition = { name: "title", type: "text", localized: true };
+    const field: FieldDefinition = { localized: true, name: "title", type: "text" };
     const schema = fieldToZodSchema(field, true);
     expect(schema.parse({ en: "Hello", fr: "Bonjour" })).toEqual({ en: "Hello", fr: "Bonjour" });
     expect(() => schema.parse("not-a-record")).toThrow();
@@ -344,7 +346,7 @@ describe("fieldToZodSchema — localization", () => {
   });
 
   it("does not wrap localized field when localize=false", () => {
-    const field: FieldDefinition = { name: "title", type: "text", localized: true };
+    const field: FieldDefinition = { localized: true, name: "title", type: "text" };
     const schema = fieldToZodSchema(field, false);
     expect(schema.parse("Hello")).toBe("Hello");
   });
@@ -395,7 +397,7 @@ describe("fieldToZodSchema — combined validators", () => {
     const field: FieldDefinition = {
       name: "username",
       type: "text",
-      validation: { minLength: 3, maxLength: 10, pattern: "^[a-zA-Z][a-zA-Z0-9]+$" },
+      validation: { maxLength: 10, minLength: 3, pattern: "^[a-zA-Z][a-zA-Z0-9]+$" },
     };
     const schema = fieldToZodSchema(field);
     expect(schema.parse("Alice42")).toBe("Alice42");
@@ -410,7 +412,7 @@ describe("fieldToZodSchema — custom validation messages", () => {
     const field: FieldDefinition = {
       name: "name",
       type: "text",
-      validation: { minLength: 3, message: "Too short!" },
+      validation: { message: "Too short!", minLength: 3 },
     };
     const schema = fieldToZodSchema(field);
     expect(() => schema.parse("ab")).toThrow("Too short!");
@@ -430,7 +432,7 @@ describe("fieldToZodSchema — custom validation messages", () => {
     const field: FieldDefinition = {
       name: "age",
       type: "number",
-      validation: { min: 18, message: "Must be 18+" },
+      validation: { message: "Must be 18+", min: 18 },
     };
     const schema = fieldToZodSchema(field);
     expect(() => schema.parse(15)).toThrow("Must be 18+");
@@ -450,7 +452,7 @@ describe("fieldToZodSchema — custom validation messages", () => {
     const field: FieldDefinition = {
       name: "code",
       type: "text",
-      validation: { pattern: "^[A-Z]+$", message: "Uppercase only" },
+      validation: { message: "Uppercase only", pattern: "^[A-Z]+$" },
     };
     const schema = fieldToZodSchema(field);
     expect(() => schema.parse("abc")).toThrow("Uppercase only");
@@ -460,54 +462,54 @@ describe("fieldToZodSchema — custom validation messages", () => {
 describe("collectionToCreateSchema — extras", () => {
   it("includes _status field when drafts enabled", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
       versions: { drafts: true },
     };
     const schema = collectionToCreateSchema(collection);
-    expect(schema.parse({ title: "Hello", _status: "draft" })).toEqual({
-      title: "Hello",
+    expect(schema.parse({ _status: "draft", title: "Hello" })).toEqual({
       _status: "draft",
-    });
-    expect(schema.parse({ title: "Hello", _status: "published" })).toEqual({
       title: "Hello",
-      _status: "published",
     });
-    expect(() => schema.parse({ title: "Hello", _status: "invalid" })).toThrow();
+    expect(schema.parse({ _status: "published", title: "Hello" })).toEqual({
+      _status: "published",
+      title: "Hello",
+    });
+    expect(() => schema.parse({ _status: "invalid", title: "Hello" })).toThrow();
   });
 
   it("includes _publishAt field when scheduledPublishing enabled", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
       versions: { drafts: false, scheduledPublishing: true },
     };
     const schema = collectionToCreateSchema(collection);
-    expect(schema.parse({ title: "Hello", _publishAt: "2026-01-01T00:00:00Z" })).toEqual({
-      title: "Hello",
+    expect(schema.parse({ _publishAt: "2026-01-01T00:00:00Z", title: "Hello" })).toEqual({
       _publishAt: "2026-01-01T00:00:00Z",
+      title: "Hello",
     });
   });
 
   it("includes both _status and _publishAt when both enabled", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
       versions: { drafts: true, scheduledPublishing: true },
     };
     const schema = collectionToCreateSchema(collection);
     const parsed = schema.parse({
-      title: "Hello",
-      _status: "draft",
       _publishAt: "2026-06-01T00:00:00Z",
+      _status: "draft",
+      title: "Hello",
     });
     expect(parsed).toEqual({
-      title: "Hello",
-      _status: "draft",
       _publishAt: "2026-06-01T00:00:00Z",
+      _status: "draft",
+      title: "Hello",
     });
   });
 });
@@ -515,9 +517,9 @@ describe("collectionToCreateSchema — extras", () => {
 describe("collectionToUpdateSchema — extras", () => {
   it("includes _status field when drafts enabled", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
       versions: { drafts: true },
     };
     const schema = collectionToUpdateSchema(collection);
@@ -527,9 +529,9 @@ describe("collectionToUpdateSchema — extras", () => {
 
   it("includes _publishAt field when scheduledPublishing enabled", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
       versions: { drafts: false, scheduledPublishing: true },
     };
     const schema = collectionToUpdateSchema(collection);
@@ -568,21 +570,21 @@ describe("fieldToZodSchema — P3 validation hardening", () => {
   });
 
   it("validates color field with rgb format", () => {
-    const field: FieldDefinition = { name: "accent", type: "color", format: "rgb" };
+    const field: FieldDefinition = { format: "rgb", name: "accent", type: "color" };
     const schema = fieldToZodSchema(field);
     expect(schema.parse("rgb(255, 0, 0)")).toBe("rgb(255, 0, 0)");
     expect(() => schema.parse("#ff0000")).toThrow();
   });
 
   it("validates color field with rgba format", () => {
-    const field: FieldDefinition = { name: "accent", type: "color", format: "rgba" };
+    const field: FieldDefinition = { format: "rgba", name: "accent", type: "color" };
     const schema = fieldToZodSchema(field);
     expect(schema.parse("rgba(255, 0, 0, 0.5)")).toBe("rgba(255, 0, 0, 0.5)");
     expect(() => schema.parse("rgb(255,0,0)")).toThrow();
   });
 
   it("validates color field with hsl format", () => {
-    const field: FieldDefinition = { name: "accent", type: "color", format: "hsl" };
+    const field: FieldDefinition = { format: "hsl", name: "accent", type: "color" };
     const schema = fieldToZodSchema(field);
     expect(schema.parse("hsl(0, 100%, 50%)")).toBe("hsl(0, 100%, 50%)");
     expect(() => schema.parse("#ff0000")).toThrow();
@@ -611,29 +613,29 @@ describe("fieldToZodSchema — P3 validation hardening", () => {
 describe("collection schemas with relation fields", () => {
   it("collectionToCreateSchema treats relation fields as optional strings", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
         { name: "title", type: "text", validation: { required: true } },
-        { name: "author", type: "relation", to: "users" },
+        { name: "author", to: "users", type: "relation" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     };
     const schema = collectionToCreateSchema(collection);
     expect(schema.parse({ title: "Hello" })).toEqual({ title: "Hello" });
-    expect(schema.parse({ title: "Hello", author: "user-123" })).toEqual({
-      title: "Hello",
+    expect(schema.parse({ author: "user-123", title: "Hello" })).toEqual({
       author: "user-123",
+      title: "Hello",
     });
   });
 
   it("collectionToUpdateSchema treats relation fields as optional strings", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
         { name: "title", type: "text" },
-        { name: "author", type: "relation", to: "users" },
+        { name: "author", to: "users", type: "relation" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     };
     const schema = collectionToUpdateSchema(collection);
     expect(schema.parse({})).toEqual({});

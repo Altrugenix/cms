@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
 import {
   fetchCollections,
   fetchGlobals,
@@ -21,16 +22,16 @@ import {
 
 export function useCollections() {
   return useQuery({
-    queryKey: ["collections"],
     queryFn: fetchCollections,
+    queryKey: ["collections"],
     staleTime: 30_000,
   });
 }
 
 export function useGlobals() {
   return useQuery({
-    queryKey: ["globals"],
     queryFn: fetchGlobals,
+    queryKey: ["globals"],
     staleTime: 30_000,
   });
 }
@@ -39,111 +40,111 @@ export function useCollection(slug: string) {
   const { data: collections = [] } = useCollections();
   return {
     collection: collections.find((c: CollectionMeta) => c.slug === slug),
-    isLoading: false,
     error: null,
+    isLoading: false,
   };
 }
 
 export function useGlobal(slug: string) {
   const { data: globals = [] } = useGlobals();
   return {
+    error: null,
     global: globals.find((g: GlobalMeta) => g.slug === slug),
     isLoading: false,
-    error: null,
   };
 }
 
 export function useGlobalData(slug: string) {
   return useQuery({
-    queryKey: ["global", slug],
     queryFn: () => fetchGlobal(slug),
+    queryKey: ["global", slug],
     staleTime: 30_000,
   });
 }
 
 export function useEntries(slug: string, params: Record<string, string> = {}) {
   return useQuery({
-    queryKey: ["entries", slug, params],
+    enabled: !!slug,
     queryFn: async () => {
       const searchParams = new URLSearchParams(params);
       return apiFetch<{ data: Record<string, unknown>[]; total: number }>(
         `/api/${slug}?${searchParams}`,
       );
     },
-    enabled: !!slug,
+    queryKey: ["entries", slug, params],
   });
 }
 
 export function useEntry(slug: string, id: string, locale = "en") {
   return useQuery({
-    queryKey: ["entry", slug, id, locale],
-    queryFn: () => apiFetch<Record<string, unknown>>(`/api/${slug}/${id}?locale=${locale}`),
     enabled: !!slug && !!id,
+    queryFn: () => apiFetch<Record<string, unknown>>(`/api/${slug}/${id}?locale=${locale}`),
+    queryKey: ["entry", slug, id, locale],
   });
 }
 
 export function useDashboardData(colSlugs: string[]) {
   return useQuery({
-    queryKey: ["dashboard", colSlugs],
+    enabled: colSlugs.length > 0,
     queryFn: async () => {
       const counts = await Promise.all(
         colSlugs.map(async (slug) => {
           try {
             const data = await apiFetch<{ total: number }>(`/api/${slug}`);
-            return { slug, entryCount: data.total };
+            return { entryCount: data.total, slug };
           } catch {
-            return { slug, entryCount: 0 };
+            return { entryCount: 0, slug };
           }
         }),
       );
-      const { fetchUsers, fetchMedia, fetchActivity } = await import("@/lib/api");
+      const { fetchActivity, fetchMedia, fetchUsers } = await import("@/lib/api");
       const [usersRes, mediaRes, activityRes] = await Promise.all([
         fetchUsers(),
         fetchMedia(),
         fetchActivity().catch(() => ({ data: [], total: 0 })),
       ]);
-      return { counts, usersRes, mediaRes, activityRes };
+      return { activityRes, counts, mediaRes, usersRes };
     },
-    enabled: colSlugs.length > 0,
+    queryKey: ["dashboard", colSlugs],
     staleTime: 30_000,
   });
 }
 
 export function useApiTokensList() {
   return useQuery({
-    queryKey: ["api-tokens"],
     queryFn: fetchApiTokens,
+    queryKey: ["api-tokens"],
     staleTime: 30_000,
   });
 }
 
 export function useWebhooksList() {
   return useQuery({
-    queryKey: ["webhooks"],
     queryFn: fetchWebhooks,
+    queryKey: ["webhooks"],
     staleTime: 30_000,
   });
 }
 
 export function useWebhook(id: string) {
   return useQuery({
-    queryKey: ["webhook", id],
-    queryFn: () => fetchWebhook(id),
     enabled: !!id,
+    queryFn: () => fetchWebhook(id),
+    queryKey: ["webhook", id],
   });
 }
 
 export function usePluginsList() {
   return useQuery({
-    queryKey: ["plugins"],
     queryFn: fetchPlugins,
+    queryKey: ["plugins"],
     staleTime: 30_000,
   });
 }
 
 export function useRelationEntries(to: string) {
   return useQuery({
-    queryKey: ["relation-entries", to],
+    enabled: !!to,
     queryFn: async () => {
       const data = await apiFetch<{ data: Array<Record<string, unknown>> }>(`/api/${to}`);
       return data.data.map((e) => ({
@@ -151,7 +152,7 @@ export function useRelationEntries(to: string) {
         label: (e.title ?? e.name ?? e.id) as string,
       }));
     },
-    enabled: !!to,
+    queryKey: ["relation-entries", to],
   });
 }
 
@@ -185,8 +186,8 @@ export function useBulkDelete(slug: string) {
   return useMutation({
     mutationFn: async (ids: string[]) => {
       await apiFetch(`/api/${slug}/bulk-delete`, {
-        method: "POST",
         body: JSON.stringify({ ids }),
+        method: "POST",
       });
     },
     onSuccess: () => {
@@ -259,8 +260,8 @@ export function useUpdateWebhook() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
-      id,
       data,
+      id,
     }: {
       id: string;
       data: Partial<{
@@ -292,9 +293,9 @@ export function useSaveSchema() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
-      type,
-      slug,
       data,
+      slug,
+      type,
     }: {
       type: string;
       slug: string;

@@ -1,11 +1,13 @@
+import { Upload, Plus, Trash2, GripVertical } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
+
+import type { FieldDefinition } from "@/lib/api";
+
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Upload, Plus, Trash2, GripVertical } from "lucide-react";
 import { uploadMedia, getMediaUrl, fetchSchema } from "@/lib/api";
 import { useRelationEntries } from "@/lib/hooks";
-import type { FieldDefinition } from "@/lib/api";
 
 type FieldInputProps = {
   field: FieldDefinition;
@@ -14,7 +16,7 @@ type FieldInputProps = {
   error?: string;
 };
 
-export function FieldInput({ field, value, onChange, error }: FieldInputProps) {
+export function FieldInput({ error, field, onChange, value }: FieldInputProps) {
   const strVal = typeof value === "string" ? value : value != null ? String(value) : "";
 
   if (field.type === "media" || field.type === "upload") {
@@ -150,10 +152,10 @@ function FieldError({ error }: { error?: string }) {
 /* ─── Boolean ─── */
 
 function BooleanInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -183,10 +185,10 @@ function BooleanInput({
 /* ─── Checkbox ─── */
 
 function CheckboxInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -216,10 +218,10 @@ function CheckboxInput({
 /* ─── Select ─── */
 
 function SelectInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -251,10 +253,10 @@ function SelectInput({
 /* ─── Radio ─── */
 
 function RadioInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -288,10 +290,10 @@ function RadioInput({
 /* ─── MultiSelect ─── */
 
 function MultiSelectInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -342,10 +344,10 @@ function MultiSelectInput({
 /* ─── Color ─── */
 
 function ColorInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -379,10 +381,10 @@ function ColorInput({
 /* ─── Textarea (plain) ─── */
 
 function TextareaInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -409,10 +411,10 @@ function TextareaInput({
 /* ─── RichText (contentEditable with minimal toolbar) ─── */
 
 function RichTextInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -507,10 +509,10 @@ function RichTextInput({
 }
 
 function ToolbarBtn({
+  className,
+  label,
   onClick,
   title,
-  label,
-  className,
 }: {
   onClick: () => void;
   title: string;
@@ -531,14 +533,14 @@ function ToolbarBtn({
 
 /* ─── Markdown (split: edit + preview) ─── */
 
-import { marked } from "marked";
 import DOMPurify from "dompurify";
+import { marked } from "marked";
 
 function MarkdownInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -579,10 +581,10 @@ function MarkdownInput({
 /* ─── Code (monospace textarea with language badge) ─── */
 
 function CodeInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -618,10 +620,10 @@ function CodeInput({
 /* ─── JSON (monospace textarea with validation) ─── */
 
 function JsonInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -687,10 +689,10 @@ function JsonInput({
 /* ─── Media / Upload ─── */
 
 function MediaUploadInput({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -769,10 +771,10 @@ function MediaUploadInput({
 /* ─── Relation ─── */
 
 function RelationPicker({
-  field,
-  strVal,
-  onChange,
   error,
+  field,
+  onChange,
+  strVal,
 }: {
   field: FieldDefinition;
   strVal: string;
@@ -870,10 +872,10 @@ function RelationPicker({
 /* ─── Component ─── */
 
 function ComponentInput({
-  field,
-  value,
-  onChange,
   error,
+  field,
+  onChange,
+  value,
 }: {
   field: FieldDefinition;
   value: unknown;
@@ -968,10 +970,10 @@ function ComponentInput({
 /* ─── DynamicZone ─── */
 
 function DynamicZoneInput({
-  field,
-  value,
-  onChange,
   error,
+  field,
+  onChange,
+  value,
 }: {
   field: FieldDefinition;
   value: unknown;
@@ -1086,10 +1088,10 @@ function DynamicZoneInput({
 /* ─── Array ─── */
 
 function ArrayInput({
-  field,
-  value,
-  onChange,
   error,
+  field,
+  onChange,
+  value,
 }: {
   field: FieldDefinition;
   value: unknown;
@@ -1138,10 +1140,10 @@ function ArrayInput({
 /* ─── Object / Group ─── */
 
 function ObjectInput({
-  field,
-  value,
-  onChange,
   error,
+  field,
+  onChange,
+  value,
 }: {
   field: FieldDefinition;
   value: unknown;
@@ -1163,10 +1165,10 @@ function ObjectInput({
 /* ─── Repeater ─── */
 
 function RepeaterInput({
-  field,
-  value,
-  onChange,
   error,
+  field,
+  onChange,
+  value,
 }: {
   field: FieldDefinition;
   value: unknown;
@@ -1218,10 +1220,10 @@ function RepeaterInput({
 /* ─── Tabs ─── */
 
 function TabsInput({
-  field,
-  value,
-  onChange,
   error,
+  field,
+  onChange,
+  value,
 }: {
   field: FieldDefinition;
   value: unknown;
@@ -1278,8 +1280,8 @@ function TabsInput({
 
 function NestedFields({
   fields,
-  values,
   onChange,
+  values,
 }: {
   fields: FieldDefinition[];
   values: Record<string, unknown>;

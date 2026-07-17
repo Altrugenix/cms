@@ -1,15 +1,15 @@
-import type { FastifyInstance } from "fastify";
 import type { DatabaseAdapter } from "@arche-cms/database";
+import type { FastifyInstance } from "fastify";
 
 export function registerHealth(fastify: FastifyInstance, adapter: DatabaseAdapter): void {
   fastify.get(
     "/health",
     {
       schema: {
-        summary: "Health check",
         description: "Returns server health status including database connectivity",
-        tags: ["System"],
         security: [],
+        summary: "Health check",
+        tags: ["System"],
       },
     },
     async () => {
@@ -20,8 +20,8 @@ export function registerHealth(fastify: FastifyInstance, adapter: DatabaseAdapte
         dbStatus = "error";
       }
       return {
-        status: dbStatus === "ok" ? "ok" : "degraded",
         db: dbStatus,
+        status: dbStatus === "ok" ? "ok" : "degraded",
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
       };

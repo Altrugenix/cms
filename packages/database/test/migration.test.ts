@@ -1,24 +1,26 @@
 import { describe, it, expect, vi } from "vitest";
-import { MigrationRunner } from "../src/migration.js";
+
 import type { DatabaseAdapter, Migration } from "../src/types.js";
+
+import { MigrationRunner } from "../src/migration.js";
 
 function createMockAdapter(): DatabaseAdapter {
   return {
     connect: vi.fn(),
-    disconnect: vi.fn(),
-    findOne: vi.fn(),
-    findMany: vi.fn(),
     create: vi.fn(),
-    update: vi.fn(),
+    createTable: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),
-    transaction: vi.fn(),
-    raw: vi.fn().mockResolvedValue([]),
-    createTable: vi.fn(),
+    disconnect: vi.fn(),
     dropTable: vi.fn(),
-    runMigration: vi.fn(),
+    findMany: vi.fn(),
+    findOne: vi.fn(),
     getExecutedMigrations: vi.fn().mockResolvedValue([]),
     getExistingSchema: vi.fn(),
+    raw: vi.fn().mockResolvedValue([]),
+    runMigration: vi.fn(),
+    transaction: vi.fn(),
+    update: vi.fn(),
   };
 }
 
@@ -29,9 +31,9 @@ describe("MigrationRunner", () => {
 
     const runner = new MigrationRunner(adapter);
     const migrations: Migration[] = [
-      { id: "001", name: "m1", up: "UP1", down: "DOWN1" },
-      { id: "002", name: "m2", up: "UP2", down: "DOWN2" },
-      { id: "003", name: "m3", up: "UP3", down: "DOWN3" },
+      { down: "DOWN1", id: "001", name: "m1", up: "UP1" },
+      { down: "DOWN2", id: "002", name: "m2", up: "UP2" },
+      { down: "DOWN3", id: "003", name: "m3", up: "UP3" },
     ];
 
     await runner.rollback(migrations);
@@ -48,9 +50,9 @@ describe("MigrationRunner", () => {
 
     const runner = new MigrationRunner(adapter);
     const migrations: Migration[] = [
-      { id: "001", name: "m1", up: "UP1", down: "DOWN1" },
-      { id: "002", name: "m2", up: "UP2", down: "DOWN2" },
-      { id: "003", name: "m3", up: "UP3", down: "DOWN3" },
+      { down: "DOWN1", id: "001", name: "m1", up: "UP1" },
+      { down: "DOWN2", id: "002", name: "m2", up: "UP2" },
+      { down: "DOWN3", id: "003", name: "m3", up: "UP3" },
     ];
 
     await runner.rollback(migrations, "002");
@@ -65,9 +67,9 @@ describe("MigrationRunner", () => {
 
     const runner = new MigrationRunner(adapter);
     const migrations: Migration[] = [
-      { id: "001", name: "m1", up: "UP1", down: "DOWN1" },
-      { id: "002", name: "m2", up: "UP2", down: "DOWN2" },
-      { id: "003", name: "m3", up: "UP3", down: "DOWN3" },
+      { down: "DOWN1", id: "001", name: "m1", up: "UP1" },
+      { down: "DOWN2", id: "002", name: "m2", up: "UP2" },
+      { down: "DOWN3", id: "003", name: "m3", up: "UP3" },
     ];
 
     await runner.rollback(migrations);
@@ -82,7 +84,7 @@ describe("MigrationRunner", () => {
     adapter.getExecutedMigrations.mockResolvedValue([]);
 
     const runner = new MigrationRunner(adapter);
-    await runner.rollback([{ id: "001", name: "m1", up: "UP1", down: "DOWN1" }]);
+    await runner.rollback([{ down: "DOWN1", id: "001", name: "m1", up: "UP1" }]);
 
     expect(adapter.raw).not.toHaveBeenCalled();
   });

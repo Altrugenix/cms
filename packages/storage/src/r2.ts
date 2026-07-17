@@ -11,15 +11,15 @@ export interface R2AdapterOptions {
 export class R2Adapter extends S3Adapter {
   constructor(options: R2AdapterOptions) {
     const s3Options: S3AdapterOptions = {
+      baseDir: options.baseDir,
       bucket: options.bucket,
-      region: "auto",
-      endpoint: `https://${options.accountId}.r2.cloudflarestorage.com`,
       credentials: {
         accessKeyId: options.accessKeyId,
         secretAccessKey: options.secretAccessKey,
       },
+      endpoint: `https://${options.accountId}.r2.cloudflarestorage.com`,
       forcePathStyle: true,
-      baseDir: options.baseDir,
+      region: "auto",
     };
     super(s3Options);
   }

@@ -1,86 +1,86 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "Arche CMS",
+  base: process.env.DOCS_BASE || "/arche-cms/",
+  cleanUrls: true,
   description: "File-based, open-source, developer-first headless CMS",
   lang: "en-US",
   lastUpdated: true,
-  cleanUrls: true,
-  base: process.env.DOCS_BASE || "/arche-cms/",
-
   themeConfig: {
+    footer: {
+      copyright: "Copyright 2026 Arche CMS",
+      message: "Released under the MIT License.",
+    },
+
     logo: "/logo.svg",
 
     nav: [
-      { text: "Guide", link: "/guide/getting-started", activeMatch: "/guide/" },
-      { text: "Reference", link: "/reference/api", activeMatch: "/reference/" },
+      { activeMatch: "/guide/", link: "/guide/getting-started", text: "Guide" },
+      { activeMatch: "/reference/", link: "/reference/api", text: "Reference" },
       {
-        text: "v0.1.0",
         items: [
-          { text: "Changelog", link: "/changelog" },
-          { text: "Contributing", link: "/contributing" },
-          { text: "GitHub", link: "https://github.com/Arche-CMS/arche-cms" },
+          { link: "/changelog", text: "Changelog" },
+          { link: "/contributing", text: "Contributing" },
+          { link: "https://github.com/Arche-CMS/arche-cms", text: "GitHub" },
         ],
+        text: "v0.1.0",
       },
     ],
+
+    search: {
+      provider: "local",
+    },
 
     sidebar: {
       "/guide/": [
         {
+          items: [
+            { link: "/guide/introduction", text: "Introduction" },
+            { link: "/guide/getting-started", text: "Getting Started" },
+            { link: "/guide/architecture", text: "Architecture" },
+          ],
           text: "Getting Started",
-          items: [
-            { text: "Introduction", link: "/guide/introduction" },
-            { text: "Getting Started", link: "/guide/getting-started" },
-            { text: "Architecture", link: "/guide/architecture" },
-          ],
         },
         {
+          items: [
+            { link: "/guide/schemas", text: "Schemas" },
+            { link: "/guide/field-types", text: "Field Types" },
+            { link: "/guide/plugins", text: "Plugins" },
+            { link: "/guide/storage", text: "Storage" },
+          ],
           text: "Core Concepts",
-          items: [
-            { text: "Schemas", link: "/guide/schemas" },
-            { text: "Field Types", link: "/guide/field-types" },
-            { text: "Plugins", link: "/guide/plugins" },
-            { text: "Storage", link: "/guide/storage" },
-          ],
         },
         {
+          items: [{ link: "/guide/cli-usage", text: "CLI Usage" }],
           text: "CLI",
-          items: [{ text: "CLI Usage", link: "/guide/cli-usage" }],
         },
         {
+          items: [{ link: "/guide/deployment", text: "Deployment Guide" }],
           text: "Deployment",
-          items: [{ text: "Deployment Guide", link: "/guide/deployment" }],
         },
       ],
 
       "/reference/": [
         {
-          text: "API Reference",
           items: [
-            { text: "REST API", link: "/reference/api" },
-            { text: "GraphQL API", link: "/reference/graphql" },
-            { text: "TypeScript SDK", link: "/reference/sdk" },
+            { link: "/reference/api", text: "REST API" },
+            { link: "/reference/graphql", text: "GraphQL API" },
+            { link: "/reference/sdk", text: "TypeScript SDK" },
           ],
+          text: "API Reference",
         },
         {
-          text: "Package Reference",
           items: [
-            { text: "Schema API", link: "/reference/schema" },
-            { text: "Plugin API", link: "/reference/plugin-api" },
+            { link: "/reference/schema", text: "Schema API" },
+            { link: "/reference/plugin-api", text: "Plugin API" },
           ],
+          text: "Package Reference",
         },
       ],
     },
 
     socialLinks: [{ icon: "github", link: "https://github.com/Arche-CMS/arche-cms" }],
-
-    footer: {
-      message: "Released under the MIT License.",
-      copyright: "Copyright 2026 Arche CMS",
-    },
-
-    search: {
-      provider: "local",
-    },
   },
+
+  title: "Arche CMS",
 });

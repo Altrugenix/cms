@@ -1,6 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { pascalCase, fieldToGraphQLType, fieldToGraphQLInputType } from "../src/types.js";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
+import { pascalCase, fieldToGraphQLType, fieldToGraphQLInputType } from "../src/types.js";
 
 const emptyCollections: CollectionDefinition[] = [];
 
@@ -33,13 +35,13 @@ describe("fieldToGraphQLType", () => {
 
   it("maps select to String", () => {
     expect(
-      fieldToGraphQLType({ name: "status", type: "select", options: [] }, emptyCollections),
+      fieldToGraphQLType({ name: "status", options: [], type: "select" }, emptyCollections),
     ).toBe("String");
   });
 
   it("maps radio to String", () => {
     expect(
-      fieldToGraphQLType({ name: "choice", type: "radio", options: [] }, emptyCollections),
+      fieldToGraphQLType({ name: "choice", options: [], type: "radio" }, emptyCollections),
     ).toBe("String");
   });
 
@@ -51,33 +53,33 @@ describe("fieldToGraphQLType", () => {
 
   it("maps multiSelect to [String!]", () => {
     expect(
-      fieldToGraphQLType({ name: "tags", type: "multiSelect", options: [] }, emptyCollections),
+      fieldToGraphQLType({ name: "tags", options: [], type: "multiSelect" }, emptyCollections),
     ).toBe("[String!]");
   });
 
   it("maps relation to target collection PascalCase", () => {
     const collections: CollectionDefinition[] = [
       {
-        slug: "users",
-        labels: { singular: "User", plural: "Users" },
         fields: [{ name: "name", type: "text" }],
+        labels: { plural: "Users", singular: "User" },
+        slug: "users",
       },
     ];
-    expect(fieldToGraphQLType({ name: "author", type: "relation", to: "users" }, collections)).toBe(
+    expect(fieldToGraphQLType({ name: "author", to: "users", type: "relation" }, collections)).toBe(
       "Users",
     );
   });
 
   it("maps relation to String when target not found", () => {
     expect(
-      fieldToGraphQLType({ name: "ref", type: "relation", to: "nonexistent" }, emptyCollections),
+      fieldToGraphQLType({ name: "ref", to: "nonexistent", type: "relation" }, emptyCollections),
     ).toBe("String");
   });
 
   it("maps component to PascalCase of component name", () => {
     expect(
       fieldToGraphQLType(
-        { name: "seo", type: "component", component: "seo-widget" },
+        { component: "seo-widget", name: "seo", type: "component" },
         emptyCollections,
       ),
     ).toBe("SeoWidget");
@@ -89,36 +91,36 @@ describe("fieldToGraphQLType", () => {
 
   it("maps dynamicZone to [JSON!]", () => {
     expect(
-      fieldToGraphQLType({ name: "blocks", type: "dynamicZone", components: [] }, emptyCollections),
+      fieldToGraphQLType({ components: [], name: "blocks", type: "dynamicZone" }, emptyCollections),
     ).toBe("[JSON!]");
   });
 
   it("maps array to [JSON!]", () => {
-    expect(fieldToGraphQLType({ name: "items", type: "array", fields: [] }, emptyCollections)).toBe(
+    expect(fieldToGraphQLType({ fields: [], name: "items", type: "array" }, emptyCollections)).toBe(
       "[JSON!]",
     );
   });
 
   it("maps repeater to [JSON!]", () => {
     expect(
-      fieldToGraphQLType({ name: "rows", type: "repeater", fields: [] }, emptyCollections),
+      fieldToGraphQLType({ fields: [], name: "rows", type: "repeater" }, emptyCollections),
     ).toBe("[JSON!]");
   });
 
   it("maps object to JSON", () => {
-    expect(fieldToGraphQLType({ name: "meta", type: "object", fields: [] }, emptyCollections)).toBe(
+    expect(fieldToGraphQLType({ fields: [], name: "meta", type: "object" }, emptyCollections)).toBe(
       "JSON",
     );
   });
 
   it("maps group to JSON", () => {
     expect(
-      fieldToGraphQLType({ name: "settings", type: "group", fields: [] }, emptyCollections),
+      fieldToGraphQLType({ fields: [], name: "settings", type: "group" }, emptyCollections),
     ).toBe("JSON");
   });
 
   it("maps tabs to JSON", () => {
-    expect(fieldToGraphQLType({ name: "content", type: "tabs", tabs: [] }, emptyCollections)).toBe(
+    expect(fieldToGraphQLType({ name: "content", tabs: [], type: "tabs" }, emptyCollections)).toBe(
       "JSON",
     );
   });
@@ -131,11 +133,12 @@ describe("fieldToGraphQLType", () => {
 
   it("returns JSON for localized field", () => {
     expect(
-      fieldToGraphQLType({ name: "title", type: "text", localized: true }, emptyCollections),
+      fieldToGraphQLType({ localized: true, name: "title", type: "text" }, emptyCollections),
     ).toBe("JSON");
   });
 });
 
+// eslint-disable-next-line no-secrets/no-secrets -- false positive on function name
 describe("fieldToGraphQLInputType", () => {
   it("adds ! for required field", () => {
     expect(

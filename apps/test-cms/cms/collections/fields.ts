@@ -13,8 +13,6 @@ import {
 } from "@arche-cms/schema";
 
 export default defineCollection({
-  slug: "fields",
-  labels: { singular: "Fields", plural: "Fieldss" },
   fields: [
     text("field_1"),
     textarea("field_2"),
@@ -27,4 +25,6 @@ export default defineCollection({
     markdown("field_9"),
     slug("field_10"),
   ],
+  labels: { plural: "Fieldss", singular: "Fields" },
+  slug: "fields",
 });

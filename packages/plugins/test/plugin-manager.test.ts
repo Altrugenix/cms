@@ -1,29 +1,31 @@
-import { describe, it, expect, vi } from "vitest";
-import { PluginManager } from "../src/plugin-manager.js";
 import type { PluginDefinition } from "@arche-cms/types";
+
+import { describe, it, expect, vi } from "vitest";
+
+import { PluginManager } from "../src/plugin-manager.js";
 
 describe("PluginManager", () => {
   const mockEventBus = { emit: vi.fn() };
   const mockLifecycle = { onShutdown: vi.fn() };
   const mockContext = {
     config: {} as never,
-    logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn() },
     container: {},
+    logger: { debug: vi.fn(), error: vi.fn(), fatal: vi.fn(), info: vi.fn(), warn: vi.fn() },
   };
 
   function createManager() {
     return new PluginManager({
+      context: mockContext,
       eventBus: mockEventBus,
       lifecycle: mockLifecycle,
-      context: mockContext,
     });
   }
 
   it("registers a plugin", () => {
     const pm = createManager();
     const plugin: PluginDefinition = {
-      slug: "test-plugin",
       name: "Test Plugin",
+      slug: "test-plugin",
     };
     pm.register(plugin);
     expect(pm.get("test-plugin")).toBeDefined();
@@ -33,29 +35,29 @@ describe("PluginManager", () => {
 
   it("throws when registering duplicate plugin", () => {
     const pm = createManager();
-    const plugin: PluginDefinition = { slug: "dup", name: "Dup" };
+    const plugin: PluginDefinition = { name: "Dup", slug: "dup" };
     pm.register(plugin);
     expect(() => pm.register(plugin)).toThrow('Plugin "dup" is already registered');
   });
 
   it("unregisters a plugin", () => {
     const pm = createManager();
-    pm.register({ slug: "test", name: "Test" });
+    pm.register({ name: "Test", slug: "test" });
     pm.unregister("test");
     expect(pm.get("test")).toBeUndefined();
   });
 
   it("gets all registered plugins", () => {
     const pm = createManager();
-    pm.register({ slug: "a", name: "A" });
-    pm.register({ slug: "b", name: "B" });
+    pm.register({ name: "A", slug: "a" });
+    pm.register({ name: "B", slug: "b" });
     expect(pm.getAll()).toHaveLength(2);
   });
 
   it("filters enabled plugins", () => {
     const pm = createManager();
-    pm.register({ slug: "a", name: "A" });
-    pm.register({ slug: "b", name: "B" });
+    pm.register({ name: "A", slug: "a" });
+    pm.register({ name: "B", slug: "b" });
     pm.disable("a");
     expect(pm.getEnabled()).toHaveLength(1);
     expect(pm.getEnabled()[0]?.plugin.slug).toBe("b");
@@ -63,7 +65,7 @@ describe("PluginManager", () => {
 
   it("enable/disable toggles plugin state", () => {
     const pm = createManager();
-    pm.register({ slug: "test", name: "Test" });
+    pm.register({ name: "Test", slug: "test" });
     pm.disable("test");
     expect(pm.get("test")?.enabled).toBe(false);
     pm.enable("test");
@@ -72,13 +74,13 @@ describe("PluginManager", () => {
 
   it("emits plugin:registered event", () => {
     const pm = createManager();
-    pm.register({ slug: "audit", name: "Audit" });
+    pm.register({ name: "Audit", slug: "audit" });
     expect(mockEventBus.emit).toHaveBeenCalledWith("plugin:registered", { slug: "audit" });
   });
 
   it("registers shutdown hook", () => {
     const pm = createManager();
-    pm.register({ slug: "test", name: "Test" });
+    pm.register({ name: "Test", slug: "test" });
     expect(mockLifecycle.onShutdown).toHaveBeenCalled();
   });
 
@@ -86,9 +88,9 @@ describe("PluginManager", () => {
     const pm = createManager();
     const beforeSchemaLoad = vi.fn();
     pm.register({
-      slug: "test",
-      name: "Test",
       hooks: { beforeSchemaLoad },
+      name: "Test",
+      slug: "test",
     });
     await pm.runHook("beforeSchemaLoad");
     expect(beforeSchemaLoad).toHaveBeenCalledWith(mockContext);
@@ -98,9 +100,9 @@ describe("PluginManager", () => {
     const pm = createManager();
     const afterSchemaLoad = vi.fn();
     pm.register({
-      slug: "test",
-      name: "Test",
       hooks: { afterSchemaLoad },
+      name: "Test",
+      slug: "test",
     });
     await pm.runHook("afterSchemaLoad");
     expect(afterSchemaLoad).toHaveBeenCalledWith(mockContext);
@@ -109,7 +111,7 @@ describe("PluginManager", () => {
   it("skips hooks for disabled plugins", async () => {
     const pm = createManager();
     const hook = vi.fn();
-    pm.register({ slug: "test", name: "Test", hooks: { beforeSchemaLoad: hook } });
+    pm.register({ hooks: { beforeSchemaLoad: hook }, name: "Test", slug: "test" });
     pm.disable("test");
     await pm.runHook("beforeSchemaLoad");
     expect(hook).not.toHaveBeenCalled();
@@ -118,18 +120,18 @@ describe("PluginManager", () => {
   it("collects custom fields from plugins", () => {
     const pm = createManager();
     pm.register({
-      slug: "seo",
-      name: "SEO",
       fields: {
         posts: [{ name: "metaTitle", type: "text" }],
       },
+      name: "SEO",
+      slug: "seo",
     });
     pm.register({
-      slug: "audit",
-      name: "Audit",
       fields: {
         posts: [{ name: "lastReviewed", type: "date" }],
       },
+      name: "Audit",
+      slug: "audit",
     });
     const fields = pm.getCustomFields();
     expect(fields.posts).toHaveLength(2);
@@ -140,11 +142,11 @@ describe("PluginManager", () => {
   it("collects admin panels from plugins", () => {
     const pm = createManager();
     pm.register({
-      slug: "analytics",
-      name: "Analytics",
       adminPanels: [
-        { slug: "analytics-dash", label: "Analytics Dashboard", component: "AnalyticsDashboard" },
+        { component: "AnalyticsDashboard", label: "Analytics Dashboard", slug: "analytics-dash" },
       ],
+      name: "Analytics",
+      slug: "analytics",
     });
     const panels = pm.getAdminPanels();
     expect(panels).toHaveLength(1);
@@ -155,7 +157,7 @@ describe("PluginManager", () => {
   it("initPlugins runs beforeSchemaLoad hooks", async () => {
     const pm = createManager();
     const hook = vi.fn();
-    pm.register({ slug: "test", name: "Test", hooks: { beforeSchemaLoad: hook } });
+    pm.register({ hooks: { beforeSchemaLoad: hook }, name: "Test", slug: "test" });
     await pm.initPlugins();
     expect(hook).toHaveBeenCalled();
   });
@@ -164,9 +166,9 @@ describe("PluginManager", () => {
     const pm = createManager();
     const beforeRequest = vi.fn();
     pm.register({
-      slug: "test",
-      name: "Test",
       hooks: { beforeRequest },
+      name: "Test",
+      slug: "test",
     });
     const req = { url: "/api/posts" };
     await pm.runRequestHook("beforeRequest", req);
@@ -177,9 +179,9 @@ describe("PluginManager", () => {
     const pm = createManager();
     const afterRequest = vi.fn();
     pm.register({
-      slug: "test",
-      name: "Test",
       hooks: { afterRequest },
+      name: "Test",
+      slug: "test",
     });
     const res = { status: 200 };
     await pm.runRequestHook("afterRequest", res);
@@ -190,9 +192,9 @@ describe("PluginManager", () => {
     const pm = createManager();
     const beforeRouteRegister = vi.fn();
     pm.register({
-      slug: "test",
-      name: "Test",
       hooks: { beforeRouteRegister },
+      name: "Test",
+      slug: "test",
     });
     await pm.runRouteHook("beforeRouteRegister");
     expect(beforeRouteRegister).toHaveBeenCalledWith(mockContext);
@@ -202,9 +204,9 @@ describe("PluginManager", () => {
     const pm = createManager();
     const afterRouteRegister = vi.fn();
     pm.register({
-      slug: "test",
-      name: "Test",
       hooks: { afterRouteRegister },
+      name: "Test",
+      slug: "test",
     });
     await pm.runRouteHook("afterRouteRegister");
     expect(afterRouteRegister).toHaveBeenCalledWith(mockContext);
@@ -213,7 +215,7 @@ describe("PluginManager", () => {
   it("skips request hooks for disabled plugins", async () => {
     const pm = createManager();
     const hook = vi.fn();
-    pm.register({ slug: "test", name: "Test", hooks: { beforeRequest: hook } });
+    pm.register({ hooks: { beforeRequest: hook }, name: "Test", slug: "test" });
     pm.disable("test");
     await pm.runRequestHook("beforeRequest", {});
     expect(hook).not.toHaveBeenCalled();
@@ -222,7 +224,7 @@ describe("PluginManager", () => {
   it("skips route hooks for disabled plugins", async () => {
     const pm = createManager();
     const hook = vi.fn();
-    pm.register({ slug: "test", name: "Test", hooks: { beforeRouteRegister: hook } });
+    pm.register({ hooks: { beforeRouteRegister: hook }, name: "Test", slug: "test" });
     pm.disable("test");
     await pm.runRouteHook("beforeRouteRegister");
     expect(hook).not.toHaveBeenCalled();
@@ -233,9 +235,9 @@ describe("PluginManager", () => {
     const error = new Error("hook failed");
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     pm.register({
-      slug: "bad-plugin",
-      name: "Bad Plugin",
       hooks: { beforeSchemaLoad: vi.fn().mockRejectedValue(error) },
+      name: "Bad Plugin",
+      slug: "bad-plugin",
     });
     await pm.runHook("beforeSchemaLoad");
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -250,9 +252,9 @@ describe("PluginManager", () => {
     const error = new Error("request hook failed");
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     pm.register({
-      slug: "bad-plugin",
-      name: "Bad Plugin",
       hooks: { beforeRequest: vi.fn().mockRejectedValue(error) },
+      name: "Bad Plugin",
+      slug: "bad-plugin",
     });
     await pm.runRequestHook("beforeRequest", {});
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -267,9 +269,9 @@ describe("PluginManager", () => {
     const error = new Error("route hook failed");
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     pm.register({
-      slug: "bad-plugin",
-      name: "Bad Plugin",
       hooks: { beforeRouteRegister: vi.fn().mockRejectedValue(error) },
+      name: "Bad Plugin",
+      slug: "bad-plugin",
     });
     await pm.runRouteHook("beforeRouteRegister");
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -281,7 +283,7 @@ describe("PluginManager", () => {
 
   it("executes shutdown callback to remove plugin registration", async () => {
     const pm = createManager();
-    pm.register({ slug: "temp", name: "Temp" });
+    pm.register({ name: "Temp", slug: "temp" });
     expect(pm.get("temp")).toBeDefined();
     const allCalls = mockLifecycle.onShutdown.mock.calls;
     const shutdownFn = allCalls[allCalls.length - 1]?.[0];
@@ -292,27 +294,27 @@ describe("PluginManager", () => {
 
   it("getCustomFields returns empty when no plugins have fields", () => {
     const pm = createManager();
-    pm.register({ slug: "nofields", name: "No Fields" });
+    pm.register({ name: "No Fields", slug: "nofields" });
     const fields = pm.getCustomFields();
     expect(fields).toEqual({});
   });
 
   it("getAdminPanels returns empty when no plugins have panels", () => {
     const pm = createManager();
-    pm.register({ slug: "nopanels", name: "No Panels" });
+    pm.register({ name: "No Panels", slug: "nopanels" });
     const panels = pm.getAdminPanels();
     expect(panels).toEqual([]);
   });
 
   it("register passes config to registration", () => {
     const pm = createManager();
-    pm.register({ slug: "cfg", name: "Cfg" }, { apiKey: "123" });
+    pm.register({ name: "Cfg", slug: "cfg" }, { apiKey: "123" });
     expect(pm.get("cfg")?.config).toEqual({ apiKey: "123" });
   });
 
   it("register without config leaves config undefined", () => {
     const pm = createManager();
-    pm.register({ slug: "nocfg", name: "No Cfg" });
+    pm.register({ name: "No Cfg", slug: "nocfg" });
     expect(pm.get("nocfg")?.config).toBeUndefined();
   });
 
@@ -343,31 +345,31 @@ describe("PluginManager", () => {
 
   it("runHook does nothing when no plugins have the hook", async () => {
     const pm = createManager();
-    pm.register({ slug: "nohook", name: "No Hook" });
+    pm.register({ name: "No Hook", slug: "nohook" });
     await pm.runHook("beforeSchemaLoad");
   });
 
   it("runRequestHook does nothing when no plugins have the hook", async () => {
     const pm = createManager();
-    pm.register({ slug: "nohook", name: "No Hook" });
+    pm.register({ name: "No Hook", slug: "nohook" });
     await pm.runRequestHook("beforeRequest", {});
   });
 
   it("runRouteHook does nothing when no plugins have the hook", async () => {
     const pm = createManager();
-    pm.register({ slug: "nohook", name: "No Hook" });
+    pm.register({ name: "No Hook", slug: "nohook" });
     await pm.runRouteHook("beforeRouteRegister");
   });
 
   it("getCustomFields accumulates fields from multiple collection keys", () => {
     const pm = createManager();
     pm.register({
-      slug: "p1",
-      name: "P1",
       fields: {
-        posts: [{ name: "f1", type: "text" }],
         pages: [{ name: "f2", type: "text" }],
+        posts: [{ name: "f1", type: "text" }],
       },
+      name: "P1",
+      slug: "p1",
     });
     const fields = pm.getCustomFields();
     expect(fields.posts).toHaveLength(1);

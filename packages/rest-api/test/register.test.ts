@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+
 import { registerRoutes, type RouterAdapter } from "../src/register.js";
 
 describe("registerRoutes", () => {
@@ -8,14 +9,14 @@ describe("registerRoutes", () => {
 
     const routes = [
       {
+        handler: async () => ({ body: [], statusCode: 200 }),
         method: "GET" as const,
         path: "/posts",
-        handler: async () => ({ statusCode: 200, body: [] }),
       },
       {
+        handler: async () => ({ body: {}, statusCode: 201 }),
         method: "POST" as const,
         path: "/posts",
-        handler: async () => ({ statusCode: 201, body: {} }),
       },
     ];
 
@@ -31,43 +32,43 @@ describe("registerRoutes", () => {
       route: (opts) => {
         opts.handler(
           {
-            params: { id: "1" },
-            query: { select: "title" },
             body: null,
             headers: { authorization: "Bearer x" },
+            params: { id: "1" },
+            query: { select: "title" },
           },
-          { status: () => ({ send: () => {}, header: () => {} }) },
+          { status: () => ({ header: () => {}, send: () => {} }) },
         );
       },
     };
 
-    const handler = vi.fn().mockResolvedValue({ statusCode: 200, body: {} });
-    registerRoutes(adapter, [{ method: "GET", path: "/posts/:id", handler }]);
+    const handler = vi.fn().mockResolvedValue({ body: {}, statusCode: 200 });
+    registerRoutes(adapter, [{ handler, method: "GET", path: "/posts/:id" }]);
 
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
+        headers: { authorization: "Bearer x" },
         params: { id: "1" },
         query: { select: "title" },
-        headers: { authorization: "Bearer x" },
       }),
     );
   });
 
   it("sends status code and body via reply", async () => {
     const send = vi.fn();
-    const status = vi.fn().mockReturnValue({ send, header: vi.fn() });
+    const status = vi.fn().mockReturnValue({ header: vi.fn(), send });
 
     const adapter: RouterAdapter = {
       route: (opts) => {
-        opts.handler({ params: {}, query: {}, body: null, headers: {} }, { status });
+        opts.handler({ body: null, headers: {}, params: {}, query: {} }, { status });
       },
     };
 
     registerRoutes(adapter, [
       {
+        handler: async () => ({ body: { data: [] }, statusCode: 200 }),
         method: "GET",
         path: "/posts",
-        handler: async () => ({ statusCode: 200, body: { data: [] } }),
       },
     ]);
 
@@ -80,19 +81,19 @@ describe("registerRoutes", () => {
   it("sends response headers when provided by handler", async () => {
     const header = vi.fn();
     const send = vi.fn();
-    const status = vi.fn().mockReturnValue({ send, header });
+    const status = vi.fn().mockReturnValue({ header, send });
 
     const adapter: RouterAdapter = {
       route: (opts) => {
-        opts.handler({ params: {}, query: {}, body: null, headers: {} }, { status });
+        opts.handler({ body: null, headers: {}, params: {}, query: {} }, { status });
       },
     };
 
     registerRoutes(adapter, [
       {
+        handler: async () => ({ body: {}, headers: { "x-custom": "value" }, statusCode: 200 }),
         method: "GET",
         path: "/posts",
-        handler: async () => ({ statusCode: 200, body: {}, headers: { "x-custom": "value" } }),
       },
     ]);
 
@@ -103,21 +104,21 @@ describe("registerRoutes", () => {
 
   it("handles handler rejection with 500", async () => {
     const send = vi.fn();
-    const status = vi.fn().mockReturnValue({ send, header: vi.fn() });
+    const status = vi.fn().mockReturnValue({ header: vi.fn(), send });
 
     const adapter: RouterAdapter = {
       route: (opts) => {
-        opts.handler({ params: {}, query: {}, body: null, headers: {} }, { status });
+        opts.handler({ body: null, headers: {}, params: {}, query: {} }, { status });
       },
     };
 
     registerRoutes(adapter, [
       {
-        method: "GET",
-        path: "/error",
         handler: async () => {
           throw new Error("Something broke");
         },
+        method: "GET",
+        path: "/error",
       },
     ]);
 
@@ -138,21 +139,21 @@ describe("registerRoutes", () => {
 
   it("handles non-Error throw with fallback message", async () => {
     const send = vi.fn();
-    const status = vi.fn().mockReturnValue({ send, header: vi.fn() });
+    const status = vi.fn().mockReturnValue({ header: vi.fn(), send });
 
     const adapter: RouterAdapter = {
       route: (opts) => {
-        opts.handler({ params: {}, query: {}, body: null, headers: {} }, { status });
+        opts.handler({ body: null, headers: {}, params: {}, query: {} }, { status });
       },
     };
 
     registerRoutes(adapter, [
       {
-        method: "GET",
-        path: "/error",
         handler: async () => {
           throw "string error";
         },
+        method: "GET",
+        path: "/error",
       },
     ]);
 
@@ -163,21 +164,21 @@ describe("registerRoutes", () => {
   });
 
   it("passes collection to handler context", async () => {
-    const handler = vi.fn().mockResolvedValue({ statusCode: 200, body: {} });
+    const handler = vi.fn().mockResolvedValue({ body: {}, statusCode: 200 });
     const adapter: RouterAdapter = {
       route: (opts) => {
         opts.handler(
-          { params: {}, query: {}, body: null, headers: {} },
-          { status: () => ({ send: () => {}, header: () => {} }) },
+          { body: null, headers: {}, params: {}, query: {} },
+          { status: () => ({ header: () => {}, send: () => {} }) },
         );
       },
     };
 
     registerRoutes(adapter, [
       {
+        handler,
         method: "POST",
         path: "/posts",
-        handler,
       },
     ]);
 

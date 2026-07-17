@@ -28,8 +28,8 @@ export function createScheduledPublisher(
         if (rows.length === 0) continue;
         for (const row of rows) {
           await adapter.update(tableName, String(row.id), {
-            _status: "published",
             _publishedAt: now,
+            _status: "published",
           } as Record<string, unknown>);
         }
       } catch {

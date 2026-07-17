@@ -39,7 +39,7 @@
     "maxCyclomatic": 20,
     "maxCognitive": 30,
     "maxUnitSize": 150,
-    "maxCrap": 400,
+    "maxCrap": 30,
     "ignore": ["packages/*/test/**/*.test.ts", "apps/*/test/**/*.test.ts"],
     "thresholdOverrides": [
       {
@@ -57,7 +57,7 @@
         "maxUnitSize": 200,
         "maxCyclomatic": 45,
         "maxCognitive": 65,
-        "maxCrap": 2000,
+        "maxCrap": 50,
         "reason": "command-line arg parser with multiple subcommands"
       },
       {
@@ -76,7 +76,28 @@
         "files": ["packages/validation/src/generator.ts"],
         "maxCyclomatic": 45,
         "maxCognitive": 30,
+        "maxCrap": 50,
         "reason": "field-to-Zod mapping with regex validation for each field type"
+      },
+      {
+        "files": ["packages/generators/src/admin-forms.ts"],
+        "maxCyclomatic": 25,
+        "reason": "field-to-input-type mapping with many type branches"
+      },
+      {
+        "files": ["packages/cms/src/server/routes/collections.ts"],
+        "maxCognitive": 60,
+        "reason": "collection CRUD route registration with relations, versions, permissions"
+      },
+      {
+        "files": ["packages/cms/src/server/routes/webhooks.ts"],
+        "maxUnitSize": 300,
+        "reason": "webhook CRUD route registration"
+      },
+      {
+        "files": ["packages/cms/src/server/plugins/auth.ts"],
+        "maxUnitSize": 250,
+        "reason": "auth plugin with JWT, API key, and session management"
       }
     ]
   },

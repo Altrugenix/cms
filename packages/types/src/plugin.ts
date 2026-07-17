@@ -1,5 +1,5 @@
-import type { FieldDefinition } from "./fields.js";
 import type { CMSContext } from "./core.js";
+import type { FieldDefinition } from "./fields.js";
 
 export interface PluginHooks {
   beforeSchemaLoad?: (context: CMSContext) => Promise<void>;

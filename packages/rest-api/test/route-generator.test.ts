@@ -1,39 +1,42 @@
-import { describe, it, expect } from "vitest";
 import type { CollectionDefinition, GlobalDefinition, DatabaseAdapter } from "@arche-cms/database";
+
+import { describe, it, expect } from "vitest";
+
 import type { RouteHandlerContext, RouteHandlerResult, MiddlewareHooks } from "../src/types.js";
+
+import { applyMiddleware } from "../src/middleware.js";
 import {
   createCollectionRouter,
   createCollectionRouters,
   createGlobalRouter,
   createGlobalRouters,
 } from "../src/route-generator.js";
-import { applyMiddleware } from "../src/middleware.js";
 
 const mockAdapter = {
-  findOne: async () => null,
-  findMany: async () => ({ data: [], total: 0 }),
+  connect: async () => {},
   create: async () => ({}),
-  update: async () => null,
+  createTable: async () => {},
   delete: async () => true,
   deleteMany: async () => 0,
-  connect: async () => {},
   disconnect: async () => {},
-  transaction: async <T>(fn: () => Promise<T>) => fn(),
-  raw: async () => [],
-  createTable: async () => {},
   dropTable: async () => {},
-  runMigration: async () => {},
+  findMany: async () => ({ data: [], total: 0 }),
+  findOne: async () => null,
   getExecutedMigrations: async () => [],
+  raw: async () => [],
+  runMigration: async () => {},
+  transaction: async <T>(fn: () => Promise<T>) => fn(),
+  update: async () => null,
 } satisfies DatabaseAdapter;
 
 const postCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "body", type: "richText" },
-    { name: "author", type: "relation", to: "users" },
+    { name: "author", to: "users", type: "relation" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 describe("createCollectionRouter", () => {
@@ -105,9 +108,9 @@ describe("createCollectionRouter", () => {
 
   it("handles slug with hyphens", () => {
     const collection: CollectionDefinition = {
-      slug: "blog-posts",
-      labels: { singular: "Blog Post", plural: "Blog Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Blog Posts", singular: "Blog Post" },
+      slug: "blog-posts",
     };
     const { routes } = createCollectionRouter(collection, mockAdapter);
     expect(routes[0]).toHaveProperty("operationId", "listBlogPosts");
@@ -116,9 +119,9 @@ describe("createCollectionRouter", () => {
 
   it("adds restore route when softDelete enabled", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
       versions: { drafts: false, softDelete: true },
     };
     const { routes } = createCollectionRouter(collection, mockAdapter);
@@ -134,9 +137,9 @@ describe("createCollectionRouter", () => {
 
   it("adds publish/unpublish routes when drafts enabled", () => {
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
       versions: { drafts: true },
     };
     const { routes } = createCollectionRouter(collection, mockAdapter);
@@ -160,20 +163,20 @@ describe("createCollectionRouter", () => {
 
 describe("middleware hooks", () => {
   const okHandler = async (): Promise<RouteHandlerResult> => ({
-    statusCode: 200,
     body: { ok: true },
+    statusCode: 200,
   });
 
   it("passes through when no hooks are provided", async () => {
     const wrapped = applyMiddleware(okHandler, undefined);
-    const result = await wrapped({ params: {}, query: {}, body: null, headers: {} });
+    const result = await wrapped({ body: null, headers: {}, params: {}, query: {} });
     expect(result.statusCode).toBe(200);
     expect(result.body).toEqual({ ok: true });
   });
 
   it("passes through when hooks are empty", async () => {
     const wrapped = applyMiddleware(okHandler, {});
-    const result = await wrapped({ params: {}, query: {}, body: null, headers: {} });
+    const result = await wrapped({ body: null, headers: {}, params: {}, query: {} });
     expect(result.statusCode).toBe(200);
   });
 
@@ -188,9 +191,9 @@ describe("middleware hooks", () => {
     };
     const wrapped = applyMiddleware(async () => {
       order.push("handler");
-      return { statusCode: 200, body: { ok: true } };
+      return { body: { ok: true }, statusCode: 200 };
     }, hooks);
-    await wrapped({ params: {}, query: {}, body: null, headers: {} });
+    await wrapped({ body: null, headers: {}, params: {}, query: {} });
     expect(order).toEqual(["before", "handler"]);
   });
 
@@ -206,20 +209,20 @@ describe("middleware hooks", () => {
     };
     const wrapped = applyMiddleware(async () => {
       order.push("handler");
-      return { statusCode: 200, body: { ok: true } };
+      return { body: { ok: true }, statusCode: 200 };
     }, hooks);
-    await wrapped({ params: {}, query: {}, body: null, headers: {} });
+    await wrapped({ body: null, headers: {}, params: {}, query: {} });
     expect(order).toEqual(["handler", "after"]);
   });
 
   it("before hook can short-circuit by returning a result", async () => {
     const hooks: MiddlewareHooks = {
-      before: [async () => ({ statusCode: 401, body: { error: "Unauthorized" } })],
+      before: [async () => ({ body: { error: "Unauthorized" }, statusCode: 401 })],
     };
     const wrapped = applyMiddleware(async () => {
       throw new Error("should not be called");
     }, hooks);
-    const result = await wrapped({ params: {}, query: {}, body: null, headers: {} });
+    const result = await wrapped({ body: null, headers: {}, params: {}, query: {} });
     expect(result.statusCode).toBe(401);
     expect(result.body).toEqual({ error: "Unauthorized" });
   });
@@ -233,22 +236,22 @@ describe("middleware hooks", () => {
         }),
       ],
     };
-    const wrapped = applyMiddleware(async () => ({ statusCode: 200, body: { ok: true } }), hooks);
-    const result = await wrapped({ params: {}, query: {}, body: null, headers: {} });
-    expect(result.body).toEqual({ ok: true, modified: true });
+    const wrapped = applyMiddleware(async () => ({ body: { ok: true }, statusCode: 200 }), hooks);
+    const result = await wrapped({ body: null, headers: {}, params: {}, query: {} });
+    expect(result.body).toEqual({ modified: true, ok: true });
   });
 
   it("middleware is applied to all routes via config", async () => {
     const hooks: MiddlewareHooks = {
-      before: [async () => ({ statusCode: 403, body: { error: "Forbidden" } })],
+      before: [async () => ({ body: { error: "Forbidden" }, statusCode: 403 })],
     };
     const { routes } = createCollectionRouter(postCollection, mockAdapter, { hooks });
     for (const route of routes) {
       const result = await route.handler({
-        params: {},
-        query: {},
         body: null,
         headers: {},
+        params: {},
+        query: {},
       });
       expect(result.statusCode).toBe(403);
       expect(result.body).toEqual({ error: "Forbidden" });
@@ -259,9 +262,9 @@ describe("middleware hooks", () => {
 describe("createCollectionRouters", () => {
   it("generates routers for multiple collections", () => {
     const userCollection: CollectionDefinition = {
-      slug: "users",
-      labels: { singular: "User", plural: "Users" },
       fields: [{ name: "email", type: "email" }],
+      labels: { plural: "Users", singular: "User" },
+      slug: "users",
     };
     const routers = createCollectionRouters([postCollection, userCollection], mockAdapter);
     expect(routers).toHaveLength(2);
@@ -275,12 +278,12 @@ describe("createCollectionRouters", () => {
 });
 
 const siteSettings: GlobalDefinition = {
-  slug: "site-settings",
-  label: "Site Settings",
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "description", type: "textarea" },
   ],
+  label: "Site Settings",
+  slug: "site-settings",
 };
 
 describe("createGlobalRouter", () => {
@@ -320,9 +323,9 @@ describe("createGlobalRouter", () => {
 describe("createGlobalRouters", () => {
   it("generates routers for multiple globals", () => {
     const navSettings: GlobalDefinition = {
-      slug: "nav-settings",
-      label: "Nav Settings",
       fields: [{ name: "items", type: "json" }],
+      label: "Nav Settings",
+      slug: "nav-settings",
     };
     const routers = createGlobalRouters([siteSettings, navSettings], mockAdapter);
     expect(routers).toHaveLength(2);

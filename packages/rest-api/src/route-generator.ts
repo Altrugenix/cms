@@ -1,7 +1,8 @@
 import type { DatabaseAdapter } from "@arche-cms/database";
 import type { CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
+
 import type { RouteDefinition, RouteGeneratorConfig, CollectionRouter } from "./types.js";
-import { applyMiddleware } from "./middleware.js";
+
 import {
   createListHandler,
   createGetHandler,
@@ -17,6 +18,7 @@ import {
   createGlobalGetHandler,
   createGlobalUpsertHandler,
 } from "./handlers.js";
+import { applyMiddleware } from "./middleware.js";
 
 export function pascalCase(slug: string): string {
   return slug
@@ -40,112 +42,112 @@ export function createCollectionRouter(
 
   const routes: RouteDefinition[] = [
     {
-      method: "GET",
-      path: `${basePath}/${slug}`,
-      operationId: `list${pascalCase(slug)}`,
-      summary: `List ${plural}`,
-      tags: [tag],
       handler: applyMiddleware(
         createListHandler(collection, adapter, maxPageSize, defaultPageSize),
         hooks,
         collection,
       ),
+      method: "GET",
+      operationId: `list${pascalCase(slug)}`,
+      path: `${basePath}/${slug}`,
+      summary: `List ${plural}`,
+      tags: [tag],
     },
     {
+      handler: applyMiddleware(createGetHandler(collection, adapter), hooks, collection),
       method: "GET",
-      path: `${basePath}/${slug}/:id`,
       operationId: `get${pascalCase(slug)}`,
+      path: `${basePath}/${slug}/:id`,
       summary: `Get a single ${tag}`,
       tags: [tag],
-      handler: applyMiddleware(createGetHandler(collection, adapter), hooks, collection),
     },
     {
+      handler: applyMiddleware(createCreateHandler(collection, adapter), hooks, collection),
       method: "POST",
-      path: `${basePath}/${slug}`,
       operationId: `create${pascalCase(slug)}`,
+      path: `${basePath}/${slug}`,
       summary: `Create a ${tag}`,
       tags: [tag],
-      handler: applyMiddleware(createCreateHandler(collection, adapter), hooks, collection),
     },
     {
+      handler: applyMiddleware(createUpdateHandler(collection, adapter), hooks, collection),
       method: "PATCH",
-      path: `${basePath}/${slug}/:id`,
       operationId: `update${pascalCase(slug)}`,
+      path: `${basePath}/${slug}/:id`,
       summary: `Update a ${tag}`,
       tags: [tag],
-      handler: applyMiddleware(createUpdateHandler(collection, adapter), hooks, collection),
     },
     {
+      handler: applyMiddleware(createDeleteHandler(collection, adapter), hooks, collection),
       method: "DELETE",
-      path: `${basePath}/${slug}/:id`,
       operationId: `delete${pascalCase(slug)}`,
+      path: `${basePath}/${slug}/:id`,
       summary: `Delete a ${tag}`,
       tags: [tag],
-      handler: applyMiddleware(createDeleteHandler(collection, adapter), hooks, collection),
     },
     {
+      handler: applyMiddleware(createBulkDeleteHandler(collection, adapter), hooks, collection),
       method: "POST",
-      path: `${basePath}/${slug}/bulk-delete`,
       operationId: `bulkDelete${pascalCase(slug)}`,
+      path: `${basePath}/${slug}/bulk-delete`,
       summary: `Bulk delete ${plural}`,
       tags: [tag],
-      handler: applyMiddleware(createBulkDeleteHandler(collection, adapter), hooks, collection),
     },
   ];
 
   if (collection.versions?.drafts) {
     routes.push(
       {
+        handler: applyMiddleware(createPublishHandler(collection, adapter), hooks, collection),
         method: "POST",
-        path: `${basePath}/${slug}/:id/publish`,
         operationId: `publish${pascalCase(slug)}`,
+        path: `${basePath}/${slug}/:id/publish`,
         summary: `Publish a ${tag}`,
         tags: [tag],
-        handler: applyMiddleware(createPublishHandler(collection, adapter), hooks, collection),
       },
       {
+        handler: applyMiddleware(createUnpublishHandler(collection, adapter), hooks, collection),
         method: "POST",
-        path: `${basePath}/${slug}/:id/unpublish`,
         operationId: `unpublish${pascalCase(slug)}`,
+        path: `${basePath}/${slug}/:id/unpublish`,
         summary: `Unpublish a ${tag}`,
         tags: [tag],
-        handler: applyMiddleware(createUnpublishHandler(collection, adapter), hooks, collection),
       },
     );
   }
 
   if (collection.versions?.softDelete) {
     routes.push({
+      handler: applyMiddleware(createRestoreHandler(collection, adapter), hooks, collection),
       method: "POST",
-      path: `${basePath}/${slug}/:id/restore`,
       operationId: `restore${pascalCase(slug)}`,
+      path: `${basePath}/${slug}/:id/restore`,
       summary: `Restore a soft-deleted ${tag}`,
       tags: [tag],
-      handler: applyMiddleware(createRestoreHandler(collection, adapter), hooks, collection),
     });
   }
 
   if (collection.versions) {
     routes.push(
       {
+        handler: applyMiddleware(createListVersionsHandler(collection, adapter), hooks, collection),
         method: "GET",
-        path: `${basePath}/${slug}/:id/versions`,
         operationId: `list${pascalCase(slug)}Versions`,
+        path: `${basePath}/${slug}/:id/versions`,
         summary: `List versions for a ${tag}`,
         tags: [tag],
-        handler: applyMiddleware(createListVersionsHandler(collection, adapter), hooks, collection),
       },
       {
-        method: "POST",
-        path: `${basePath}/${slug}/:id/versions/:versionId/restore`,
-        operationId: `restore${pascalCase(slug)}Version`,
-        summary: `Restore a ${tag} to a previous version`,
-        tags: [tag],
         handler: applyMiddleware(
           createRestoreVersionHandler(collection, adapter),
           hooks,
           collection,
         ),
+        method: "POST",
+        operationId: `restore${pascalCase(slug)}Version`,
+        path: `${basePath}/${slug}/:id/versions/:versionId/restore`,
+        summary: `Restore a ${tag} to a previous version`,
+        tags: [tag],
       },
     );
   }
@@ -172,20 +174,20 @@ export function createGlobalRouter(
 
   const routes: RouteDefinition[] = [
     {
+      handler: createGlobalGetHandler(globalDef, adapter),
       method: "GET",
-      path: `${basePath}/globals/${slug}`,
       operationId: `getGlobal${pascalCase(slug)}`,
+      path: `${basePath}/globals/${slug}`,
       summary: `Get ${tag}`,
       tags: ["Globals"],
-      handler: createGlobalGetHandler(globalDef, adapter),
     },
     {
+      handler: createGlobalUpsertHandler(globalDef, adapter),
       method: "PUT",
-      path: `${basePath}/globals/${slug}`,
       operationId: `upsertGlobal${pascalCase(slug)}`,
+      path: `${basePath}/globals/${slug}`,
       summary: `Create or update ${tag}`,
       tags: ["Globals"],
-      handler: createGlobalUpsertHandler(globalDef, adapter),
     },
   ];
 

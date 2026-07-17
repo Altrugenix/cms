@@ -1,11 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import type { DatabaseAdapter } from "@arche-cms/database";
+
+import { describe, it, expect, beforeEach } from "vitest";
+
 import { AuthService } from "../src/service.js";
 
 const config = {
-  secret: "test-secret-at-least-32-chars-long-for-security!!",
   accessTokenExpiresIn: "15m",
   refreshTokenExpiresIn: "7d",
+  secret: "test-secret-at-least-32-chars-long-for-security!!",
 };
 
 function createMockAdapter(): DatabaseAdapter {
@@ -13,19 +15,28 @@ function createMockAdapter(): DatabaseAdapter {
   let nextId = 1;
 
   return {
-    findOne: async (collection, id) => store.get(id) ?? null,
-    findMany: async (_collection, options) => {
-      const all = [...store.values()];
-      const email = options?.where?.email;
-      const filtered = email ? all.filter((r) => r.email === email) : all;
-      return { data: filtered.slice(0, options?.limit ?? 100), total: filtered.length };
-    },
+    connect: async () => {},
     create: async (_collection, data) => {
       const id = String(nextId++);
       const record = { id, ...data };
       store.set(id, record);
       return record;
     },
+    createTable: async () => {},
+    delete: async () => true,
+    disconnect: async () => {},
+    dropTable: async () => {},
+    findMany: async (_collection, options) => {
+      const all = [...store.values()];
+      const email = options?.where?.email;
+      const filtered = email ? all.filter((r) => r.email === email) : all;
+      return { data: filtered.slice(0, options?.limit ?? 100), total: filtered.length };
+    },
+    findOne: async (collection, id) => store.get(id) ?? null,
+    getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_collection, id, data) => {
       const existing = store.get(id);
       if (!existing) return null;
@@ -33,15 +44,6 @@ function createMockAdapter(): DatabaseAdapter {
       store.set(id, updated);
       return updated;
     },
-    delete: async () => true,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
   };
 }
 

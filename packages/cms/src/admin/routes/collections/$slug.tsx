@@ -1,8 +1,11 @@
-import { useState } from "react";
 import { createRoute, Link, useParams } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
+import { ArrowLeft, Plus, Pencil, Trash2, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { useState } from "react";
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
 import {
   useCollection,
   useEntries,
@@ -12,14 +15,12 @@ import {
   useUnpublishEntry,
   useRestoreEntry,
 } from "@/lib/hooks";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { ArrowLeft, Plus, Pencil, Trash2, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: CollectionEntries,
   getParentRoute: () => rootRoute,
   path: "/collections/$slug",
-  component: CollectionEntries,
 });
 
 type Entry = Record<string, unknown> & { id: string };
@@ -38,7 +39,7 @@ function CollectionEntries() {
   const searchParams: Record<string, string> = { locale };
   if (showDeleted) searchParams.deleted = "true";
 
-  const { data: entriesData, isLoading: loading, error } = useEntries(slug, searchParams);
+  const { data: entriesData, error, isLoading: loading } = useEntries(slug, searchParams);
   const entries: Entry[] = (entriesData?.data ?? []) as Entry[];
   const total = entriesData?.total ?? 0;
   const deleteEntry = useDeleteEntry(slug);
@@ -424,7 +425,7 @@ function renderActions(
           <XCircle className="h-4 w-4 text-amber-500" />
         </Button>
       )}
-      <Link to="/collections/$slug/$id" params={{ slug, id: entry.id }}>
+      <Link to="/collections/$slug/$id" params={{ id: entry.id, slug }}>
         <Button variant="ghost" size="icon">
           <Pencil className="h-4 w-4" />
         </Button>

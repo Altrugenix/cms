@@ -2,6 +2,7 @@
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+
 import { pluginTemplate, pluginCreateHelp } from "../templates/templates.js";
 
 export interface PluginCreateOptions {

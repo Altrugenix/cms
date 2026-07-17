@@ -64,28 +64,28 @@ coverage/
 
 function generatePackageJson(outDir: string): void {
   const pkg = {
-    name: "arche-cms-production",
-    version: "0.0.1",
-    private: true,
-    type: "module",
-    packageManager: "pnpm@10.10.0",
-    scripts: {
-      start: "node dist/index.js start",
-    },
     dependencies: {
-      fastify: "^5.3.2",
       "@fastify/cors": "^11.0.1",
       "@fastify/rate-limit": "^10.2.2",
       "@fastify/static": "^8.1.1",
       "@fastify/swagger": "^9.4.2",
       "@fastify/swagger-ui": "^5.2.2",
-      graphql: "^16.0.0",
-      mercurius: "^16.9.0",
       "@libsql/client": "^0.17.4",
       "drizzle-orm": "^0.45.2",
+      fastify: "^5.3.2",
+      graphql: "^16.0.0",
+      mercurius: "^16.9.0",
       pg: "^8.22.0",
       zod: "^4.4.3",
     },
+    name: "arche-cms-production",
+    packageManager: "pnpm@10.10.0",
+    private: true,
+    scripts: {
+      start: "node dist/index.js start",
+    },
+    type: "module",
+    version: "0.0.1",
   };
 
   writeFileSync(join(outDir, "package.json"), JSON.stringify(pkg, null, 2));
@@ -110,8 +110,8 @@ export async function build(options: BuildOptions): Promise<void> {
   try {
     execSync("pnpm build", {
       cwd: cmsPackageRoot(),
-      stdio: "inherit",
       env: { ...process.env, NODE_ENV: "production" },
+      stdio: "inherit",
     });
   } catch {
     log("Build failed — see errors above");

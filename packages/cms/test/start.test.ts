@@ -9,46 +9,46 @@ vi.mock("../src/server/bootstrap.js", () => ({
 
 vi.mock("../src/server/config.js", () => ({
   loadConfig: vi.fn().mockReturnValue({
-    port: 3000,
+    auth: { secret: "test-secret-32-chars-long-here-ok!" },
+    cors: { origin: "*" },
+    database: { adapter: "sqlite", url: ":memory:" },
     host: "0.0.0.0",
     logger: { level: "silent" },
-    cors: { origin: "*" },
+    port: 3000,
     rateLimit: { max: 100, timeWindow: "1 minute" },
-    swagger: { title: "Test", version: "0.0.1", description: "Test" },
     schema: { baseDir: "./cms" },
-    database: { adapter: "sqlite", url: ":memory:" },
-    auth: { secret: "test-secret-32-chars-long-here-ok!" },
     storage: { baseDir: "./uploads" },
+    swagger: { description: "Test", title: "Test", version: "0.0.1" },
   }),
 }));
 
 vi.mock("@arche-cms/database", () => ({
+  createPostgresAdapter: vi.fn(),
   SQLiteAdapter: vi.fn().mockImplementation(() => ({
     connect: vi.fn(),
     disconnect: vi.fn(),
   })),
-  createPostgresAdapter: vi.fn(),
 }));
 
 vi.mock("@arche-cms/plugins", () => ({
+  discoverPlugins: vi.fn().mockResolvedValue([]),
   PluginManager: vi.fn().mockImplementation(() => ({
+    getAdminPanels: vi.fn().mockReturnValue([]),
+    getCustomFields: vi.fn().mockReturnValue({}),
     register: vi.fn(),
     runRouteHook: vi.fn(),
-    getCustomFields: vi.fn().mockReturnValue({}),
-    getAdminPanels: vi.fn().mockReturnValue([]),
   })),
   seoPlugin: { definition: { slug: "seo" } },
-  discoverPlugins: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@arche-cms/core", () => ({
-  EventBus: vi.fn(),
-  Lifecycle: vi.fn(),
   createLogger: vi.fn().mockReturnValue({
+    error: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn(),
   }),
+  EventBus: vi.fn(),
+  Lifecycle: vi.fn(),
 }));
 
 function withLogCapture(fn: (lines: string[]) => Promise<void>): () => Promise<void> {
@@ -90,13 +90,13 @@ describe("start command", () => {
       "calls applyCliOverrides, connectAndLoad, createAndStartApp",
       withLogCapture(async () => {
         const { start } = await import("../src/commands/start.js");
-        const { applyCliOverrides, connectAndLoad, createAndStartApp, autoCreateSqlite } =
+        const { applyCliOverrides, autoCreateSqlite, connectAndLoad, createAndStartApp } =
           await import("../src/server/bootstrap.js");
 
-        const _startPromise = start({ port: 4000, host: "127.0.0.1" });
+        const _startPromise = start({ host: "127.0.0.1", port: 4000 });
 
         await vi.waitFor(() => {
-          expect(applyCliOverrides).toHaveBeenCalledWith({ port: 4000, host: "127.0.0.1" });
+          expect(applyCliOverrides).toHaveBeenCalledWith({ host: "127.0.0.1", port: 4000 });
           expect(autoCreateSqlite).toHaveBeenCalled();
           expect(connectAndLoad).toHaveBeenCalled();
           expect(createAndStartApp).toHaveBeenCalled();
@@ -113,20 +113,20 @@ describe("start command", () => {
         const { applyCliOverrides } = await import("../src/server/bootstrap.js");
 
         const _startPromise = start({
-          dir: "./schemas",
-          port: 5000,
-          host: "0.0.0.0",
-          dbUrl: "file:./prod.db",
           dbAdapter: "postgres",
+          dbUrl: "file:./prod.db",
+          dir: "./schemas",
+          host: "0.0.0.0",
+          port: 5000,
         });
 
         await vi.waitFor(() => {
           expect(applyCliOverrides).toHaveBeenCalledWith({
-            dir: "./schemas",
-            port: 5000,
-            host: "0.0.0.0",
-            dbUrl: "file:./prod.db",
             dbAdapter: "postgres",
+            dbUrl: "file:./prod.db",
+            dir: "./schemas",
+            host: "0.0.0.0",
+            port: 5000,
           });
         });
       }),

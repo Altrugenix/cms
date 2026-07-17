@@ -1,11 +1,12 @@
-import { writeFile, mkdir } from "node:fs/promises";
-import { resolve, dirname } from "node:path";
 import type {
   CollectionDefinition,
   GlobalDefinition,
   ComponentDefinition,
   FieldDefinition,
 } from "@arche-cms/types";
+
+import { writeFile, mkdir } from "node:fs/promises";
+import { resolve, dirname } from "node:path";
 
 export interface TypeGenOptions {
   collections?: CollectionDefinition[];
@@ -15,27 +16,27 @@ export interface TypeGenOptions {
 }
 
 const fieldTypeMap: Record<string, string> = {
-  text: "string",
-  textarea: "string",
-  number: "number",
   boolean: "boolean",
+  checkbox: "boolean",
+  code: "string",
+  color: "string",
   date: "string",
   datetime: "string",
   email: "string",
-  password: "string",
-  url: "string",
   json: "Record<string, unknown>",
-  richText: "unknown",
   markdown: "string",
-  code: "string",
-  color: "string",
   media: "string",
-  upload: "string",
-  select: "string",
   multiSelect: "string[]",
+  number: "number",
+  password: "string",
   radio: "string",
-  checkbox: "boolean",
+  richText: "unknown",
+  select: "string",
   slug: "string",
+  text: "string",
+  textarea: "string",
+  upload: "string",
+  url: "string",
 };
 
 function fieldToType(field: FieldDefinition): string {

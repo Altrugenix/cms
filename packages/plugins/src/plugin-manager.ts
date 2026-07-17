@@ -28,9 +28,9 @@ export class PluginManager {
     }
 
     const registration: PluginRegistration = {
-      plugin,
-      enabled: true,
       config,
+      enabled: true,
+      plugin,
     };
 
     this.registrations.set(plugin.slug, registration);

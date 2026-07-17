@@ -5,7 +5,9 @@ import type {
   RelationField,
   GlobalDefinition,
 } from "@arche-cms/types";
+
 import { collectionToCreateSchema, collectionToUpdateSchema } from "@arche-cms/validation";
+
 import type { RouteHandler, RouteHandlerContext, RouteHandlerResult } from "./types.js";
 
 function collectionTableName(slug: string): string {
@@ -104,10 +106,10 @@ function queryOptions(
   return {
     limit: parseLimit(ctx.query.limit, maxPageSize, defaultPageSize),
     offset: parseOffset(ctx.query.offset),
+    populate: parsePopulate(ctx.query.populate),
+    select: parseSelect(ctx.query.select),
     sort: parseSort(ctx.query.sort),
     where: parseWhere(ctx.query),
-    select: parseSelect(ctx.query.select),
-    populate: parsePopulate(ctx.query.populate),
   };
 }
 
@@ -189,7 +191,7 @@ function populateRelations(
 }
 
 function errorResult(statusCode: number, message: string): RouteHandlerResult {
-  return { statusCode, body: { error: message } };
+  return { body: { error: message }, statusCode };
 }
 
 function hasDrafts(collection: CollectionDefinition): boolean {
@@ -206,9 +208,9 @@ async function saveVersion(
 ): Promise<void> {
   try {
     const existing = await adapter.findMany(VERSIONS_TABLE, {
-      where: { collection: collection.slug, entryId },
-      sort: { version: "desc" },
       limit: 1,
+      sort: { version: "desc" },
+      where: { collection: collection.slug, entryId },
     });
     const nextVersion =
       existing.total > 0
@@ -216,16 +218,16 @@ async function saveVersion(
         : 1;
     await adapter.create(VERSIONS_TABLE, {
       collection: collection.slug,
+      createdAt: new Date().toISOString(),
+      data: JSON.stringify(data),
       entryId,
       version: nextVersion,
-      data: JSON.stringify(data),
-      createdAt: new Date().toISOString(),
     });
     const maxPerDoc = collection.versions?.maxPerDoc;
     if (maxPerDoc) {
       const allVersions = await adapter.findMany(VERSIONS_TABLE, {
-        where: { collection: collection.slug, entryId },
         sort: { version: "desc" },
+        where: { collection: collection.slug, entryId },
       });
       if (allVersions.total > maxPerDoc) {
         const toDelete = allVersions.data
@@ -295,11 +297,11 @@ export function createPublishHandler(
       if (!id) return errorResult(400, "Missing id parameter");
       const tableName = collectionTableName(collection.slug);
       const record = await adapter.update(tableName, id, {
-        _status: "published",
         _publishedAt: new Date().toISOString(),
+        _status: "published",
       } as Record<string, unknown>);
       if (!record) return errorResult(404, "Not found");
-      return { statusCode: 200, body: record };
+      return { body: record, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -316,12 +318,12 @@ export function createUnpublishHandler(
       if (!id) return errorResult(400, "Missing id parameter");
       const tableName = collectionTableName(collection.slug);
       const record = await adapter.update(tableName, id, {
-        _status: "draft",
         _publishedAt: null,
         _publishedBy: null,
+        _status: "draft",
       } as Record<string, unknown>);
       if (!record) return errorResult(404, "Not found");
-      return { statusCode: 200, body: record };
+      return { body: record, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -361,7 +363,7 @@ export function createListHandler(
       if (options.populate && result.data.length > 0) {
         await populateRelations(result.data, options.populate, collection, adapter);
       }
-      return { statusCode: 200, body: result };
+      return { body: result, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -400,7 +402,7 @@ export function createGetHandler(
       if (populate) {
         await populateRelations([record], populate, collection, adapter);
       }
-      return { statusCode: 200, body: record };
+      return { body: record, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -420,8 +422,8 @@ export function createCreateHandler(
       const parsed = schema.safeParse(ctx.body);
       if (!parsed.success) {
         return {
+          body: { details: parsed.error.issues, error: "Validation failed" },
           statusCode: 400,
-          body: { error: "Validation failed", details: parsed.error.issues },
         };
       }
       const data = parsed.data as Record<string, unknown>;
@@ -444,12 +446,12 @@ export function createCreateHandler(
           record as Record<string, unknown>,
         );
       }
-      return { statusCode: 201, body: record };
+      return { body: record, statusCode: 201 };
     } catch (e) {
       if (isUniqueConstraintError(e)) {
         return {
+          body: { code: "CONFLICT", error: "A record with this value already exists" },
           statusCode: 409,
-          body: { error: "A record with this value already exists", code: "CONFLICT" },
         };
       }
       return errorResult(500, "Internal server error");
@@ -472,30 +474,30 @@ export function createUpdateHandler(
       const parsed = schema.safeParse(ctx.body);
       if (!parsed.success) {
         return {
+          body: { details: parsed.error.issues, error: "Validation failed" },
           statusCode: 400,
-          body: { error: "Validation failed", details: parsed.error.issues },
         };
       }
       const data = parsed.data as Record<string, unknown>;
       let record: Record<string, unknown> | null;
       if (hasDrafts(collection)) {
-        const { _status, _publishedAt, _publishedBy, ...rest } = data;
+        const { _publishedAt, _publishedBy, _status, ...rest } = data;
         const tableName = collectionTableName(collection.slug);
         record = await adapter.update(tableName, id, rest);
         if (!record) return errorResult(404, "Not found");
         await saveVersion(adapter, collection, id, record);
-        return { statusCode: 200, body: record };
+        return { body: record, statusCode: 200 };
       }
       const tableName = collectionTableName(collection.slug);
       record = await adapter.update(tableName, id, data);
       if (!record) return errorResult(404, "Not found");
       await saveVersion(adapter, collection, id, record);
-      return { statusCode: 200, body: record };
+      return { body: record, statusCode: 200 };
     } catch (e) {
       if (isUniqueConstraintError(e)) {
         return {
+          body: { code: "CONFLICT", error: "A record with this value already exists" },
           statusCode: 409,
-          body: { error: "A record with this value already exists", code: "CONFLICT" },
         };
       }
       return errorResult(500, "Internal server error");
@@ -511,7 +513,7 @@ export function createGlobalGetHandler(
     try {
       const tableName = collectionTableName(globalDef.slug);
       const record = await adapter.findOne(tableName, "1");
-      return { statusCode: 200, body: record ?? {} };
+      return { body: record ?? {}, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -538,12 +540,12 @@ export function createGlobalUpsertHandler(
           ...(ctx.body as Record<string, unknown>),
         });
       }
-      return { statusCode: 200, body: record };
+      return { body: record, statusCode: 200 };
     } catch (e) {
       if (isUniqueConstraintError(e)) {
         return {
+          body: { code: "CONFLICT", error: "A record with this value already exists" },
           statusCode: 409,
-          body: { error: "A record with this value already exists", code: "CONFLICT" },
         };
       }
       return errorResult(500, "Internal server error");
@@ -575,10 +577,10 @@ export function createBulkDeleteHandler(
             _deletedAt: new Date().toISOString(),
           } as Record<string, unknown>);
         }
-        return { statusCode: 200, body: { deleted: ids.length } };
+        return { body: { deleted: ids.length }, statusCode: 200 };
       }
       const deleted = await adapter.deleteMany(tableName, ids);
-      return { statusCode: 200, body: { deleted } };
+      return { body: { deleted }, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -599,11 +601,11 @@ export function createDeleteHandler(
           _deletedAt: new Date().toISOString(),
         } as Record<string, unknown>);
         if (!record) return errorResult(404, "Not found");
-        return { statusCode: 200, body: { id, deleted: true } };
+        return { body: { deleted: true, id }, statusCode: 200 };
       }
       const deleted = await adapter.delete(tableName, id);
       if (!deleted) return errorResult(404, "Not found");
-      return { statusCode: 200, body: { id, deleted: true } };
+      return { body: { deleted: true, id }, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -623,7 +625,7 @@ export function createRestoreHandler(
         _deletedAt: null,
       } as Record<string, unknown>);
       if (!record) return errorResult(404, "Not found");
-      return { statusCode: 200, body: record };
+      return { body: record, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -639,10 +641,10 @@ export function createListVersionsHandler(
       const { id } = ctx.params;
       if (!id) return errorResult(400, "Missing id parameter");
       const result = await adapter.findMany(VERSIONS_TABLE, {
-        where: { collection: collection.slug, entryId: id },
         sort: { version: "desc" },
+        where: { collection: collection.slug, entryId: id },
       });
-      return { statusCode: 200, body: result };
+      return { body: result, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }
@@ -660,8 +662,8 @@ export function createRestoreVersionHandler(
       const tableName = collectionTableName(collection.slug);
 
       const records = await adapter.findMany(VERSIONS_TABLE, {
-        where: { collection: collection.slug, entryId: id, id: Number(versionId) },
         limit: 1,
+        where: { collection: collection.slug, entryId: id, id: Number(versionId) },
       });
       if (records.total === 0) return errorResult(404, "Version not found");
 
@@ -678,7 +680,7 @@ export function createRestoreVersionHandler(
       const record = await adapter.update(tableName, id, versionData);
       if (!record) return errorResult(404, "Not found");
       await saveVersion(adapter, collection, id, record);
-      return { statusCode: 200, body: record };
+      return { body: record, statusCode: 200 };
     } catch {
       return errorResult(500, "Internal server error");
     }

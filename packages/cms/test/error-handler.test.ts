@@ -1,6 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
 import type { FastifyError } from "fastify";
+
+import { describe, it, expect, vi } from "vitest";
+
 import { AppError, NotFoundError, ValidationError } from "../src/server/lib/errors.js";
 import { registerErrorHandler } from "../src/server/plugins/error-handler.js";
 
@@ -13,7 +15,7 @@ type ErrorHandler = (
 function createMockReply() {
   const status = vi.fn().mockReturnThis();
   const send = vi.fn().mockReturnThis();
-  return { status, send };
+  return { send, status };
 }
 
 function createMockFastify(cb: (h: ErrorHandler) => void): FastifyInstance {
@@ -21,7 +23,7 @@ function createMockFastify(cb: (h: ErrorHandler) => void): FastifyInstance {
     cb(h);
   }) as unknown as FastifyInstance["setErrorHandler"];
   const log = { error: vi.fn() };
-  return { setErrorHandler, log } as unknown as FastifyInstance;
+  return { log, setErrorHandler } as unknown as FastifyInstance;
 }
 
 describe("registerErrorHandler", () => {
@@ -39,9 +41,9 @@ describe("registerErrorHandler", () => {
 
     expect(reply.status).toHaveBeenCalledWith(404);
     expect(reply.send).toHaveBeenCalledWith({
+      code: "NOT_FOUND",
       error: "Post not found: 42",
       statusCode: 404,
-      code: "NOT_FOUND",
     });
   });
 
@@ -58,10 +60,10 @@ describe("registerErrorHandler", () => {
 
     expect(reply.status).toHaveBeenCalledWith(400);
     expect(reply.send).toHaveBeenCalledWith({
-      error: "Bad input",
-      statusCode: 400,
       code: "VALIDATION_ERROR",
       details: { field: "email" },
+      error: "Bad input",
+      statusCode: 400,
     });
   });
 
@@ -78,9 +80,9 @@ describe("registerErrorHandler", () => {
 
     expect(reply.status).toHaveBeenCalledWith(500);
     expect(reply.send).toHaveBeenCalledWith({
+      code: "INTERNAL_ERROR",
       error: "Internal server error",
       statusCode: 500,
-      code: "INTERNAL_ERROR",
     });
     expect(fastify.log.error).toHaveBeenCalledWith(error);
   });
@@ -99,9 +101,9 @@ describe("registerErrorHandler", () => {
 
     expect(reply.status).toHaveBeenCalledWith(413);
     expect(reply.send).toHaveBeenCalledWith({
+      code: "PAYLOAD_TOO_LARGE",
       error: "Request body too large",
       statusCode: 413,
-      code: "PAYLOAD_TOO_LARGE",
     });
   });
 
@@ -119,9 +121,9 @@ describe("registerErrorHandler", () => {
 
     expect(reply.status).toHaveBeenCalledWith(400);
     expect(reply.send).toHaveBeenCalledWith({
+      code: "BAD_REQUEST",
       error: "Bad length",
       statusCode: 400,
-      code: "BAD_REQUEST",
     });
   });
 
@@ -139,9 +141,9 @@ describe("registerErrorHandler", () => {
 
     expect(reply.status).toHaveBeenCalledWith(400);
     expect(reply.send).toHaveBeenCalledWith({
+      code: "BAD_REQUEST",
       error: "Parse fail",
       statusCode: 400,
-      code: "BAD_REQUEST",
     });
   });
 });

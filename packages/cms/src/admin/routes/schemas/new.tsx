@@ -1,34 +1,35 @@
-import { useState } from "react";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
+import { ArrowLeft, Plus } from "lucide-react";
+import { useState } from "react";
+
 import { useToast } from "@/components/toast-provider";
-import { createSchema } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus } from "lucide-react";
+import { createSchema } from "@/lib/api";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: NewSchema,
   getParentRoute: () => rootRoute,
   path: "/schemas/new",
-  component: NewSchema,
 });
 
 const SCHEMA_TYPES = [
   {
-    value: "collection",
-    label: "Collection",
     desc: "A content type with multiple entries (e.g. Posts, Users)",
+    label: "Collection",
+    value: "collection",
   },
   {
-    value: "global",
-    label: "Global",
     desc: "A singleton with single-entry data (e.g. Site Settings)",
+    label: "Global",
+    value: "global",
   },
   {
-    value: "component",
-    label: "Component",
     desc: "A reusable field group (e.g. Address Block, SEO)",
+    label: "Component",
+    value: "component",
   },
 ] as const;
 
@@ -57,9 +58,9 @@ function NewSchema() {
     }
     setCreating(true);
     try {
-      await createSchema(type, { slug: trimmedSlug, label: trimmedLabel });
+      await createSchema(type, { label: trimmedLabel, slug: trimmedSlug });
       toast("Schema created", "success");
-      navigate({ to: "/schemas/$type/$slug", params: { type, slug: trimmedSlug } });
+      navigate({ params: { slug: trimmedSlug, type }, to: "/schemas/$type/$slug" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create schema";
       toast(msg, "error");

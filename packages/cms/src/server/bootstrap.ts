@@ -1,16 +1,19 @@
-import { existsSync, writeFileSync } from "node:fs";
-import type { FastifyInstance } from "fastify";
-import { SchemaLoader } from "@arche-cms/schema";
-import { MigrationGenerator, MigrationRunner } from "@arche-cms/database";
 import type { DatabaseAdapter } from "@arche-cms/database";
 import type { CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
-import { LocalStorageAdapter } from "@arche-cms/storage";
-import { createLogger } from "@arche-cms/core";
 import type { Logger } from "@arche-cms/types";
+import type { FastifyInstance } from "fastify";
+
+import { createLogger } from "@arche-cms/core";
+import { MigrationGenerator, MigrationRunner } from "@arche-cms/database";
+import { SchemaLoader } from "@arche-cms/schema";
+import { LocalStorageAdapter } from "@arche-cms/storage";
+import { existsSync, writeFileSync } from "node:fs";
+
 import type { ServerConfig } from "./config.js";
+
 import { createApp } from "./app.js";
-import { createScheduledPublisher } from "./services/scheduled-publisher.js";
 import { registerAdminStatic } from "./plugins/static.js";
+import { createScheduledPublisher } from "./services/scheduled-publisher.js";
 
 export interface PluginHooks {
   runHook(name: "beforeRouteRegister" | "afterRouteRegister"): Promise<void>;
@@ -114,12 +117,12 @@ export async function createAndStartApp(
   const storageAdapter = new LocalStorageAdapter(process.env.STORAGE_DIR ?? "./uploads");
 
   const fastify = await createApp({
-    config,
     adapter,
-    storageAdapter,
     collections,
+    config,
     globals,
     pluginManager,
+    storageAdapter,
   });
 
   const publisher = createScheduledPublisher(adapter, collections ?? []);
@@ -127,7 +130,7 @@ export async function createAndStartApp(
 
   await registerAdminStatic(fastify, {});
 
-  await fastify.listen({ port: config.port, host: config.host });
+  await fastify.listen({ host: config.host, port: config.port });
   logger.info(`Server listening on http://${config.host}:${config.port}`);
   logger.info(`API docs at http://localhost:${config.port}/docs`);
 

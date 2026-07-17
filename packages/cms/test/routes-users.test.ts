@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import type { FastifyInstance } from "fastify";
 import type { DatabaseAdapter } from "@arche-cms/database";
-import { createApp } from "../src/server/app.js";
+import type { FastifyInstance } from "fastify";
+
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 import type { ServerConfig } from "../src/server/config.js";
+
+import { createApp } from "../src/server/app.js";
 
 function createMockAdapter(): DatabaseAdapter {
   const users = new Map<string, Record<string, unknown>>();
@@ -11,11 +14,30 @@ function createMockAdapter(): DatabaseAdapter {
   let nextRoleId = 1;
 
   return {
-    findOne: async (_table: string, id: string) => {
-      if (_table === "__cms_users") return users.get(id) ?? null;
-      if (_table === "__cms_roles") return roles.get(id) ?? null;
-      return null;
+    connect: async () => {},
+    create: async (_table: string, data: Record<string, unknown>) => {
+      if (_table === "__cms_users") {
+        const id = String(nextUserId++);
+        const record = { id, ...data };
+        users.set(id, record);
+        return record;
+      }
+      if (_table === "__cms_roles") {
+        const id = String(nextRoleId++);
+        const record = { id, ...data };
+        roles.set(id, record);
+        return record;
+      }
+      return {};
     },
+    createTable: async () => {},
+    delete: async (_table: string, id: string) => {
+      if (_table === "__cms_users") return users.delete(id);
+      return true;
+    },
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
     findMany: async (_table: string, options) => {
       if (_table === "__cms_users") {
         let all = [...users.values()];
@@ -33,21 +55,15 @@ function createMockAdapter(): DatabaseAdapter {
       }
       return { data: [], total: 0 };
     },
-    create: async (_table: string, data: Record<string, unknown>) => {
-      if (_table === "__cms_users") {
-        const id = String(nextUserId++);
-        const record = { id, ...data };
-        users.set(id, record);
-        return record;
-      }
-      if (_table === "__cms_roles") {
-        const id = String(nextRoleId++);
-        const record = { id, ...data };
-        roles.set(id, record);
-        return record;
-      }
-      return {};
+    findOne: async (_table: string, id: string) => {
+      if (_table === "__cms_users") return users.get(id) ?? null;
+      if (_table === "__cms_roles") return roles.get(id) ?? null;
+      return null;
     },
+    getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_table: string, id: string, data: Record<string, unknown>) => {
       if (_table === "__cms_users") {
         const existing = users.get(id);
@@ -58,37 +74,24 @@ function createMockAdapter(): DatabaseAdapter {
       }
       return null;
     },
-    delete: async (_table: string, id: string) => {
-      if (_table === "__cms_users") return users.delete(id);
-      return true;
-    },
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
   };
 }
 
 const testConfig: ServerConfig = {
-  port: 0,
-  host: "localhost",
-  logger: { level: "silent" },
-  cors: { origin: "*" },
-  rateLimit: { max: 1000, timeWindow: "1 minute" },
-  swagger: { title: "Test API", version: "1.0.0", description: "Test" },
-  schema: { baseDir: "./cms" },
-  database: { adapter: "sqlite", url: ":memory:" },
   auth: {
-    secret: "test-secret-at-least-32-chars-long-for-security!!",
     accessTokenExpiresIn: "15m",
     refreshTokenExpiresIn: "7d",
+    secret: "test-secret-at-least-32-chars-long-for-security!!",
   },
+  cors: { origin: "*" },
+  database: { adapter: "sqlite", url: ":memory:" },
+  host: "localhost",
+  logger: { level: "silent" },
+  port: 0,
+  rateLimit: { max: 1000, timeWindow: "1 minute" },
+  schema: { baseDir: "./cms" },
   storage: { baseDir: "./uploads" },
+  swagger: { description: "Test", title: "Test API", version: "1.0.0" },
 };
 
 describe("Users Routes", () => {
@@ -98,11 +101,11 @@ describe("Users Routes", () => {
 
   beforeAll(async () => {
     adapter = createMockAdapter();
-    app = await createApp({ config: testConfig, adapter, collections: [] });
+    app = await createApp({ adapter, collections: [], config: testConfig });
     const loginRes = await app.inject({
+      body: { email: "admin@arche-cms.com", password: "admin123" },
       method: "POST",
       url: "/api/auth/login",
-      body: { email: "admin@arche-cms.com", password: "admin123" },
     });
     authToken = JSON.parse(loginRes.body).accessToken;
   });
@@ -113,9 +116,9 @@ describe("Users Routes", () => {
 
   it("GET /api/users returns list of users", async () => {
     const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
       method: "GET",
       url: "/api/users",
-      headers: { authorization: `Bearer ${authToken}` },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -126,9 +129,9 @@ describe("Users Routes", () => {
 
   it("GET /api/users/:id returns a single user", async () => {
     const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
       method: "GET",
       url: "/api/users/1",
-      headers: { authorization: `Bearer ${authToken}` },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -137,9 +140,9 @@ describe("Users Routes", () => {
 
   it("GET /api/users/:id returns 404 for unknown user", async () => {
     const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
       method: "GET",
       url: "/api/users/999",
-      headers: { authorization: `Bearer ${authToken}` },
     });
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).error).toBe("User not found");
@@ -147,10 +150,10 @@ describe("Users Routes", () => {
 
   it("PATCH /api/users/:id updates a user", async () => {
     const res = await app.inject({
+      body: { email: "updated@test.com" },
+      headers: { authorization: `Bearer ${authToken}` },
       method: "PATCH",
       url: "/api/users/1",
-      headers: { authorization: `Bearer ${authToken}` },
-      body: { email: "updated@test.com" },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -159,10 +162,10 @@ describe("Users Routes", () => {
 
   it("PATCH /api/users/:id returns 404 for unknown user", async () => {
     const res = await app.inject({
+      body: { email: "nobody@test.com" },
+      headers: { authorization: `Bearer ${authToken}` },
       method: "PATCH",
       url: "/api/users/999",
-      headers: { authorization: `Bearer ${authToken}` },
-      body: { email: "nobody@test.com" },
     });
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).error).toBe("User not found");
@@ -170,16 +173,16 @@ describe("Users Routes", () => {
 
   it("DELETE /api/users/:id deletes a user", async () => {
     const regRes = await app.inject({
+      body: { email: "delete-me@test.com", password: "password123" },
       method: "POST",
       url: "/api/auth/register",
-      body: { email: "delete-me@test.com", password: "password123" },
     });
     const newUserId = JSON.parse(regRes.body).user.id;
 
     const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
       method: "DELETE",
       url: `/api/users/${newUserId}`,
-      headers: { authorization: `Bearer ${authToken}` },
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).message).toBe("User deleted");
@@ -187,9 +190,9 @@ describe("Users Routes", () => {
 
   it("DELETE /api/users/:id returns 404 for unknown user", async () => {
     const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
       method: "DELETE",
       url: "/api/users/999",
-      headers: { authorization: `Bearer ${authToken}` },
     });
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).error).toBe("User not found");

@@ -57,11 +57,11 @@ export async function fetchRecentActivity(
     [limit],
   );
   return (rows as Array<Record<string, unknown>>).map((r) => ({
-    id: String(r.id),
     action: String(r.action),
     collection: String(r.collection),
-    documentId: r.documentId != null ? String(r.documentId) : null,
-    label: String(r.label),
     createdAt: String(r.createdAt),
+    documentId: r.documentId != null ? String(r.documentId) : null,
+    id: String(r.id),
+    label: String(r.label),
   }));
 }

@@ -1,8 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { discoverPlugins } from "../src/discovery.js";
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it, expect } from "vitest";
+
+import { discoverPlugins } from "../src/discovery.js";
 
 function tmpDir(suffix: string) {
   return join(tmpdir(), `arche-disc-test-${Date.now()}-${suffix}`);
@@ -19,7 +20,7 @@ function writeFlatPlugin(base: string, name: string, exports: string) {
 function writeFlatFallbackPlugin(base: string, name: string, mainPath: string, exports: string) {
   const pkgDir = join(base, "node_modules", name);
   mkdirSync(pkgDir, { recursive: true });
-  writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ name, main: mainPath }));
+  writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ main: mainPath, name }));
   const fullMain = join(pkgDir, mainPath);
   const parent = fullMain.substring(0, fullMain.lastIndexOf("/"));
   mkdirSync(parent, { recursive: true });
@@ -62,7 +63,7 @@ describe("discoverPlugins", () => {
       expect(plugins[0]?.definition.name).toBe("Test Plugin");
       expect(plugins[0]?.path).toContain("arche-cms-plugin-test");
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      rmSync(dir, { force: true, recursive: true });
     }
   });
 
@@ -83,7 +84,7 @@ describe("discoverPlugins", () => {
       const slugs = plugins.map((p) => p.slug);
       expect(slugs).toContain("linked");
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      rmSync(dir, { force: true, recursive: true });
     }
   });
 
@@ -105,7 +106,7 @@ describe("discoverPlugins", () => {
       const plugins = await discoverPlugins(dir);
       expect(plugins).toEqual([]);
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      rmSync(dir, { force: true, recursive: true });
     }
   });
 
@@ -124,7 +125,7 @@ describe("discoverPlugins", () => {
       expect(plugins[0]?.slug).toBe("fallback");
       expect(plugins[0]?.definition.name).toBe("Fallback Plugin");
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      rmSync(dir, { force: true, recursive: true });
     }
   });
 
@@ -134,14 +135,14 @@ describe("discoverPlugins", () => {
     mkdirSync(pkgDir, { recursive: true });
     writeFileSync(
       join(pkgDir, "package.json"),
-      JSON.stringify({ name: "nofallback", main: "lib/index.js" }),
+      JSON.stringify({ main: "lib/index.js", name: "nofallback" }),
     );
 
     try {
       const plugins = await discoverPlugins(dir);
       expect(plugins).toEqual([]);
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      rmSync(dir, { force: true, recursive: true });
     }
   });
 
@@ -153,7 +154,7 @@ describe("discoverPlugins", () => {
       const plugins = await discoverPlugins(dir);
       expect(plugins).toEqual([]);
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      rmSync(dir, { force: true, recursive: true });
     }
   });
 
@@ -176,7 +177,7 @@ describe("discoverPlugins", () => {
       const slugs = plugins.map((p) => p.slug).sort();
       expect(slugs).toEqual(["alpha", "beta"]);
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      rmSync(dir, { force: true, recursive: true });
     }
   });
 });

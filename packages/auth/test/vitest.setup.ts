@@ -1,3 +1,4 @@
+/* eslint-disable no-secrets/no-secrets */
 import { vi } from "vitest";
 
 const mockCompare = vi.fn(async (pw: string, _hash: string) => {
@@ -6,10 +7,10 @@ const mockCompare = vi.fn(async (pw: string, _hash: string) => {
 });
 
 vi.mock("bcryptjs", () => ({
+  compare: mockCompare,
   default: {
-    hash: vi.fn(async () => "$2b$12$testhashedpasswordvalue1234567890abcdef"),
     compare: mockCompare,
+    hash: vi.fn(async () => "$2b$12$testhashedpasswordvalue1234567890abcdef"),
   },
   hash: vi.fn(async () => "$2b$12$testhashedpasswordvalue1234567890abcdef"),
-  compare: mockCompare,
 }));

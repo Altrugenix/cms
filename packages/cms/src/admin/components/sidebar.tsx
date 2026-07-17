@@ -8,17 +8,18 @@ import {
   Globe,
   Layers,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
 import { useCollections, useGlobals } from "@/lib/hooks";
+import { cn } from "@/lib/utils";
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/collections", label: "Collections", icon: FileText },
-  { to: "/globals", label: "Globals", icon: Globe },
-  { to: "/media", label: "Media", icon: Image },
-  { to: "/schemas", label: "Schema Builder", icon: Layers },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { icon: LayoutDashboard, label: "Dashboard", to: "/" },
+  { icon: FileText, label: "Collections", to: "/collections" },
+  { icon: Globe, label: "Globals", to: "/globals" },
+  { icon: Image, label: "Media", to: "/media" },
+  { icon: Layers, label: "Schema Builder", to: "/schemas" },
+  { icon: Settings, label: "Settings", to: "/settings" },
 ];
 
 type SidebarProps = {
@@ -28,7 +29,7 @@ type SidebarProps = {
   onMobileClose: () => void;
 };
 
-export function Sidebar({ collapsed, mobileOpen, onToggle, onMobileClose }: SidebarProps) {
+export function Sidebar({ collapsed, mobileOpen, onMobileClose, onToggle }: SidebarProps) {
   const location = useLocation();
   const { data: collections = [] } = useCollections();
   const { data: globals = [] } = useGlobals();

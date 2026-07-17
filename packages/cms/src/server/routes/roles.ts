@@ -1,7 +1,8 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { DatabaseAdapter } from "@arche-cms/database";
-import { AccessControl } from "@arche-cms/permissions";
 import type { Permission } from "@arche-cms/permissions";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+
+import { AccessControl } from "@arche-cms/permissions";
 
 export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAdapter): void {
   const ac = new AccessControl(adapter);
@@ -11,8 +12,8 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "List roles",
         description: "Returns all roles with their permissions",
+        summary: "List roles",
         tags: ["Roles"],
       },
     },
@@ -27,8 +28,8 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Get role",
         description: "Returns a single role by ID with its permissions",
+        summary: "Get role",
         tags: ["Roles"],
       },
     },
@@ -45,8 +46,8 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")],
       schema: {
-        summary: "Create role",
         description: "Create a new role with permissions (requires manage:roles permission)",
+        summary: "Create role",
         tags: ["Roles"],
       },
     },
@@ -75,9 +76,9 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")],
       schema: {
-        summary: "Update role",
         description:
           "Update a role's name, description, or permissions (requires manage:roles permission)",
+        summary: "Update role",
         tags: ["Roles"],
       },
     },
@@ -102,8 +103,8 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")],
       schema: {
-        summary: "Delete role",
         description: "Delete a role (requires manage:roles permission)",
+        summary: "Delete role",
         tags: ["Roles"],
       },
     },

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 import { SQLiteAdapter } from "../src/sqlite.js";
 
 describe("SQLiteAdapter extra coverage", () => {
@@ -76,9 +77,9 @@ describe("SQLiteAdapter extra coverage", () => {
       await adapter.create("sort_test", { rank: 2 });
 
       const result = await adapter.findMany("sort_test", {
-        sort: { rank: "asc" },
         limit: 2,
         offset: 1,
+        sort: { rank: "asc" },
       });
       expect(result.data).toHaveLength(2);
     });
@@ -131,10 +132,10 @@ describe("SQLiteAdapter extra coverage", () => {
       const a = new SQLiteAdapter(":memory:");
       await a.connect();
       await a.runMigration({
+        down: "DROP TABLE test_migrate",
         id: "001",
         name: "create-test-table",
         up: "CREATE TABLE test_migrate (id INTEGER PRIMARY KEY, name TEXT)",
-        down: "DROP TABLE test_migrate",
       });
       const migrations = await a.getExecutedMigrations();
       expect(migrations).toContain("001");
@@ -243,7 +244,7 @@ describe("SQLiteAdapter extra coverage", () => {
 
     it("throws for runMigration", async () => {
       const a = new SQLiteAdapter(":memory:");
-      await expect(a.runMigration({ id: "1", name: "m", up: "", down: "" })).rejects.toThrow(
+      await expect(a.runMigration({ down: "", id: "1", name: "m", up: "" })).rejects.toThrow(
         "SQLiteAdapter not connected",
       );
     });

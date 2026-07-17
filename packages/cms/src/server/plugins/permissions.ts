@@ -1,5 +1,6 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { DatabaseAdapter } from "@arche-cms/database";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+
 import { AccessControl } from "@arche-cms/permissions";
 
 export interface PermissionPluginOptions {

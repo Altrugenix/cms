@@ -1,16 +1,19 @@
 /* eslint-disable no-console */
 
-import { existsSync } from "node:fs";
-import { execSync } from "node:child_process";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { SchemaWatcher } from "@arche-cms/schema";
 import type { SchemaChangeEvent } from "@arche-cms/schema";
+import type { ViteDevServer } from "vite";
+
+import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
 import { SQLiteAdapter, createPostgresAdapter } from "@arche-cms/database";
 import { PluginManager, seoPlugin, discoverPlugins } from "@arche-cms/plugins";
-import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
-import type { ViteDevServer } from "vite";
-import { loadConfig } from "../server/config.js";
+import { SchemaWatcher } from "@arche-cms/schema";
+import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import type { ServerInstance } from "../server/bootstrap.js";
+
 import {
   ensureDevAuthSecret,
   applyCliOverrides,
@@ -18,7 +21,7 @@ import {
   connectAndLoad,
   createAndStartApp,
 } from "../server/bootstrap.js";
-import type { ServerInstance } from "../server/bootstrap.js";
+import { loadConfig } from "../server/config.js";
 
 const RELOAD_DEBOUNCE_MS = 300;
 
@@ -43,18 +46,18 @@ async function startViteDevServer(
   logger.info(`Starting Vite dev server for admin panel...`);
   const server = await createServer({
     configFile: resolve(adminDir, "vite.config.ts"),
+    define: { "import.meta.env.VITE_API_URL": '""' },
     root: adminDir,
     server: {
       port: 5173,
       proxy: {
         "/api": `http://localhost:${port}`,
-        "/graphql": `http://localhost:${port}`,
-        "/graphiql": `http://localhost:${port}`,
-        "/health": `http://localhost:${port}`,
         "/docs": `http://localhost:${port}`,
+        "/graphiql": `http://localhost:${port}`,
+        "/graphql": `http://localhost:${port}`,
+        "/health": `http://localhost:${port}`,
       },
     },
-    define: { "import.meta.env.VITE_API_URL": '""' },
   });
 
   await server.listen();
@@ -91,8 +94,8 @@ function ensureAdminBuild(logger: ReturnType<typeof createLogger>): void {
     try {
       execSync("pnpm build:admin", {
         cwd: resolve(currentDir, "../.."),
-        stdio: "inherit",
         env: { ...process.env, NODE_ENV: "production" },
+        stdio: "inherit",
       });
       logger.info("Admin panel built at " + bundledAdmin);
     } catch {
@@ -131,9 +134,9 @@ export async function dev(options: DevOptions): Promise<void> {
   const eventBus = new EventBus();
   const lifecycle = new Lifecycle();
   const pluginManager = new PluginManager({
+    context: { config: config as never, container: {}, logger },
     eventBus,
     lifecycle,
-    context: { config: config as never, logger, container: {} },
   });
 
   pluginManager.register(seoPlugin);
@@ -143,20 +146,20 @@ export async function dev(options: DevOptions): Promise<void> {
   }
 
   const pluginHooks = {
-    runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
-      pluginManager.runRouteHook(name),
-    getCustomFields: () => pluginManager.getCustomFields(),
     getAdminPanels: () => pluginManager.getAdminPanels(),
     getAll: () =>
       pluginManager.getAll().map((r) => ({
+        enabled: r.enabled,
         plugin: {
-          slug: r.plugin.slug,
-          name: r.plugin.name,
           description: r.plugin.description,
+          name: r.plugin.name,
+          slug: r.plugin.slug,
           version: r.plugin.version,
         },
-        enabled: r.enabled,
       })),
+    getCustomFields: () => pluginManager.getCustomFields(),
+    runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
+      pluginManager.runRouteHook(name),
   };
 
   let currentServer: ServerInstance | null = null;

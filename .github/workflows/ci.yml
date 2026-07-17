@@ -32,9 +32,20 @@ jobs:
           node-version: 24
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm eslint
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
         env:
           PG_TEST_URL: postgres://cms:cms@localhost:5432/cms_test
       - run: pnpm build
+      - name: Check admin bundle size
+        run: |
+          ADMIN_JS=$(find packages/cms/admin/dist -name "*.js" -exec cat {} \; | wc -c)
+          ADMIN_KB=$((ADMIN_JS / 1024))
+          echo "Admin JS bundle: ${ADMIN_KB}KB"
+          if [ "$ADMIN_KB" -gt 600 ]; then
+            echo "::error::Admin JS bundle exceeds 600KB threshold (${ADMIN_KB}KB)"
+            exit 1
+          fi

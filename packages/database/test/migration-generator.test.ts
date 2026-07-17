@@ -1,7 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { MigrationGenerator } from "../src/migration-generator.js";
-import type { CollectionDefinition, ExistingSchema } from "../src/index.js";
 import type { GlobalDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
+import type { CollectionDefinition, ExistingSchema } from "../src/index.js";
+
+import { MigrationGenerator } from "../src/migration-generator.js";
 
 const emptySchema: ExistingSchema = {
   tables: new Map([
@@ -14,13 +17,13 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [
           { name: "title", type: "text", validation: { required: true } },
           { name: "body", type: "richText" },
           { name: "published", type: "boolean" },
         ],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
     ];
 
@@ -41,12 +44,12 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [
           { name: "title", type: "text" },
           { name: "excerpt", type: "textarea" },
         ],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
     ];
 
@@ -70,9 +73,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
     ];
 
@@ -91,14 +94,14 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
       {
-        slug: "users",
-        labels: { singular: "User", plural: "Users" },
         fields: [{ name: "email", type: "email" }],
+        labels: { plural: "Users", singular: "User" },
+        slug: "users",
       },
     ];
 
@@ -112,8 +115,6 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "all-types",
-        labels: { singular: "All", plural: "All" },
         fields: [
           { name: "f_text", type: "text" },
           { name: "f_number", type: "number" },
@@ -121,10 +122,12 @@ describe("MigrationGenerator", () => {
           { name: "f_date", type: "date" },
           { name: "f_email", type: "email" },
           { name: "f_json", type: "json" },
-          { name: "f_relation", type: "relation", to: "users" },
+          { name: "f_relation", to: "users", type: "relation" },
           { name: "f_slug", type: "slug" },
-          { name: "f_component", type: "component", component: "seo" },
+          { component: "seo", name: "f_component", type: "component" },
         ],
+        labels: { plural: "All", singular: "All" },
+        slug: "all-types",
       },
     ];
 
@@ -144,9 +147,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "items",
-        labels: { singular: "Item", plural: "Items" },
         fields: [{ name: "name", type: "text" }],
+        labels: { plural: "Items", singular: "Item" },
+        slug: "items",
       },
     ];
 
@@ -158,9 +161,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
         versions: { drafts: true },
       },
     ];
@@ -175,11 +178,11 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "unknown-type",
-        labels: { singular: "Unknown", plural: "Unknowns" },
         fields: [
           { name: "custom", type: "customType" as unknown as import("../src/types.js").FieldType },
         ],
+        labels: { plural: "Unknowns", singular: "Unknown" },
+        slug: "unknown-type",
       },
     ];
 
@@ -191,12 +194,12 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "localized",
-        labels: { singular: "Localized", plural: "Localized" },
         fields: [
-          { name: "title", type: "text", localized: true },
-          { name: "count", type: "number", localized: true },
+          { localized: true, name: "title", type: "text" },
+          { localized: true, name: "count", type: "number" },
         ],
+        labels: { plural: "Localized", singular: "Localized" },
+        slug: "localized",
       },
     ];
 
@@ -209,9 +212,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "empty",
-        labels: { singular: "Empty", plural: "Empties" },
         fields: [],
+        labels: { plural: "Empties", singular: "Empty" },
+        slug: "empty",
       },
     ];
 
@@ -225,9 +228,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
         versions: { drafts: false, softDelete: true },
       },
     ];
@@ -241,9 +244,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
         versions: { drafts: false, softDelete: true },
       },
     ];
@@ -265,9 +268,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
         versions: { drafts: true, softDelete: true },
       },
     ];
@@ -283,9 +286,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
         versions: { drafts: true, scheduledPublishing: true },
       },
     ];
@@ -298,9 +301,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
         versions: { drafts: true, scheduledPublishing: true },
       },
     ];
@@ -321,9 +324,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
         versions: { drafts: true },
       },
     ];
@@ -346,9 +349,9 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const collections: CollectionDefinition[] = [
       {
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [{ name: "title", type: "text" }],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       },
     ];
 
@@ -366,12 +369,12 @@ describe("MigrationGenerator", () => {
     const generator = new MigrationGenerator();
     const globals: GlobalDefinition[] = [
       {
-        slug: "settings",
-        label: "Settings",
         fields: [
           { name: "siteName", type: "text" },
           { name: "description", type: "textarea" },
         ],
+        label: "Settings",
+        slug: "settings",
       },
     ];
 

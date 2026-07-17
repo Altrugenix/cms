@@ -1,5 +1,3 @@
-import { Readable } from "node:stream";
-import type { StorageAdapter } from "./types.js";
 import {
   S3Client,
   PutObjectCommand,
@@ -8,6 +6,9 @@ import {
   HeadObjectCommand,
   type S3ClientConfig,
 } from "@aws-sdk/client-s3";
+import { Readable } from "node:stream";
+
+import type { StorageAdapter } from "./types.js";
 
 export interface S3AdapterOptions {
   bucket: string;
@@ -31,9 +32,9 @@ export class S3Adapter implements StorageAdapter {
     this.baseDir = options.baseDir ?? "";
 
     const clientConfig: S3ClientConfig = {
-      region: options.region ?? "us-east-1",
       endpoint: options.endpoint,
       forcePathStyle: options.forcePathStyle ?? !!options.endpoint,
+      region: options.region ?? "us-east-1",
     };
 
     if (options.credentials) {
@@ -50,10 +51,10 @@ export class S3Adapter implements StorageAdapter {
   async save(path: string, buffer: Buffer, mimeType: string): Promise<void> {
     await this.client.send(
       new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: this.fullPath(path),
         Body: buffer,
+        Bucket: this.bucket,
         ContentType: mimeType,
+        Key: this.fullPath(path),
       }),
     );
   }

@@ -5,7 +5,7 @@ export interface LoggerOptions {
   prefix?: string;
 }
 
-const levels = { debug: 0, info: 1, warn: 2, error: 3, fatal: 4 } as const;
+const levels = { debug: 0, error: 3, fatal: 4, info: 1, warn: 2 } as const;
 
 export function createLogger(options?: LoggerOptions): Logger {
   const minLevel = levels[options?.level ?? "info"];
@@ -27,9 +27,9 @@ export function createLogger(options?: LoggerOptions): Logger {
 
   return {
     debug: log("debug"),
-    info: log("info"),
-    warn: log("warn"),
     error: log("error"),
     fatal: log("fatal"),
+    info: log("info"),
+    warn: log("warn"),
   };
 }

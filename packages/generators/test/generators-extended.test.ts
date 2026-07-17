@@ -1,16 +1,16 @@
-import { describe, it, expect } from "vitest";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
 import { adminFormGenerator } from "../src/admin-forms.js";
-import { migrationGenerator } from "../src/migrations.js";
-import { sdkGenerator } from "../src/sdk.js";
-import { openApiGenerator } from "../src/openapi.js";
-import { validationGenerator } from "../src/validation.js";
 import { apiRoutesGenerator } from "../src/api-routes.js";
 import { graphqlGenerator } from "../src/graphql-schema.js";
+import { migrationGenerator } from "../src/migrations.js";
+import { openApiGenerator } from "../src/openapi.js";
+import { sdkGenerator } from "../src/sdk.js";
+import { validationGenerator } from "../src/validation.js";
 
 const allFieldTypesCollection: CollectionDefinition = {
-  slug: "all-fields",
-  labels: { singular: "All Field", plural: "All Fields" },
   fields: [
     { name: "f_text", type: "text" },
     { name: "f_textarea", type: "textarea" },
@@ -28,14 +28,16 @@ const allFieldTypesCollection: CollectionDefinition = {
     { name: "f_color", type: "color" },
     { name: "f_media", type: "media" },
     { name: "f_upload", type: "upload" },
-    { name: "f_select", type: "select", options: [{ label: "A", value: "a" }] },
-    { name: "f_multiSelect", type: "multiSelect", options: [{ label: "B", value: "b" }] },
-    { name: "f_radio", type: "radio", options: [{ label: "C", value: "c" }] },
+    { name: "f_select", options: [{ label: "A", value: "a" }], type: "select" },
+    { name: "f_multiSelect", options: [{ label: "B", value: "b" }], type: "multiSelect" },
+    { name: "f_radio", options: [{ label: "C", value: "c" }], type: "radio" },
     { name: "f_checkbox", type: "checkbox" },
     { name: "f_slug", type: "slug" },
-    { name: "f_relation", type: "relation", to: "other" },
-    { name: "f_component", type: "component", component: "seo" },
+    { name: "f_relation", to: "other", type: "relation" },
+    { component: "seo", name: "f_component", type: "component" },
   ],
+  labels: { plural: "All Fields", singular: "All Field" },
+  slug: "all-fields",
 };
 
 describe("adminFormGenerator - field type coverage", () => {
@@ -80,9 +82,9 @@ describe("adminFormGenerator - field type coverage", () => {
 
   it("handles field with label", async () => {
     const col: CollectionDefinition = {
+      fields: [{ label: "Title", name: "title", type: "text", validation: { required: true } }],
+      labels: { plural: "Tests", singular: "Test" },
       slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
-      fields: [{ name: "title", type: "text", label: "Title", validation: { required: true } }],
     };
     const files = await adminFormGenerator.generate({ collections: [col], outputDir: "/tmp" });
     const content = files[0]?.content ?? "";
@@ -92,9 +94,9 @@ describe("adminFormGenerator - field type coverage", () => {
 
   it("handles unknown field type via default", async () => {
     const col: CollectionDefinition = {
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
       fields: [{ name: "custom", type: "unknown-type" as never }],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     };
     const files = await adminFormGenerator.generate({ collections: [col], outputDir: "/tmp" });
     const content = files[0]?.content ?? "";
@@ -137,22 +139,22 @@ describe("migrationGenerator - field type coverage", () => {
 
   it("skips component, dynamicZone, array, repeater, tabs, object, group fields", async () => {
     const col: CollectionDefinition = {
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
       fields: [
         { name: "title", type: "text" },
-        { name: "comp", type: "component", component: "seo" },
-        { name: "dz", type: "dynamicZone", components: ["comp1", "comp2"] },
-        { name: "arr", type: "array", fields: [{ name: "item", type: "text" }] },
-        { name: "rep", type: "repeater", fields: [{ name: "item", type: "text" }] },
+        { component: "seo", name: "comp", type: "component" },
+        { components: ["comp1", "comp2"], name: "dz", type: "dynamicZone" },
+        { fields: [{ name: "item", type: "text" }], name: "arr", type: "array" },
+        { fields: [{ name: "item", type: "text" }], name: "rep", type: "repeater" },
         {
           name: "tab_fields",
+          tabs: [{ fields: [{ name: "x", type: "text" }], label: "Tab1" }],
           type: "tabs",
-          tabs: [{ label: "Tab1", fields: [{ name: "x", type: "text" }] }],
         },
-        { name: "obj", type: "object", fields: [{ name: "nested", type: "text" }] },
-        { name: "grp", type: "group", fields: [{ name: "inner", type: "text" }] },
+        { fields: [{ name: "nested", type: "text" }], name: "obj", type: "object" },
+        { fields: [{ name: "inner", type: "text" }], name: "grp", type: "group" },
       ],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     };
     const files = await migrationGenerator.generate({ collections: [col], outputDir: "/tmp" });
     const content = files[0]?.content ?? "";
@@ -191,8 +193,6 @@ describe("sdkGenerator - field type coverage", () => {
     const files = await sdkGenerator.generate({
       collections: [
         {
-          slug: "items",
-          labels: { singular: "Item", plural: "Items" },
           fields: [
             { name: "title", type: "text" },
             { name: "count", type: "number" },
@@ -200,10 +200,12 @@ describe("sdkGenerator - field type coverage", () => {
             { name: "meta", type: "json" },
             { name: "body", type: "richText" },
             { name: "tags", type: "multiSelect" },
-            { name: "author", type: "relation", to: "users" },
+            { name: "author", to: "users", type: "relation" },
             { name: "publishedAt", type: "date" },
             { name: "createdAt", type: "datetime" },
           ],
+          labels: { plural: "Items", singular: "Item" },
+          slug: "items",
         },
       ],
       outputDir: "/tmp",
@@ -236,12 +238,12 @@ describe("sdkGenerator - field type coverage", () => {
     const files = await sdkGenerator.generate({
       collections: [
         {
-          slug: "posts",
-          labels: { singular: "Post", plural: "Posts" },
           fields: [
             { name: "title", type: "text", validation: { required: true } },
             { name: "slug", type: "slug", validation: { required: true } },
           ],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
         },
       ],
       outputDir: "/tmp",
@@ -257,8 +259,6 @@ describe("openApiGenerator (generators) - field type coverage", () => {
     const files = await openApiGenerator.generate({
       collections: [
         {
-          slug: "items",
-          labels: { singular: "Item", plural: "Items" },
           fields: [
             { name: "count", type: "number" },
             { name: "active", type: "boolean" },
@@ -267,6 +267,8 @@ describe("openApiGenerator (generators) - field type coverage", () => {
             { name: "tags", type: "multiSelect" },
             { name: "title", type: "text" },
           ],
+          labels: { plural: "Items", singular: "Item" },
+          slug: "items",
         },
       ],
       outputDir: "/tmp",
@@ -310,14 +312,14 @@ describe("validationGenerator - field type coverage", () => {
     const files = await validationGenerator.generate({
       collections: [
         {
-          slug: "items",
-          labels: { singular: "Item", plural: "Items" },
           fields: [
             { name: "title", type: "text" },
             { name: "count", type: "number" },
             { name: "active", type: "boolean" },
             { name: "tags", type: "multiSelect" },
           ],
+          labels: { plural: "Items", singular: "Item" },
+          slug: "items",
         },
       ],
       outputDir: "/tmp",
@@ -345,9 +347,9 @@ describe("apiRoutesGenerator - field type coverage", () => {
     const files = await apiRoutesGenerator.generate({
       collections: [
         {
-          slug: "posts",
-          labels: { singular: "Post", plural: "Posts" },
           fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
         },
       ],
       outputDir: "/tmp",
@@ -363,9 +365,9 @@ describe("apiRoutesGenerator - field type coverage", () => {
     const files = await apiRoutesGenerator.generate({
       collections: [
         {
-          slug: "blog-posts",
-          labels: { singular: "Blog Post", plural: "Blog Posts" },
           fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Blog Posts", singular: "Blog Post" },
+          slug: "blog-posts",
         },
       ],
       outputDir: "/tmp",
@@ -390,17 +392,17 @@ describe("graphqlGenerator - field type coverage", () => {
     const files = await graphqlGenerator.generate({
       collections: [
         {
-          slug: "pages",
-          labels: { singular: "Page", plural: "Pages" },
           fields: [
             { name: "title", type: "text", validation: { required: true } },
-            { name: "seo", type: "component", component: "seo" },
-            { name: "content", type: "dynamicZone", components: ["hero", "text"] },
-            { name: "author", type: "relation", to: "users" },
+            { component: "seo", name: "seo", type: "component" },
+            { components: ["hero", "text"], name: "content", type: "dynamicZone" },
+            { name: "author", to: "users", type: "relation" },
             { name: "count", type: "number" },
             { name: "active", type: "boolean" },
             { name: "tags", type: "multiSelect" },
           ],
+          labels: { plural: "Pages", singular: "Page" },
+          slug: "pages",
         },
       ],
       outputDir: "/tmp",
@@ -423,9 +425,9 @@ describe("graphqlGenerator - field type coverage", () => {
     const files = await graphqlGenerator.generate({
       collections: [
         {
-          slug: "test",
-          labels: { singular: "Test", plural: "Tests" },
           fields: [{ name: "custom", type: "unknown-type" as never }],
+          labels: { plural: "Tests", singular: "Test" },
+          slug: "test",
         },
       ],
       outputDir: "/tmp",
@@ -439,9 +441,9 @@ describe("graphqlGenerator - field type coverage", () => {
     const files = await graphqlGenerator.generate({
       collections: [
         {
-          slug: "posts",
-          labels: { singular: "Post", plural: "Posts" },
           fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
         },
       ],
       outputDir: "/tmp",
@@ -461,9 +463,9 @@ describe("graphqlGenerator - field type coverage", () => {
     const files = await graphqlGenerator.generate({
       collections: [
         {
+          fields: [{ component: undefined as unknown as string, name: "comp", type: "component" }],
+          labels: { plural: "Tests", singular: "Test" },
           slug: "test",
-          labels: { singular: "Test", plural: "Tests" },
-          fields: [{ name: "comp", type: "component", component: undefined as unknown as string }],
         },
       ],
       outputDir: "/tmp",
@@ -477,10 +479,10 @@ describe("graphqlGenerator - field type coverage", () => {
 describe("apiRoutesGenerator - jsValue fallback coverage", () => {
   it("covers String(val) fallback for non-serializable values", async () => {
     const col = {
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
-      fields: [{ name: "title", type: "text" }],
       customProp: () => "fn",
+      fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     } as unknown as import("../src/types.js").CollectionDefinition;
     const files = await apiRoutesGenerator.generate({
       collections: [col],
@@ -492,10 +494,10 @@ describe("apiRoutesGenerator - jsValue fallback coverage", () => {
 
   it("covers undefined and null branch values in jsValue", async () => {
     const col = {
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Tests", singular: "Test" },
       nullProp: null,
+      slug: "test",
     } as unknown as import("../src/types.js").CollectionDefinition;
     const files = await apiRoutesGenerator.generate({
       collections: [col],
@@ -510,10 +512,10 @@ describe("apiRoutesGenerator - jsValue fallback coverage", () => {
 describe("validationGenerator - jsValue fallback coverage", () => {
   it("covers String(val) fallback for non-serializable values", async () => {
     const col = {
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
-      fields: [{ name: "title", type: "text" }],
       customProp: () => "fn",
+      fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     } as unknown as import("../src/types.js").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
@@ -525,10 +527,10 @@ describe("validationGenerator - jsValue fallback coverage", () => {
 
   it("covers undefined and null branch values in jsValue", async () => {
     const col = {
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Tests", singular: "Test" },
       nullProp: null,
+      slug: "test",
     } as unknown as import("../src/types.js").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
@@ -541,10 +543,10 @@ describe("validationGenerator - jsValue fallback coverage", () => {
 
   it("covers empty object branch in jsValue", async () => {
     const col = {
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
-      fields: [{ name: "title", type: "text" }],
       emptyObj: {},
+      fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     } as unknown as import("../src/types.js").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
@@ -559,12 +561,12 @@ describe("validationGenerator - jsValue fallback coverage", () => {
 describe("migrationGenerator - default case and component case coverage", () => {
   it("hits default case for unknown field types", async () => {
     const col: CollectionDefinition = {
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
       fields: [
         { name: "title", type: "text" },
         { name: "custom", type: "custom-unknown-type" as never },
       ],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     };
     const files = await migrationGenerator.generate({ collections: [col], outputDir: "/tmp" });
     const content = files[0]?.content ?? "";

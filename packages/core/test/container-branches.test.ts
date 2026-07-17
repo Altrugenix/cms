@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { Container } from "../src/container.js";
 
 describe("Container — resolve fallback to parent", () => {

@@ -1,35 +1,36 @@
 import type { DatabaseAdapter } from "@arche-cms/database";
+
 import type { Permission, RoleRecord } from "./types.js";
 
 const ROLES_TABLE = "__cms_roles";
 
 const DEFAULT_ROLES: RoleRecord[] = [
   {
+    createdAt: new Date().toISOString(),
+    description: "Full access to all resources",
     id: "1",
     name: "admin",
-    description: "Full access to all resources",
     permissions: [{ action: "*", resource: "*" }],
-    createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
+    createdAt: new Date().toISOString(),
+    description: "Can create, read, update content",
     id: "2",
     name: "editor",
-    description: "Can create, read, update content",
     permissions: [
       { action: "create", resource: "*" },
       { action: "read", resource: "*" },
       { action: "update", resource: "*" },
     ],
-    createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
+    createdAt: new Date().toISOString(),
+    description: "Read-only access",
     id: "3",
     name: "viewer",
-    description: "Read-only access",
     permissions: [{ action: "read", resource: "*" }],
-    createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
 ];
@@ -53,10 +54,10 @@ export class AccessControl {
   async init(): Promise<void> {
     if (this.initialized) return;
     await this.db.createTable(ROLES_TABLE, {
-      name: "TEXT NOT NULL UNIQUE",
-      description: "TEXT",
-      permissions: "TEXT",
       createdAt: "TEXT NOT NULL",
+      description: "TEXT",
+      name: "TEXT NOT NULL UNIQUE",
+      permissions: "TEXT",
       updatedAt: "TEXT NOT NULL",
     });
     this.initialized = true;
@@ -72,7 +73,7 @@ export class AccessControl {
   }
 
   async getRole(name: string): Promise<RoleRecord | null> {
-    const result = await this.db.findMany(ROLES_TABLE, { where: { name }, limit: 1 });
+    const result = await this.db.findMany(ROLES_TABLE, { limit: 1, where: { name } });
     const row = result.data[0];
     if (!row) return null;
     return row as unknown as RoleRecord;
@@ -101,10 +102,10 @@ export class AccessControl {
 
     const now = new Date().toISOString();
     const created = await this.db.create(ROLES_TABLE, {
-      name,
-      description,
-      permissions,
       createdAt: now,
+      description,
+      name,
+      permissions,
       updatedAt: now,
     });
     return created as unknown as RoleRecord;

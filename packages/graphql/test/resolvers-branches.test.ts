@@ -1,50 +1,52 @@
-import { describe, it, expect } from "vitest";
-import type { CollectionDefinition } from "@arche-cms/types";
 import type { DatabaseAdapter } from "@arche-cms/database";
+import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
 import { generateResolvers } from "../src/resolvers.js";
 
 const mockAdapter: DatabaseAdapter = {
-  findOne: async () => null,
-  findMany: async () => ({ data: [], total: 0 }),
-  create: async () => ({}),
-  update: async () => null,
-  delete: async () => true,
   connect: async () => {},
-  disconnect: async () => {},
-  transaction: async <T>(fn: () => Promise<T>) => fn(),
-  raw: async () => [],
+  create: async () => ({}),
   createTable: async () => {},
+  delete: async () => true,
+  disconnect: async () => {},
   dropTable: async () => {},
-  runMigration: async () => {},
+  findMany: async () => ({ data: [], total: 0 }),
+  findOne: async () => null,
   getExecutedMigrations: async () => [],
+  raw: async () => [],
+  runMigration: async () => {},
+  transaction: async <T>(fn: () => Promise<T>) => fn(),
+  update: async () => null,
 };
 
 const localizedCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
-    { name: "title", type: "text", localized: true },
+    { localized: true, name: "title", type: "text" },
     { name: "body", type: "text" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
   localization: {
-    locales: ["en", "fr"],
     defaultLocale: "en",
+    locales: ["en", "fr"],
   },
+  slug: "posts",
 };
 
 const userCollection: CollectionDefinition = {
-  slug: "users",
-  labels: { singular: "User", plural: "Users" },
   fields: [{ name: "name", type: "text" }],
+  labels: { plural: "Users", singular: "User" },
+  slug: "users",
 };
 
 const postWithAuthorCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text" },
-    { name: "author", type: "relation", to: "users" },
+    { name: "author", to: "users", type: "relation" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 describe("resolvers — filterLocale with null/undefined data (line 23)", () => {
@@ -54,9 +56,9 @@ describe("resolvers — filterLocale with null/undefined data (line 23)", () => 
       findMany: async () => ({
         data: [
           {
+            body: "Body",
             id: "1",
             title: null,
-            body: "Body",
           },
         ],
         total: 1,
@@ -80,8 +82,8 @@ describe("resolvers — filterLocale with null/undefined data (line 23)", () => 
       findMany: async () => ({
         data: [
           {
-            id: "1",
             body: "Body",
+            id: "1",
           },
         ],
         total: 1,
@@ -113,9 +115,9 @@ describe("resolvers — single relation where findOne returns null (line 89)", (
     ) as Record<string, Record<string, (...args: unknown[]) => unknown>>;
 
     const result = await resolvers.Posts.author({
+      author: "nonexistent-user",
       id: "1",
       title: "Hello",
-      author: "nonexistent-user",
     });
     expect(result).toBeNull();
   });
@@ -137,9 +139,9 @@ describe("resolvers — single relation where findOne returns null (line 89)", (
     ) as Record<string, Record<string, (...args: unknown[]) => unknown>>;
 
     const result = await resolvers.Posts.author({
+      author: "user-42",
       id: "1",
       title: "Hello",
-      author: "user-42",
     });
     expect(result).toEqual({ id: "42", name: "Bob" });
   });
@@ -166,12 +168,12 @@ describe("resolvers — sort with asc direction (line 129)", () => {
 });
 
 const simpleCollection: CollectionDefinition = {
-  slug: "articles",
-  labels: { singular: "Article", plural: "Articles" },
   fields: [
     { name: "title", type: "text" },
     { name: "body", type: "text" },
   ],
+  labels: { plural: "Articles", singular: "Article" },
+  slug: "articles",
 };
 
 describe("resolvers — create/update mutation with null data (lines 166, 176)", () => {
@@ -191,9 +193,9 @@ describe("resolvers — create/update mutation with null data (lines 166, 176)",
 
     const result = await resolvers.Mutation.createArticles(
       {},
-      { data: { title: "Hello", body: "World" } },
+      { data: { body: "World", title: "Hello" } },
     );
-    expect(capturedData).toEqual({ title: "Hello", body: "World" });
+    expect(capturedData).toEqual({ body: "World", title: "Hello" });
     expect(result).toHaveProperty("id");
   });
 
@@ -213,9 +215,9 @@ describe("resolvers — create/update mutation with null data (lines 166, 176)",
 
     const result = await resolvers.Mutation.updateArticles(
       {},
-      { id: "1", data: { title: "Updated", body: "Body" } },
+      { data: { body: "Body", title: "Updated" }, id: "1" },
     );
-    expect(capturedData).toEqual({ title: "Updated", body: "Body" });
+    expect(capturedData).toEqual({ body: "Body", title: "Updated" });
     expect(result).toHaveProperty("id");
   });
 

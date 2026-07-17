@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+
 import type { AuthConfig, AccessTokenPayload, RefreshTokenPayload, JwtPayload } from "./types.js";
 
 function getSecretKey(secret: string): Uint8Array {

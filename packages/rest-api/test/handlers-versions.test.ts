@@ -1,5 +1,7 @@
-import { describe, it, expect } from "vitest";
 import type { CollectionDefinition, DatabaseAdapter } from "@arche-cms/database";
+
+import { describe, it, expect } from "vitest";
+
 import {
   createListVersionsHandler,
   createRestoreVersionHandler,
@@ -13,7 +15,22 @@ function createVersionAdapter(): DatabaseAdapter {
   let nextId = 1;
   let nextVersionId = 1;
   return {
-    findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
+    connect: async () => {},
+    create: async (_c, d) => {
+      if (_c === "__cms_versions") {
+        const record = { id: nextVersionId++, ...d } as Record<string, unknown>;
+        versions.push(record);
+        return record;
+      }
+      const record = { id: nextId++, ...d } as Record<string, unknown>;
+      store.push(record);
+      return record;
+    },
+    createTable: async () => {},
+    delete: async () => false,
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
     findMany: async (c, opts) => {
       let data: Record<string, unknown>[];
       if (c === "__cms_versions") {
@@ -42,49 +59,34 @@ function createVersionAdapter(): DatabaseAdapter {
       if (opts?.limit) data = data.slice(0, opts.limit);
       return { data, total: data.length };
     },
-    create: async (_c, d) => {
-      if (_c === "__cms_versions") {
-        const record = { id: nextVersionId++, ...d } as Record<string, unknown>;
-        versions.push(record);
-        return record;
-      }
-      const record = { id: nextId++, ...d } as Record<string, unknown>;
-      store.push(record);
-      return record;
-    },
+    findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
+    getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_c, id, d) => {
       const idx = store.findIndex((r) => String(r.id) === id);
       if (idx === -1) return null;
       store[idx] = { ...store[idx], ...d } as Record<string, unknown>;
       return store[idx];
     },
-    delete: async () => false,
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
   };
 }
 
 const collection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "body", type: "richText" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
   versions: { drafts: true },
 };
 
 const collectionWithMaxVersions: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [{ name: "title", type: "text", validation: { required: true } }],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
   versions: { drafts: true, maxPerDoc: 3 },
 };
 
@@ -94,17 +96,17 @@ describe("createListVersionsHandler", () => {
     const created = await adapter.create("__cms_posts", { title: "Hello" });
     await adapter.create("__cms_versions", {
       collection: "posts",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      data: JSON.stringify({ title: "Hello" }),
       entryId: String(created.id),
       version: 1,
-      data: JSON.stringify({ title: "Hello" }),
-      createdAt: "2024-01-01T00:00:00.000Z",
     });
     const handler = createListVersionsHandler(collection, adapter);
     const result = await handler({
-      params: { id: String(created.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: unknown[]; total: number };
@@ -116,49 +118,49 @@ describe("createListVersionsHandler", () => {
     const adapter = createVersionAdapter();
     const handler = createListVersionsHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
 
   it("returns 500 on adapter error", async () => {
     const adapter: DatabaseAdapter = {
-      findOne: async () => {
-        throw new Error("DB error");
-      },
-      findMany: async () => {
-        throw new Error("DB error");
-      },
+      connect: async () => {},
       create: async () => {
         throw new Error("DB error");
       },
-      update: async () => {
-        throw new Error("DB error");
-      },
+      createTable: async () => {},
       delete: async () => {
         throw new Error("DB error");
       },
       deleteMany: async () => {
         throw new Error("DB error");
       },
-      connect: async () => {},
       disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
       dropTable: async () => {},
-      runMigration: async () => {},
+      findMany: async () => {
+        throw new Error("DB error");
+      },
+      findOne: async () => {
+        throw new Error("DB error");
+      },
       getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
+      update: async () => {
+        throw new Error("DB error");
+      },
     };
     const handler = createListVersionsHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(500);
   });
@@ -169,41 +171,41 @@ describe("saveVersion catch block", () => {
     const store: Record<string, unknown>[] = [];
     let nextId = 1;
     const adapter: DatabaseAdapter = {
-      findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
-      findMany: async (c) => {
-        if (c === "__cms_versions") throw new Error("Versions table error");
-        return { data: [...store], total: store.length };
-      },
+      connect: async () => {},
       create: async (c, d) => {
         if (c === "__cms_versions") throw new Error("Versions table error");
         const record = { id: nextId++, ...d } as Record<string, unknown>;
         store.push(record);
         return record;
       },
-      update: async () => null,
+      createTable: async () => {},
       delete: async () => false,
       deleteMany: async () => 0,
-      connect: async () => {},
       disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
       dropTable: async () => {},
-      runMigration: async () => {},
+      findMany: async (c) => {
+        if (c === "__cms_versions") throw new Error("Versions table error");
+        return { data: [...store], total: store.length };
+      },
+      findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
       getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
+      update: async () => null,
     };
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text", validation: { required: true } }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
       versions: { drafts: true },
     };
     const handler = createCreateHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { title: "Test" },
       headers: {},
+      params: {},
+      query: {},
     });
     // saveVersion catches and swallows the error, so handler still succeeds
     expect(result.statusCode).toBe(201);
@@ -212,42 +214,42 @@ describe("saveVersion catch block", () => {
   it("saveVersion catch also fires on update", async () => {
     const store: Record<string, unknown>[] = [{ id: 1, title: "Original" }];
     const adapter: DatabaseAdapter = {
-      findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
+      connect: async () => {},
+      create: async () => {
+        throw new Error("Should not be called");
+      },
+      createTable: async () => {},
+      delete: async () => false,
+      deleteMany: async () => 0,
+      disconnect: async () => {},
+      dropTable: async () => {},
       findMany: async (c) => {
         if (c === "__cms_versions") throw new Error("Versions table error");
         return { data: [...store], total: store.length };
       },
-      create: async () => {
-        throw new Error("Should not be called");
-      },
+      findOne: async (_c, id) => store.find((r) => String(r.id) === id) ?? null,
+      getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
       update: async (c, id, d) => {
         const idx = store.findIndex((r) => String(r.id) === id);
         if (idx === -1) return null;
         store[idx] = { ...store[idx], ...d } as Record<string, unknown>;
         return store[idx];
       },
-      delete: async () => false,
-      deleteMany: async () => 0,
-      connect: async () => {},
-      disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
-      dropTable: async () => {},
-      runMigration: async () => {},
-      getExecutedMigrations: async () => [],
     };
     const collection: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [{ name: "title", type: "text", validation: { required: true } }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     };
     const handler = createUpdateHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: { title: "Updated" },
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
   });
@@ -259,17 +261,17 @@ describe("createRestoreVersionHandler", () => {
     const created = await adapter.create("__cms_posts", { title: "Hello" });
     const versionRecord = await adapter.create("__cms_versions", {
       collection: "posts",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      data: JSON.stringify({ _status: "draft", id: String(created.id), title: "Old Title" }),
       entryId: String(created.id),
       version: 1,
-      data: JSON.stringify({ id: String(created.id), title: "Old Title", _status: "draft" }),
-      createdAt: "2024-01-01T00:00:00.000Z",
     });
     const handler = createRestoreVersionHandler(collection, adapter);
     const result = await handler({
-      params: { id: String(created.id), versionId: String(versionRecord.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id), versionId: String(versionRecord.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -280,10 +282,10 @@ describe("createRestoreVersionHandler", () => {
     const adapter = createVersionAdapter();
     const handler = createRestoreVersionHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -292,10 +294,10 @@ describe("createRestoreVersionHandler", () => {
     const adapter = createVersionAdapter();
     const handler = createRestoreVersionHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -304,10 +306,10 @@ describe("createRestoreVersionHandler", () => {
     const adapter = createVersionAdapter();
     const handler = createRestoreVersionHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1", versionId: "999" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1", versionId: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
@@ -316,57 +318,57 @@ describe("createRestoreVersionHandler", () => {
     const adapter = createVersionAdapter();
     await adapter.create("__cms_versions", {
       collection: "posts",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      data: JSON.stringify({ title: "Ghost" }),
       entryId: "999",
       id: 1,
       version: 1,
-      data: JSON.stringify({ title: "Ghost" }),
-      createdAt: "2024-01-01T00:00:00.000Z",
     });
     const handler = createRestoreVersionHandler(collection, adapter);
     const result = await handler({
-      params: { id: "999", versionId: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "999", versionId: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
 
   it("returns 500 on adapter error", async () => {
     const adapter: DatabaseAdapter = {
-      findOne: async () => {
-        throw new Error("DB error");
-      },
-      findMany: async () => {
-        throw new Error("DB error");
-      },
+      connect: async () => {},
       create: async () => {
         throw new Error("DB error");
       },
-      update: async () => {
-        throw new Error("DB error");
-      },
+      createTable: async () => {},
       delete: async () => {
         throw new Error("DB error");
       },
       deleteMany: async () => {
         throw new Error("DB error");
       },
-      connect: async () => {},
       disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
       dropTable: async () => {},
-      runMigration: async () => {},
+      findMany: async () => {
+        throw new Error("DB error");
+      },
+      findOne: async () => {
+        throw new Error("DB error");
+      },
       getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
+      update: async () => {
+        throw new Error("DB error");
+      },
     };
     const handler = createRestoreVersionHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1", versionId: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1", versionId: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(500);
   });
@@ -376,24 +378,24 @@ describe("createRestoreVersionHandler", () => {
     const created = await adapter.create("__cms_posts", { title: "Original" });
     const versionRecord = await adapter.create("__cms_versions", {
       collection: "posts",
-      entryId: String(created.id),
-      version: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
       data: JSON.stringify({
-        id: String(created.id),
-        title: "Restored",
-        _status: "draft",
         _deletedAt: "2024-01-01",
         _deletedBy: "user-1",
         _publishAt: "2024-01-01",
+        _status: "draft",
+        id: String(created.id),
+        title: "Restored",
       }),
-      createdAt: "2024-01-01T00:00:00.000Z",
+      entryId: String(created.id),
+      version: 1,
     });
     const handler = createRestoreVersionHandler(collection, adapter);
     const result = await handler({
-      params: { id: String(created.id), versionId: String(versionRecord.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id), versionId: String(versionRecord.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -408,25 +410,25 @@ describe("createSaveVersion with maxPerDoc", () => {
     for (let i = 1; i <= 5; i++) {
       await adapter.create("__cms_versions", {
         collection: "posts",
+        createdAt: `2024-01-0${i}T00:00:00.000Z`,
+        data: JSON.stringify({ title: `Version ${i}` }),
         entryId: String(created.id),
         version: i,
-        data: JSON.stringify({ title: `Version ${i}` }),
-        createdAt: `2024-01-0${i}T00:00:00.000Z`,
       });
     }
     const handler = createRestoreVersionHandler(collectionWithMaxVersions, adapter);
     const versionRecord = await adapter.create("__cms_versions", {
       collection: "posts",
+      createdAt: "2024-01-03T00:00:00.000Z",
+      data: JSON.stringify({ title: "Version 3 restore" }),
       entryId: String(created.id),
       version: 3,
-      data: JSON.stringify({ title: "Version 3 restore" }),
-      createdAt: "2024-01-03T00:00:00.000Z",
     });
     const result = await handler({
-      params: { id: String(created.id), versionId: String(versionRecord.id) },
-      query: {},
       body: null,
       headers: {},
+      params: { id: String(created.id), versionId: String(versionRecord.id) },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
   });

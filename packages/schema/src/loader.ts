@@ -55,7 +55,7 @@ export class SchemaLoader {
       this.loadComponents(),
     ]);
 
-    const result = { collections, globals, components };
+    const result = { collections, components, globals };
 
     if (this.options.onAfterLoad) await this.options.onAfterLoad(result);
 

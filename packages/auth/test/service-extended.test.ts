@@ -1,13 +1,15 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import type { DatabaseAdapter } from "@arche-cms/database";
-import { AuthService } from "../src/service.js";
-import { hashPassword } from "../src/password.js";
+
 import { randomBytes } from "node:crypto";
+import { describe, it, expect, beforeEach } from "vitest";
+
+import { hashPassword } from "../src/password.js";
+import { AuthService } from "../src/service.js";
 
 const config = {
-  secret: "test-secret-at-least-32-chars-long-for-security!!",
   accessTokenExpiresIn: "15m",
   refreshTokenExpiresIn: "7d",
+  secret: "test-secret-at-least-32-chars-long-for-security!!",
 };
 
 function createMockAdapter(): DatabaseAdapter {
@@ -16,22 +18,7 @@ function createMockAdapter(): DatabaseAdapter {
   let nextId = 1;
 
   return {
-    findOne: async (collection, id) => {
-      if (collection === "__cms_users") return users.get(id) ?? null;
-      return null;
-    },
-    findMany: async (collection, options) => {
-      if (collection === "__cms_users") {
-        const all = [...users.values()];
-        const email = options?.where?.email;
-        const filtered = email ? all.filter((r) => r.email === email) : all;
-        return { data: filtered.slice(0, options?.limit ?? 100), total: filtered.length };
-      }
-      if (collection === "__cms_password_resets") {
-        return { data: [...resetTokens], total: resetTokens.length };
-      }
-      return { data: [], total: 0 };
-    },
+    connect: async () => {},
     create: async (collection, data) => {
       if (collection === "__cms_users") {
         const id = String(nextId++);
@@ -46,6 +33,35 @@ function createMockAdapter(): DatabaseAdapter {
       }
       return data;
     },
+    createTable: async () => {},
+    delete: async (_collection, id) => {
+      const existed = users.has(id);
+      users.delete(id);
+      return existed;
+    },
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
+    findMany: async (collection, options) => {
+      if (collection === "__cms_users") {
+        const all = [...users.values()];
+        const email = options?.where?.email;
+        const filtered = email ? all.filter((r) => r.email === email) : all;
+        return { data: filtered.slice(0, options?.limit ?? 100), total: filtered.length };
+      }
+      if (collection === "__cms_password_resets") {
+        return { data: [...resetTokens], total: resetTokens.length };
+      }
+      return { data: [], total: 0 };
+    },
+    findOne: async (collection, id) => {
+      if (collection === "__cms_users") return users.get(id) ?? null;
+      return null;
+    },
+    getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_collection, id, data) => {
       const existing = users.get(id);
       if (!existing) return null;
@@ -53,20 +69,6 @@ function createMockAdapter(): DatabaseAdapter {
       users.set(id, updated);
       return updated;
     },
-    delete: async (_collection, id) => {
-      const existed = users.has(id);
-      users.delete(id);
-      return existed;
-    },
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
   };
 }
 
@@ -102,11 +104,11 @@ describe("AuthService extended", () => {
       const hashedToken = await hashPassword(rawToken);
       await adapter.create("__cms_password_resets", {
         email: "reset@example.com",
-        token: hashedToken,
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        token: hashedToken,
       });
 
-      const result = await service.resetPassword({ token: rawToken, password: "newpass" });
+      const result = await service.resetPassword({ password: "newpass", token: rawToken });
       expect(result.message).toContain("reset");
       await expect(
         service.login({ email: "reset@example.com", password: "newpass" }),
@@ -115,7 +117,7 @@ describe("AuthService extended", () => {
 
     it("throws for invalid token", async () => {
       await expect(
-        service.resetPassword({ token: "invalid-token", password: "newpass" }),
+        service.resetPassword({ password: "newpass", token: "invalid-token" }),
       ).rejects.toThrow("Invalid or expired reset token");
     });
 
@@ -126,11 +128,11 @@ describe("AuthService extended", () => {
       const hashedToken = await hashPassword(rawToken);
       await adapter.create("__cms_password_resets", {
         email: "expired@example.com",
-        token: hashedToken,
         expiresAt: new Date(Date.now() - 3600000).toISOString(),
+        token: hashedToken,
       });
 
-      await expect(service.resetPassword({ token: rawToken, password: "newpass" })).rejects.toThrow(
+      await expect(service.resetPassword({ password: "newpass", token: rawToken })).rejects.toThrow(
         "Reset token has expired",
       );
     });
@@ -142,14 +144,14 @@ describe("AuthService extended", () => {
       const hashedToken = await hashPassword(rawToken);
       await adapter.create("__cms_password_resets", {
         email: "deleted@example.com",
-        token: hashedToken,
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        token: hashedToken,
       });
 
       const users = await service.listUsers();
       await service.deleteUser(users[0].id);
 
-      await expect(service.resetPassword({ token: rawToken, password: "newpass" })).rejects.toThrow(
+      await expect(service.resetPassword({ password: "newpass", token: rawToken })).rejects.toThrow(
         "User not found",
       );
     });

@@ -1,18 +1,19 @@
 import { createRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Route as rootRoute } from "@/routes/__root";
-import { Skeleton } from "@/components/skeleton";
-import { useCollections } from "@/lib/hooks";
 import { FileText, Plus } from "lucide-react";
 
+import { Skeleton } from "@/components/skeleton";
+import { Button } from "@/components/ui/button";
+import { useCollections } from "@/lib/hooks";
+import { Route as rootRoute } from "@/routes/__root";
+
 export const Route = createRoute({
+  component: CollectionsList,
   getParentRoute: () => rootRoute,
   path: "/collections",
-  component: CollectionsList,
 });
 
 function CollectionsList() {
-  const { data: collections = [], isLoading: loading, error } = useCollections();
+  const { data: collections = [], error, isLoading: loading } = useCollections();
 
   if (loading) {
     return (

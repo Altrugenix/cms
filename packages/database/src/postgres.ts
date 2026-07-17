@@ -1,4 +1,5 @@
 import pg from "pg";
+
 import type { DatabaseAdapter, ExistingSchema, Migration, QueryOptions } from "./types.js";
 
 export interface PostgresAdapterOptions {
@@ -18,8 +19,8 @@ export class PostgresAdapter implements DatabaseAdapter {
   async connect(): Promise<void> {
     this.pool = new pg.Pool({
       connectionString: this.options.connectionString,
-      max: this.options.poolSize ?? 10,
       idleTimeoutMillis: this.options.idleTimeoutMs ?? 30000,
+      max: this.options.poolSize ?? 10,
     });
     await this.ensureMigrationsTable();
   }

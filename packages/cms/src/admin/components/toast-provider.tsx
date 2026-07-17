@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
 type ToastVariant = "success" | "error" | "info";
 
@@ -17,15 +17,15 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const variantStyles: Record<ToastVariant, string> = {
-  success: "bg-success text-success-foreground border-success/20",
   error: "bg-destructive text-destructive-foreground border-destructive/20",
   info: "bg-info text-info-foreground border-info/20",
+  success: "bg-success text-success-foreground border-success/20",
 };
 
 const variantIcons: Record<ToastVariant, string> = {
-  success: "✓",
   error: "✕",
   info: "ℹ",
+  success: "✓",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -44,7 +44,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ToastContext.Provider value={{ toast, dismiss }}>
+    <ToastContext.Provider value={{ dismiss, toast }}>
       {children}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
         {toasts.map((t) => (

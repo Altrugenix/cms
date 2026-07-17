@@ -1,20 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Readable } from "node:stream";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@aws-sdk/client-s3", () => {
   const mockSend = vi.fn();
   const S3Client = vi.fn(() => ({ send: mockSend }));
   return {
-    S3Client,
-    PutObjectCommand: vi.fn(),
-    GetObjectCommand: vi.fn(),
     DeleteObjectCommand: vi.fn(),
+    GetObjectCommand: vi.fn(),
     HeadObjectCommand: vi.fn(),
     mockSend,
+    PutObjectCommand: vi.fn(),
+    S3Client,
   };
 });
 
-const { S3Client, mockSend, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } =
+const { DeleteObjectCommand, HeadObjectCommand, mockSend, PutObjectCommand, S3Client } =
   await import("@aws-sdk/client-s3");
 const { S3Adapter } = await import("../src/s3.js");
 
@@ -32,22 +32,22 @@ describe("S3Adapter", () => {
   it("constructs with credentials and endpoint", () => {
     new S3Adapter({
       bucket: "test-bucket",
-      region: "eu-west-1",
-      endpoint: "http://localhost:9000",
       credentials: { accessKeyId: "minioadmin", secretAccessKey: "minioadmin" },
+      endpoint: "http://localhost:9000",
       forcePathStyle: true,
+      region: "eu-west-1",
     });
     expect(S3Client).toHaveBeenCalledWith(
       expect.objectContaining({
+        credentials: { accessKeyId: "minioadmin", secretAccessKey: "minioadmin" },
         endpoint: "http://localhost:9000",
         forcePathStyle: true,
-        credentials: { accessKeyId: "minioadmin", secretAccessKey: "minioadmin" },
       }),
     );
   });
 
   it("constructs with baseDir", () => {
-    const adapter = new S3Adapter({ bucket: "test", baseDir: "uploads" });
+    const adapter = new S3Adapter({ baseDir: "uploads", bucket: "test" });
     expect(adapter).toBeInstanceOf(S3Adapter);
   });
 
@@ -61,16 +61,16 @@ describe("S3Adapter", () => {
     mockSend.mockResolvedValue({});
     await adapter.save("file.txt", Buffer.from("hello"), "text/plain");
     expect(PutObjectCommand).toHaveBeenCalledWith({
-      Bucket: "test",
-      Key: "file.txt",
       Body: Buffer.from("hello"),
+      Bucket: "test",
       ContentType: "text/plain",
+      Key: "file.txt",
     });
     expect(mockSend).toHaveBeenCalledTimes(1);
   });
 
   it("save with baseDir prepends path", async () => {
-    const adapter = new S3Adapter({ bucket: "test", baseDir: "uploads" });
+    const adapter = new S3Adapter({ baseDir: "uploads", bucket: "test" });
     mockSend.mockResolvedValue({});
     await adapter.save("file.txt", Buffer.from("data"), "image/png");
     expect(PutObjectCommand).toHaveBeenCalledWith(

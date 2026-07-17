@@ -1,9 +1,11 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { DatabaseAdapter } from "@arche-cms/database";
-import type { CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
-import { createCollectionRouters } from "@arche-cms/rest-api";
 import type { RouteHandlerContext } from "@arche-cms/rest-api";
+import type { CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+
+import { createCollectionRouters } from "@arche-cms/rest-api";
 import { createGlobalGetHandler, createGlobalUpsertHandler } from "@arche-cms/rest-api";
+
 import { recordActivity } from "../lib/activity.js";
 import { dispatchWebhooks } from "../lib/webhooks.js";
 
@@ -20,10 +22,10 @@ function asHandler(
 ) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const result = await handler({
-      params: request.params as Record<string, string>,
-      query: request.query as Record<string, string | string[] | undefined>,
       body: request.body,
       headers: request.headers as Record<string, string>,
+      params: request.params as Record<string, string>,
+      query: request.query as Record<string, string | string[] | undefined>,
     });
     return reply.status(result.statusCode).send(result.body);
   };
@@ -121,11 +123,10 @@ export function registerCollectionRoutes(
     const slug = slugFromPath(routeDef.path);
     const methodLabel = routeDef.method.toUpperCase();
     void fastify.route({
+      handler: asHandler(handler),
       method: routeDef.method,
-      url: routeDef.path,
       preHandler: [fastify.authenticate],
       schema: {
-        summary: `${methodLabel} /api/${slug}`,
         description:
           routeDef.method === "GET"
             ? routeDef.path.endsWith("/:id")
@@ -142,9 +143,10 @@ export function registerCollectionRoutes(
                     : routeDef.path.includes("/versions")
                       ? `List or restore ${slug} versions`
                       : `${methodLabel === "POST" ? "Create" : methodLabel === "PATCH" ? "Update" : methodLabel === "DELETE" ? "Delete" : "Upsert"} a ${slug} entry`,
+        summary: `${methodLabel} /api/${slug}`,
         tags: ["Collections"],
       },
-      handler: asHandler(handler),
+      url: routeDef.path,
     });
   }
 }
@@ -155,10 +157,10 @@ export function registerGlobalRoutes(
   adapter: DatabaseAdapter,
 ): void {
   const makeCtx = (request: FastifyRequest): RouteHandlerContext => ({
-    params: request.params as Record<string, string>,
-    query: request.query as Record<string, string | string[] | undefined>,
     body: request.body,
     headers: request.headers as Record<string, string>,
+    params: request.params as Record<string, string>,
+    query: request.query as Record<string, string | string[] | undefined>,
   });
 
   fastify.get(
@@ -166,13 +168,13 @@ export function registerGlobalRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Get global",
         description: "Returns the value of a global by slug",
-        tags: ["Globals"],
         params: {
+          properties: { slug: { description: "Global slug", type: "string" } },
           type: "object",
-          properties: { slug: { type: "string", description: "Global slug" } },
         },
+        summary: "Get global",
+        tags: ["Globals"],
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -195,13 +197,13 @@ export function registerGlobalRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Upsert global",
         description: "Create or update a global by slug",
-        tags: ["Globals"],
         params: {
+          properties: { slug: { description: "Global slug", type: "string" } },
           type: "object",
-          properties: { slug: { type: "string", description: "Global slug" } },
         },
+        summary: "Upsert global",
+        tags: ["Globals"],
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {

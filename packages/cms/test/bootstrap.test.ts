@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, existsSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 interface MockConfig {
   database: { adapter: string; url: string };
@@ -47,7 +47,7 @@ describe("autoCreateSqlite", () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(tmpDir, { force: true, recursive: true });
     process.env = { ...ORIGINAL_ENV };
   });
 
@@ -158,16 +158,16 @@ describe("connectAndLoad", () => {
     const { connectAndLoad } = await import("../src/server/bootstrap.js");
     const mockAdapter = {
       connect: vi.fn(),
-      raw: vi.fn(),
-      getExistingSchema: vi.fn().mockResolvedValue({ tables: new Map() }),
       getExecutedMigrations: vi.fn().mockResolvedValue([]),
+      getExistingSchema: vi.fn().mockResolvedValue({ tables: new Map() }),
+      raw: vi.fn(),
       runMigration: vi.fn().mockResolvedValue(undefined),
       transaction: vi.fn().mockImplementation(async (fn: () => Promise<unknown>) => fn()),
     };
     const config = {
-      schema: { baseDir: "./cms" },
       database: { adapter: "sqlite", url: ":memory:" },
       logger: { level: "silent" },
+      schema: { baseDir: "./cms" },
     };
     const result = await connectAndLoad(config as never, mockAdapter as never);
     expect(mockAdapter.connect).toHaveBeenCalled();
@@ -181,10 +181,10 @@ describe("createAndStartApp", () => {
   it("creates Fastify app and starts listening", async () => {
     vi.mock("../src/server/app.js", () => ({
       createApp: vi.fn().mockResolvedValue({
+        addHook: vi.fn(),
+        close: vi.fn(),
         inject: vi.fn(),
         listen: vi.fn(),
-        close: vi.fn(),
-        addHook: vi.fn(),
         log: { info: vi.fn(), warn: vi.fn() },
       }),
     }));
@@ -199,10 +199,10 @@ describe("createAndStartApp", () => {
     const adapter = { connect: vi.fn(), raw: vi.fn() };
     const result = await createAndStartApp(
       {
-        port: 3001,
+        database: { adapter: "sqlite", url: ":memory:" },
         host: "127.0.0.1",
         logger: { level: "silent" },
-        database: { adapter: "sqlite", url: ":memory:" },
+        port: 3001,
       } as never,
       adapter as never,
       [],

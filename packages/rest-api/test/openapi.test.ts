@@ -1,28 +1,28 @@
-import { describe, it, expect } from "vitest";
 import type { CollectionDefinition } from "@arche-cms/database";
-import { generateOpenApiSpec } from "../src/openapi.js";
-import { createCollectionRouter, createCollectionRouters } from "../src/route-generator.js";
 import type { DatabaseAdapter } from "@arche-cms/database";
 
+import { describe, it, expect } from "vitest";
+
+import { generateOpenApiSpec } from "../src/openapi.js";
+import { createCollectionRouter, createCollectionRouters } from "../src/route-generator.js";
+
 const mockAdapter = {
-  findOne: async () => null,
-  findMany: async () => ({ data: [], total: 0 }),
-  create: async () => ({}),
-  update: async () => null,
-  delete: async () => true,
   connect: async () => {},
-  disconnect: async () => {},
-  transaction: async <T>(fn: () => Promise<T>) => fn(),
-  raw: async () => [],
+  create: async () => ({}),
   createTable: async () => {},
+  delete: async () => true,
+  disconnect: async () => {},
   dropTable: async () => {},
-  runMigration: async () => {},
+  findMany: async () => ({ data: [], total: 0 }),
+  findOne: async () => null,
   getExecutedMigrations: async () => [],
+  raw: async () => [],
+  runMigration: async () => {},
+  transaction: async <T>(fn: () => Promise<T>) => fn(),
+  update: async () => null,
 } satisfies DatabaseAdapter;
 
 const postCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "body", type: "richText" },
@@ -30,23 +30,25 @@ const postCollection: CollectionDefinition = {
     { name: "published", type: "boolean" },
     {
       name: "status",
-      type: "select",
       options: [
         { label: "Draft", value: "draft" },
         { label: "Published", value: "published" },
       ],
+      type: "select",
     },
     {
       name: "tags",
-      type: "multiSelect",
       options: [
         { label: "News", value: "news" },
         { label: "Tech", value: "tech" },
       ],
+      type: "multiSelect",
     },
-    { name: "author", type: "relation", to: "users" },
+    { name: "author", to: "users", type: "relation" },
     { name: "publishedAt", type: "datetime" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 describe("generateOpenApiSpec", () => {
@@ -98,9 +100,9 @@ describe("generateOpenApiSpec", () => {
 
   it("generates spec for multiple collections", () => {
     const userCollection: CollectionDefinition = {
-      slug: "users",
-      labels: { singular: "User", plural: "Users" },
       fields: [{ name: "email", type: "email" }],
+      labels: { plural: "Users", singular: "User" },
+      slug: "users",
     };
     const routers = createCollectionRouters([postCollection, userCollection], mockAdapter);
     const allRoutes = routers.flatMap((r) => r.routes);
@@ -114,12 +116,12 @@ describe("generateOpenApiSpec", () => {
 
   it("handles json and checkbox field types", () => {
     const col: CollectionDefinition = {
-      slug: "settings",
-      labels: { singular: "Setting", plural: "Settings" },
       fields: [
         { name: "metadata", type: "json" },
         { name: "active", type: "checkbox" },
       ],
+      labels: { plural: "Settings", singular: "Setting" },
+      slug: "settings",
     };
     const { routes } = createCollectionRouter(col, mockAdapter);
     const spec = generateOpenApiSpec([col], routes);
@@ -138,12 +140,12 @@ describe("generateOpenApiSpec", () => {
   it("handles POST route responses correctly", () => {
     const routes = [
       {
+        handler: async () => ({ body: {}, statusCode: 201 }),
         method: "POST" as const,
-        path: "/api/posts",
         operationId: "createPosts",
+        path: "/api/posts",
         summary: "Create a post",
         tags: ["Posts"],
-        handler: async () => ({ statusCode: 201, body: {} }),
       },
     ];
     const spec = generateOpenApiSpec([postCollection], routes);
@@ -156,9 +158,9 @@ describe("generateOpenApiSpec", () => {
 
   it("handles date field type", () => {
     const col: CollectionDefinition = {
-      slug: "events",
-      labels: { singular: "Event", plural: "Events" },
       fields: [{ name: "eventDate", type: "date" }],
+      labels: { plural: "Events", singular: "Event" },
+      slug: "events",
     };
     const { routes } = createCollectionRouter(col, mockAdapter);
     const spec = generateOpenApiSpec([col], routes);
@@ -173,9 +175,9 @@ describe("generateOpenApiSpec", () => {
 
   it("excludes timestamps when disabled", () => {
     const col: CollectionDefinition = {
-      slug: "no-ts",
-      labels: { singular: "No Ts", plural: "No Ts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "No Ts", singular: "No Ts" },
+      slug: "no-ts",
       timestamps: { createdAt: false, updatedAt: false },
     };
     const { routes } = createCollectionRouter(col, mockAdapter);
@@ -191,9 +193,9 @@ describe("generateOpenApiSpec", () => {
 
   it("includes only createdAt when updatedAt is disabled", () => {
     const col: CollectionDefinition = {
-      slug: "partial-ts",
-      labels: { singular: "Partial Ts", plural: "Partial Ts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Partial Ts", singular: "Partial Ts" },
+      slug: "partial-ts",
       timestamps: { updatedAt: false },
     };
     const { routes } = createCollectionRouter(col, mockAdapter);
@@ -209,9 +211,9 @@ describe("generateOpenApiSpec", () => {
 
   it("includes only updatedAt when createdAt is disabled", () => {
     const col: CollectionDefinition = {
-      slug: "partial-ts2",
-      labels: { singular: "Partial Ts2", plural: "Partial Ts2" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Partial Ts2", singular: "Partial Ts2" },
+      slug: "partial-ts2",
       timestamps: { createdAt: false },
     };
     const { routes } = createCollectionRouter(col, mockAdapter);
@@ -228,12 +230,12 @@ describe("generateOpenApiSpec", () => {
   it("handles GET single route with id parameter", () => {
     const routes = [
       {
+        handler: async () => ({ body: {}, statusCode: 200 }),
         method: "GET" as const,
-        path: "/api/posts/:id",
         operationId: "getPosts",
+        path: "/api/posts/:id",
         summary: "Get a post",
         tags: ["Posts"],
-        handler: async () => ({ statusCode: 200, body: {} }),
       },
     ];
     const spec = generateOpenApiSpec([postCollection], routes);
@@ -248,12 +250,12 @@ describe("generateOpenApiSpec", () => {
   it("handles GET list route with query parameters", () => {
     const routes = [
       {
+        handler: async () => ({ body: {}, statusCode: 200 }),
         method: "GET" as const,
-        path: "/api/posts",
         operationId: "listPosts",
+        path: "/api/posts",
         summary: "List posts",
         tags: ["Posts"],
-        handler: async () => ({ statusCode: 200, body: {} }),
       },
     ];
     const spec = generateOpenApiSpec([postCollection], routes);

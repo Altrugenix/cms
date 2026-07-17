@@ -1,10 +1,8 @@
 import { defineGlobal, text, textarea, email, select } from "@arche-cms/schema";
 
 export default defineGlobal({
-  slug: "site-settings",
-  label: "Site Settings",
   fields: [
-    text("siteName", { required: true, label: "Site Name" }),
+    text("siteName", { label: "Site Name", required: true }),
     textarea("siteDescription", { label: "Site Description" }),
     email("adminEmail", { label: "Admin Email" }),
     select("defaultLocale", {
@@ -14,4 +12,6 @@ export default defineGlobal({
     text("seoTitle", { label: "SEO Default Title" }),
     textarea("seoDescription", { label: "SEO Default Description" }),
   ],
+  label: "Site Settings",
+  slug: "site-settings",
 });

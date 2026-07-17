@@ -1,5 +1,6 @@
-import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
 function jsValue(val: unknown): string {
   if (val === null) return "null";
@@ -36,16 +37,16 @@ function generateValidationFile(collections: CollectionDefinition[]): string {
 }
 
 export const validationGenerator: Generator = {
-  name: "validation",
   description: "Generates Zod validation schemas from collection definitions",
   async generate(options: GenerationOptions): Promise<GeneratedFile[]> {
     if (!options.collections || options.collections.length === 0) return [];
 
     return [
       {
-        path: "validation/index.ts",
         content: generateValidationFile(options.collections),
+        path: "validation/index.ts",
       },
     ];
   },
+  name: "validation",
 };

@@ -1,5 +1,6 @@
-import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
+
+import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
 function toPascal(s: string): string {
   return s.replace(/(^\w|[-_]\w)/g, (c) => c.replace(/[-_]/g, "").toUpperCase());
@@ -124,16 +125,16 @@ function generateSdkClass(collections: CollectionDefinition[]): string {
 }
 
 export const sdkGenerator: Generator = {
-  name: "sdk",
   description: "Generates TypeScript SDK client from collection definitions",
   async generate(options: GenerationOptions): Promise<GeneratedFile[]> {
     if (!options.collections || options.collections.length === 0) return [];
 
     return [
       {
-        path: "sdk/index.ts",
         content: generateSdkClass(options.collections),
+        path: "sdk/index.ts",
       },
     ];
   },
+  name: "sdk",
 };

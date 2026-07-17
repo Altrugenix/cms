@@ -2,6 +2,7 @@
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+
 import { collectionTemplate, collectionCreateHelp } from "../templates/templates.js";
 
 export interface CollectionCreateOptions {

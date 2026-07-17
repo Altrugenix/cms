@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import type { DatabaseAdapter } from "@arche-cms/database";
+
+import { describe, it, expect, beforeEach } from "vitest";
+
 import { AccessControl } from "../src/access-control.js";
 
 function createMockAdapter(): DatabaseAdapter {
@@ -7,19 +9,32 @@ function createMockAdapter(): DatabaseAdapter {
   let nextId = 1;
 
   return {
-    findOne: async (_collection, id) => roles.get(id) ?? null,
-    findMany: async (_collection, options) => {
-      const all = [...roles.values()];
-      const name = options?.where?.name;
-      const filtered = typeof name === "string" ? all.filter((r) => r.name === name) : all;
-      return { data: filtered.slice(0, options?.limit ?? 100), total: filtered.length };
-    },
+    connect: async () => {},
     create: async (_collection, data) => {
       const id = String(nextId++);
       const record = { id, ...data };
       roles.set(id, record);
       return record;
     },
+    createTable: async () => {},
+    delete: async (_collection, id) => {
+      const existed = roles.has(id);
+      roles.delete(id);
+      return existed;
+    },
+    disconnect: async () => {},
+    dropTable: async () => {},
+    findMany: async (_collection, options) => {
+      const all = [...roles.values()];
+      const name = options?.where?.name;
+      const filtered = typeof name === "string" ? all.filter((r) => r.name === name) : all;
+      return { data: filtered.slice(0, options?.limit ?? 100), total: filtered.length };
+    },
+    findOne: async (_collection, id) => roles.get(id) ?? null,
+    getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_collection, id, data) => {
       const existing = roles.get(id);
       if (!existing) return null;
@@ -27,19 +42,6 @@ function createMockAdapter(): DatabaseAdapter {
       roles.set(id, updated);
       return updated;
     },
-    delete: async (_collection, id) => {
-      const existed = roles.has(id);
-      roles.delete(id);
-      return existed;
-    },
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
   };
 }
 
@@ -164,7 +166,7 @@ describe("AccessControl", () => {
 
     it("returns filtered fields when permission has field restrictions", async () => {
       await ac.createRole("restricted", "Restricted", [
-        { action: "read", resource: "posts", fields: ["title"] },
+        { action: "read", fields: ["title"], resource: "posts" },
       ]);
       const allowed = await ac.filterFields("restricted", "posts", ["title", "body", "secret"]);
       expect(allowed).toEqual(["title"]);

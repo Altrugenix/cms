@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 function withLogCapture(fn: (lines: string[]) => Promise<void>): () => Promise<void> {
   return async () => {
@@ -113,7 +113,7 @@ describe("doctor command", () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(tmpDir, { force: true, recursive: true });
     process.exit = originalExit;
   });
 
@@ -162,7 +162,7 @@ describe("migrate command", () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(tmpDir, { force: true, recursive: true });
   });
 
   it(
@@ -199,7 +199,7 @@ describe("typegen command", () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(tmpDir, { force: true, recursive: true });
   });
 
   it(
@@ -235,7 +235,7 @@ describe("generate command", () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(tmpDir, { force: true, recursive: true });
   });
 
   it(
@@ -273,7 +273,7 @@ describe("collection command", () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(tmpDir, { force: true, recursive: true });
     process.exit = originalExit;
   });
 
@@ -281,7 +281,7 @@ describe("collection command", () => {
     "creates a collection file",
     withLogCapture(async (lines) => {
       const { collectionCreate } = await import("../src/commands/collection.js");
-      await collectionCreate({ slug: "articles", dir: tmpDir });
+      await collectionCreate({ dir: tmpDir, slug: "articles" });
       expect(existsSync(join(tmpDir, "articles.ts"))).toBe(true);
       expect(lines.some((l) => l.includes("Created collection"))).toBe(true);
     }),
@@ -291,7 +291,7 @@ describe("collection command", () => {
     "rejects invalid slug",
     withErrorCapture(async (lines) => {
       const { collectionCreate } = await import("../src/commands/collection.js");
-      await collectionCreate({ slug: "123invalid", dir: tmpDir });
+      await collectionCreate({ dir: tmpDir, slug: "123invalid" });
       expect(lines.some((l) => l.includes("Error: slug must start"))).toBe(true);
       expect(process.exit).toHaveBeenCalledWith(1);
     }),
@@ -301,7 +301,7 @@ describe("collection command", () => {
     "rejects empty slug",
     withErrorCapture(async (lines) => {
       const { collectionCreate } = await import("../src/commands/collection.js");
-      await collectionCreate({ slug: "  ", dir: tmpDir });
+      await collectionCreate({ dir: tmpDir, slug: "  " });
       expect(lines.some((l) => l.includes("Error: slug is required"))).toBe(true);
       expect(process.exit).toHaveBeenCalledWith(1);
     }),
@@ -318,7 +318,7 @@ describe("plugin command", () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(tmpDir, { force: true, recursive: true });
     process.exit = originalExit;
   });
 
@@ -326,7 +326,7 @@ describe("plugin command", () => {
     "creates a plugin directory structure",
     withLogCapture(async (lines) => {
       const { pluginCreate } = await import("../src/commands/plugin.js");
-      await pluginCreate({ slug: "seo", dir: tmpDir });
+      await pluginCreate({ dir: tmpDir, slug: "seo" });
       expect(existsSync(join(tmpDir, "seo"))).toBe(true);
       expect(lines.some((l) => l.includes("Created plugin"))).toBe(true);
     }),
@@ -336,7 +336,7 @@ describe("plugin command", () => {
     "rejects invalid slug",
     withErrorCapture(async (lines) => {
       const { pluginCreate } = await import("../src/commands/plugin.js");
-      await pluginCreate({ slug: "123start", dir: tmpDir });
+      await pluginCreate({ dir: tmpDir, slug: "123start" });
       expect(lines.some((l) => l.includes("Error: slug must start"))).toBe(true);
       expect(process.exit).toHaveBeenCalledWith(1);
     }),
@@ -346,7 +346,7 @@ describe("plugin command", () => {
     "rejects empty slug",
     withErrorCapture(async (lines) => {
       const { pluginCreate } = await import("../src/commands/plugin.js");
-      await pluginCreate({ slug: "", dir: tmpDir });
+      await pluginCreate({ dir: tmpDir, slug: "" });
       expect(lines.some((l) => l.includes("Error: slug is required"))).toBe(true);
       expect(process.exit).toHaveBeenCalledWith(1);
     }),

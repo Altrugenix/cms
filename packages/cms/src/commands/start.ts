@@ -1,15 +1,16 @@
 /* eslint-disable no-console */
 
+import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
 import { SQLiteAdapter, createPostgresAdapter } from "@arche-cms/database";
 import { PluginManager, seoPlugin, discoverPlugins } from "@arche-cms/plugins";
-import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
-import { loadConfig } from "../server/config.js";
+
 import {
   applyCliOverrides,
   autoCreateSqlite,
   connectAndLoad,
   createAndStartApp,
 } from "../server/bootstrap.js";
+import { loadConfig } from "../server/config.js";
 
 export interface StartOptions {
   dir?: string;
@@ -53,9 +54,9 @@ export async function start(options: StartOptions): Promise<void> {
   const eventBus = new EventBus();
   const lifecycle = new Lifecycle();
   const pluginManager = new PluginManager({
+    context: { config: config as never, container: {}, logger },
     eventBus,
     lifecycle,
-    context: { config: config as never, logger, container: {} },
   });
 
   pluginManager.register(seoPlugin);
@@ -65,20 +66,20 @@ export async function start(options: StartOptions): Promise<void> {
   }
 
   const pluginHooks = {
-    runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
-      pluginManager.runRouteHook(name),
-    getCustomFields: () => pluginManager.getCustomFields(),
     getAdminPanels: () => pluginManager.getAdminPanels(),
     getAll: () =>
       pluginManager.getAll().map((r) => ({
+        enabled: r.enabled,
         plugin: {
-          slug: r.plugin.slug,
-          name: r.plugin.name,
           description: r.plugin.description,
+          name: r.plugin.name,
+          slug: r.plugin.slug,
           version: r.plugin.version,
         },
-        enabled: r.enabled,
       })),
+    getCustomFields: () => pluginManager.getCustomFields(),
+    runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
+      pluginManager.runRouteHook(name),
   };
 
   try {

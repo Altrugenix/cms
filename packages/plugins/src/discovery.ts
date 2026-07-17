@@ -1,6 +1,7 @@
+import type { PluginDefinition } from "@arche-cms/types";
+
 import { readdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
-import type { PluginDefinition } from "@arche-cms/types";
 
 const PLUGIN_PREFIXES = ["@arche-cms/plugin-", "arche-cms-plugin-"];
 
@@ -53,7 +54,7 @@ async function loadPluginDefinition(
     const mod = await import(join(pkgPath, "dist/index.js"));
     const def = mod.default ?? mod;
     if (def && typeof def === "object" && def.slug && def.name) {
-      return { slug, path: pkgPath, definition: def as PluginDefinition };
+      return { definition: def as PluginDefinition, path: pkgPath, slug };
     }
   } catch {
     try {
@@ -62,7 +63,7 @@ async function loadPluginDefinition(
       const mod = await import(join(pkgPath, main));
       const def = mod.default ?? mod;
       if (def && typeof def === "object" && def.slug && def.name) {
-        return { slug, path: pkgPath, definition: def as PluginDefinition };
+        return { definition: def as PluginDefinition, path: pkgPath, slug };
       }
     } catch {
       return null;

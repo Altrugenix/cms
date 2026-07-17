@@ -1,8 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth";
-import { useCollections, useGlobals } from "@/lib/hooks";
-import { useTheme } from "@/components/theme-provider";
 import {
   LayoutDashboard,
   FileText,
@@ -17,6 +13,11 @@ import {
   LogOut,
   type LucideIcon,
 } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
+
+import { useTheme } from "@/components/theme-provider";
+import { useAuth } from "@/lib/auth";
+import { useCollections, useGlobals } from "@/lib/hooks";
 
 type CommandItem = {
   id: string;
@@ -29,59 +30,59 @@ type CommandItem = {
 
 const pageItems: CommandItem[] = [
   {
+    category: "Pages",
+    description: "Go to dashboard",
+    icon: LayoutDashboard,
     id: "nav-dashboard",
     label: "Dashboard",
-    description: "Go to dashboard",
-    category: "Pages",
-    icon: LayoutDashboard,
     onSelect: () => {},
   },
   {
+    category: "Pages",
+    description: "View all collections",
+    icon: FileText,
     id: "nav-collections",
     label: "Collections",
-    description: "View all collections",
-    category: "Pages",
-    icon: FileText,
     onSelect: () => {},
   },
   {
+    category: "Pages",
+    description: "View all globals",
+    icon: Globe,
     id: "nav-globals",
     label: "Globals",
-    description: "View all globals",
-    category: "Pages",
-    icon: Globe,
     onSelect: () => {},
   },
   {
+    category: "Pages",
+    description: "Open media library",
+    icon: Image,
     id: "nav-media",
     label: "Media",
-    description: "Open media library",
-    category: "Pages",
-    icon: Image,
     onSelect: () => {},
   },
   {
+    category: "Pages",
+    description: "Manage users",
+    icon: Users,
     id: "nav-users",
     label: "Users",
-    description: "Manage users",
-    category: "Pages",
-    icon: Users,
     onSelect: () => {},
   },
   {
+    category: "Pages",
+    description: "Manage roles",
+    icon: Shield,
     id: "nav-roles",
     label: "Roles",
-    description: "Manage roles",
-    category: "Pages",
-    icon: Shield,
     onSelect: () => {},
   },
   {
+    category: "Pages",
+    description: "Application settings",
+    icon: Settings,
     id: "nav-settings",
     label: "Settings",
-    description: "Application settings",
-    category: "Pages",
-    icon: Settings,
     onSelect: () => {},
   },
 ];
@@ -94,10 +95,10 @@ type CommandPaletteProps = {
   onClose: () => void;
 };
 
-export function CommandPalette({ open, onClose }: CommandPaletteProps) {
+export function CommandPalette({ onClose, open }: CommandPaletteProps) {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { logout, user } = useAuth();
+  const { setTheme, theme } = useTheme();
   const resolvedTheme =
     theme === "system"
       ? window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -132,46 +133,46 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       onSelect: () => navigateTo(item.id.replace("nav-", "/")),
     })),
     ...collections.map((c) => ({
+      category: "Content" as const,
+      description: `View ${c.label} entries`,
+      icon: FileText as LucideIcon,
       id: `content-${c.slug}`,
       label: c.label,
-      description: `View ${c.label} entries`,
-      category: "Content" as const,
-      icon: FileText as LucideIcon,
       onSelect: () => navigateTo(`/collections/${c.slug}`),
     })),
     ...collections.map((c) => ({
+      category: "Actions" as const,
+      description: `Create a new ${c.label} entry`,
+      icon: Plus as LucideIcon,
       id: `create-${c.slug}`,
       label: `New ${c.label}`,
-      description: `Create a new ${c.label} entry`,
-      category: "Actions" as const,
-      icon: Plus as LucideIcon,
       onSelect: () => navigateTo(`/collections/${c.slug}/new`),
     })),
     ...globals.map((g) => ({
+      category: "Globals" as const,
+      description: `Edit ${g.label}`,
+      icon: Globe as LucideIcon,
       id: `global-${g.slug}`,
       label: g.label,
-      description: `Edit ${g.label}`,
-      category: "Globals" as const,
-      icon: Globe as LucideIcon,
       onSelect: () => navigateTo(`/globals/${g.slug}`),
     })),
     {
+      category: "Actions",
+      description: "Toggle color theme",
+      icon: resolvedTheme === "dark" ? Sun : Moon,
       id: ACTION_DARK,
       label: resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode",
-      description: "Toggle color theme",
-      category: "Actions",
-      icon: resolvedTheme === "dark" ? Sun : Moon,
       onSelect: () => {
         setTheme(resolvedTheme === "dark" ? "light" : "dark");
         onClose();
       },
     },
     {
+      category: "Actions",
+      description: user?.email ? `Sign out as ${user.email}` : "Sign out",
+      icon: LogOut,
       id: ACTION_LOGOUT,
       label: "Log out",
-      description: user?.email ? `Sign out as ${user.email}` : "Sign out",
-      category: "Actions",
-      icon: LogOut,
       onSelect: () => {
         onClose();
         logout();
@@ -312,5 +313,5 @@ export function useCommandPalette() {
   const openPalette = useCallback(() => setOpen(true), []);
   const closePalette = useCallback(() => setOpen(false), []);
 
-  return { open, toggle, openPalette, closePalette };
+  return { closePalette, open, openPalette, toggle };
 }

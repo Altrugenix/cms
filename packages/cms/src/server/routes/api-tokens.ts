@@ -1,6 +1,7 @@
-import { createHash, randomBytes } from "node:crypto";
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { DatabaseAdapter } from "@arche-cms/database";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+
+import { createHash, randomBytes } from "node:crypto";
 
 const TOKENS_TABLE = "__cms_api_tokens";
 
@@ -14,13 +15,13 @@ function generateRawToken(): string {
 
 export async function ensureApiTokensTable(adapter: DatabaseAdapter): Promise<void> {
   await adapter.createTable(TOKENS_TABLE, {
-    name: "TEXT NOT NULL",
-    token_hash: "TEXT NOT NULL UNIQUE",
-    last_four: "TEXT NOT NULL",
-    description: "TEXT NOT NULL DEFAULT ''",
     created_at: "TEXT NOT NULL",
     created_by: "TEXT NOT NULL",
+    description: "TEXT NOT NULL DEFAULT ''",
+    last_four: "TEXT NOT NULL",
     last_used_at: "TEXT",
+    name: "TEXT NOT NULL",
+    token_hash: "TEXT NOT NULL UNIQUE",
   });
 }
 
@@ -44,9 +45,9 @@ export async function verifyApiToken(
 
   return {
     user: {
-      sub: String(entry.rowid),
       email: entry.name,
       role: "admin",
+      sub: String(entry.rowid),
     },
   };
 }
@@ -66,8 +67,8 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "List API tokens",
         description: "Returns all API tokens (without the raw token values)",
+        summary: "List API tokens",
         tags: ["Settings"],
       },
     },
@@ -86,13 +87,13 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
       }[];
 
       const data = rows.map((r) => ({
-        id: String(r.rowid),
-        name: r.name,
-        lastFour: r.last_four,
-        description: r.description,
         createdAt: r.created_at,
         createdBy: r.created_by,
+        description: r.description,
+        id: String(r.rowid),
+        lastFour: r.last_four,
         lastUsedAt: r.last_used_at,
+        name: r.name,
       }));
 
       return reply.send({ data, total: data.length });
@@ -104,8 +105,8 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Create API token",
         description: "Create a new API token. The raw token is returned only once in the response.",
+        summary: "Create API token",
         tags: ["Settings"],
       },
     },
@@ -146,15 +147,15 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
       }
 
       return reply.status(201).send({
+        rawToken,
         token: {
-          id: String(entry.rowid),
-          name: entry.name,
-          lastFour: entry.last_four,
-          description: entry.description,
           createdAt: entry.created_at,
           createdBy: entry.created_by,
+          description: entry.description,
+          id: String(entry.rowid),
+          lastFour: entry.last_four,
+          name: entry.name,
         },
-        rawToken,
       });
     },
   );
@@ -164,8 +165,8 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("manage", "settings")],
       schema: {
-        summary: "Revoke API token",
         description: "Revoke (delete) an API token by ID (requires manage:settings permission)",
+        summary: "Revoke API token",
         tags: ["Settings"],
       },
     },

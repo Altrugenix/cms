@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console */
+/* eslint-disable no-console, no-secrets/no-secrets */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -34,18 +34,18 @@ export function scaffold(
     resolve(projectDir, "package.json"),
     JSON.stringify(
       {
-        name: projectDir.split("/").pop() ?? "my-cms-app",
-        version: "0.1.0",
-        private: true,
-        type: "module",
-        scripts: {
-          dev: "cms dev",
-          build: "cms build",
-          start: "cms start",
-        },
         dependencies: {
           "@arche-cms/cms": "^0.1.0",
         },
+        name: projectDir.split("/").pop() ?? "my-cms-app",
+        private: true,
+        scripts: {
+          build: "cms build",
+          dev: "cms dev",
+          start: "cms start",
+        },
+        type: "module",
+        version: "0.1.0",
       },
       null,
       2,

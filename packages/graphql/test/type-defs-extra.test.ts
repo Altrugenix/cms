@@ -1,27 +1,29 @@
-import { describe, it, expect } from "vitest";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
 import { generateTypeDefs } from "../src/type-defs.js";
 
 const localizedCollection: CollectionDefinition = {
-  slug: "localized-posts",
-  labels: { singular: "Localized Post", plural: "Localized Posts" },
   fields: [{ name: "title", type: "text" }],
+  labels: { plural: "Localized Posts", singular: "Localized Post" },
   localization: {
-    locales: ["en", "fr"],
     defaultLocale: "en",
+    locales: ["en", "fr"],
   },
+  slug: "localized-posts",
 };
 
 const collectionWithLabel: CollectionDefinition = {
+  fields: [{ label: "Title Field", name: "title", type: "text" }],
+  labels: { plural: "Labeled", singular: "Labeled" },
   slug: "labeled",
-  labels: { singular: "Labeled", plural: "Labeled" },
-  fields: [{ name: "title", type: "text", label: "Title Field" }],
 };
 
 const emptyFieldsCollection: CollectionDefinition = {
-  slug: "empty",
-  labels: { singular: "Empty", plural: "Empty" },
   fields: [],
+  labels: { plural: "Empty", singular: "Empty" },
+  slug: "empty",
 };
 
 describe("type-defs branch coverage", () => {
@@ -34,9 +36,9 @@ describe("type-defs branch coverage", () => {
 
   it("does not include locale arg for non-localized collections", () => {
     const collection: CollectionDefinition = {
-      slug: "simple",
-      labels: { singular: "Simple", plural: "Simples" },
       fields: [{ name: "name", type: "text" }],
+      labels: { plural: "Simples", singular: "Simple" },
+      slug: "simple",
     };
     const sdl = generateTypeDefs([collection]);
     expect(sdl).not.toContain("locale: String");
@@ -57,9 +59,9 @@ describe("type-defs branch coverage", () => {
 
   it("generates filter input for checkbox type as Boolean", () => {
     const collection: CollectionDefinition = {
-      slug: "checks",
-      labels: { singular: "Checks", plural: "Checks" },
       fields: [{ name: "active", type: "checkbox" }],
+      labels: { plural: "Checks", singular: "Checks" },
+      slug: "checks",
     };
     const sdl = generateTypeDefs([collection]);
     expect(sdl).toContain("active: Boolean");
@@ -67,12 +69,12 @@ describe("type-defs branch coverage", () => {
 
   it("generates filter input for date type as String", () => {
     const collection: CollectionDefinition = {
-      slug: "events",
-      labels: { singular: "Events", plural: "Events" },
       fields: [
         { name: "start", type: "date" },
         { name: "end", type: "datetime" },
       ],
+      labels: { plural: "Events", singular: "Events" },
+      slug: "events",
     };
     const sdl = generateTypeDefs([collection]);
     expect(sdl).toContain("start: String");
@@ -81,13 +83,13 @@ describe("type-defs branch coverage", () => {
 
   it("generates filter input for select/radio/multiSelect as String", () => {
     const collection: CollectionDefinition = {
-      slug: "forms",
-      labels: { singular: "Forms", plural: "Forms" },
       fields: [
-        { name: "color", type: "select", options: [] },
-        { name: "choice", type: "radio", options: [] },
-        { name: "tags", type: "multiSelect", options: [] },
+        { name: "color", options: [], type: "select" },
+        { name: "choice", options: [], type: "radio" },
+        { name: "tags", options: [], type: "multiSelect" },
       ],
+      labels: { plural: "Forms", singular: "Forms" },
+      slug: "forms",
     };
     const sdl = generateTypeDefs([collection]);
     expect(sdl).toContain("color: String");
@@ -97,9 +99,9 @@ describe("type-defs branch coverage", () => {
 
   it("generates filter for number type as Float", () => {
     const collection: CollectionDefinition = {
-      slug: "metrics",
-      labels: { singular: "Metrics", plural: "Metrics" },
       fields: [{ name: "count", type: "number" }],
+      labels: { plural: "Metrics", singular: "Metrics" },
+      slug: "metrics",
     };
     const sdl = generateTypeDefs([collection]);
     expect(sdl).toContain("count: Float");

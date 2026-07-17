@@ -1,17 +1,18 @@
-import { useState, type FormEvent } from "react";
 import { createRoute, useNavigate } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
+import { Link } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
+
 import { useToast } from "@/components/toast-provider";
-import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: RegisterPage,
   getParentRoute: () => rootRoute,
   path: "/register",
-  component: RegisterPage,
 });
 
 function RegisterPage() {
@@ -19,7 +20,7 @@ function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
-  const { register, isLoading } = useAuth();
+  const { isLoading, register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {

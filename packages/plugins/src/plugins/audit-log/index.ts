@@ -1,14 +1,14 @@
 import type { PluginDefinition } from "@arche-cms/types";
 
 const auditLogPlugin: PluginDefinition = {
-  slug: "audit-log",
-  name: "Audit Log",
+  adminPanels: [
+    { component: "AuditLogView", icon: "History", label: "Audit Log", slug: "audit-log" },
+  ],
   description:
     "Tracks all mutations (create, update, delete) on collections with before/after snapshots",
+  name: "Audit Log",
+  slug: "audit-log",
   version: "0.1.0",
-  adminPanels: [
-    { slug: "audit-log", label: "Audit Log", icon: "History", component: "AuditLogView" },
-  ],
 };
 
 export default auditLogPlugin;

@@ -1,32 +1,33 @@
 import { createRoute, Link } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
-import { type ActivityEntry } from "@/lib/api";
-import { useCollections, useDashboardData } from "@/lib/hooks";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/skeleton";
 import { Plus, Users, FileText, Database, Image, Clock, Trash2, Pencil, Check } from "lucide-react";
 
+import { Skeleton } from "@/components/skeleton";
+import { Button } from "@/components/ui/button";
+import { type ActivityEntry } from "@/lib/api";
+import { useCollections, useDashboardData } from "@/lib/hooks";
+import { Route as rootRoute } from "@/routes/__root";
+
 export const Route = createRoute({
+  component: Dashboard,
   getParentRoute: () => rootRoute,
   path: "/",
-  component: Dashboard,
 });
 
 type CollectionInfo = { slug: string; label: string; entryCount: number };
 
 const ACTION_ICONS: Record<string, typeof Plus> = {
-  create: Plus,
-  update: Pencil,
-  delete: Trash2,
   bulkDelete: Trash2,
+  create: Plus,
+  delete: Trash2,
+  update: Pencil,
   upsert: Check,
 };
 
 const ACTION_LABELS: Record<string, string> = {
-  create: "Created",
-  update: "Updated",
-  delete: "Deleted",
   bulkDelete: "Bulk deleted",
+  create: "Created",
+  delete: "Deleted",
+  update: "Updated",
   upsert: "Updated",
 };
 
@@ -41,7 +42,7 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-function RecentActivity({ loading, activity }: { loading: boolean; activity: ActivityEntry[] }) {
+function RecentActivity({ activity, loading }: { loading: boolean; activity: ActivityEntry[] }) {
   return (
     <div className="rounded-lg border">
       <div className="flex items-center justify-between border-b px-4 py-3">
@@ -97,11 +98,11 @@ function RecentActivity({ loading, activity }: { loading: boolean; activity: Act
 function Dashboard() {
   const { data: colMetas = [] } = useCollections();
   const colSlugs = colMetas.map((c: { slug: string }) => c.slug);
-  const { data: dashData, isLoading: loading, error: dashError } = useDashboardData(colSlugs);
+  const { data: dashData, error: dashError, isLoading: loading } = useDashboardData(colSlugs);
 
   const collections: CollectionInfo[] = colMetas.map((c: { slug: string; label: string }) => {
     const count = dashData?.counts.find((cnt: { slug: string }) => cnt.slug === c.slug);
-    return { slug: c.slug, label: c.label, entryCount: count?.entryCount ?? 0 };
+    return { entryCount: count?.entryCount ?? 0, label: c.label, slug: c.slug };
   });
 
   const userCount = dashData?.usersRes.total ?? 0;
@@ -114,10 +115,10 @@ function Dashboard() {
   );
 
   const stats = [
-    { label: "Collections", value: collections.length, icon: Database },
-    { label: "Entries", value: totalEntries, icon: FileText },
-    { label: "Media", value: mediaCount, icon: Image },
-    { label: "Users", value: userCount, icon: Users },
+    { icon: Database, label: "Collections", value: collections.length },
+    { icon: FileText, label: "Entries", value: totalEntries },
+    { icon: Image, label: "Media", value: mediaCount },
+    { icon: Users, label: "Users", value: userCount },
   ];
 
   return (

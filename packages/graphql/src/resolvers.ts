@@ -1,6 +1,8 @@
 import type { DatabaseAdapter, QueryOptions } from "@arche-cms/database";
 import type { CollectionDefinition, FieldDefinition, RelationField } from "@arche-cms/types";
+
 import { createMutationPayloadSchema, updateMutationPayloadSchema } from "@arche-cms/validation";
+
 import { pascalCase } from "./types.js";
 
 function collectionTableName(slug: string): string {
@@ -187,8 +189,8 @@ export function generateResolvers(
   }
 
   const resolvers: Record<string, Record<string, unknown>> = {
-    Query: queryFields,
     Mutation: mutationFields,
+    Query: queryFields,
   };
 
   for (const collection of collections) {

@@ -1,19 +1,21 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { SQLiteAdapter, Repository, MigrationRunner, MigrationGenerator } from "../src/index.js";
+
 import type { Migration, DatabaseAdapter, QueryOptions, ExistingSchema } from "../src/index.js";
 import type {
   QueryOptions as QueryOptionsFromTypes,
   Migration as MigrationFromTypes,
 } from "../src/types.js";
 
+import { SQLiteAdapter, Repository, MigrationRunner, MigrationGenerator } from "../src/index.js";
+
 const adapter = new SQLiteAdapter(":memory:");
 
 beforeAll(async () => {
   await adapter.connect();
   await adapter.createTable("posts", {
-    title: "TEXT NOT NULL",
     body: "TEXT",
     published: "INTEGER DEFAULT 0",
+    title: "TEXT NOT NULL",
   });
 });
 
@@ -23,7 +25,7 @@ afterAll(async () => {
 
 describe("SQLiteAdapter", () => {
   it("creates and finds an entry", async () => {
-    const created = await adapter.create("posts", { title: "Hello", body: "World" });
+    const created = await adapter.create("posts", { body: "World", title: "Hello" });
     expect(created).toHaveProperty("id");
 
     const found = await adapter.findOne("posts", String(created.id));
@@ -100,10 +102,10 @@ describe("MigrationRunner", () => {
 
     const migrations: Migration[] = [
       {
+        down: "DROP TABLE IF EXISTS migration_test",
         id: "001",
         name: "create_test",
         up: "CREATE TABLE IF NOT EXISTS migration_test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
-        down: "DROP TABLE IF EXISTS migration_test",
       },
     ];
 
@@ -116,10 +118,10 @@ describe("MigrationRunner", () => {
     const runner = new MigrationRunner(adapter);
     const migrations: Migration[] = [
       {
+        down: "DROP TABLE IF EXISTS migration_test_dup",
         id: "001",
         name: "create_test",
         up: "CREATE TABLE IF NOT EXISTS migration_test_dup (id INTEGER PRIMARY KEY AUTOINCREMENT)",
-        down: "DROP TABLE IF EXISTS migration_test_dup",
       },
     ];
 
@@ -175,7 +177,7 @@ describe("package exports", () => {
 
   it("imports types from src/types.ts", () => {
     const _q: QueryOptionsFromTypes = {};
-    const _m: MigrationFromTypes = { id: "1", name: "test", up: "", down: "" };
+    const _m: MigrationFromTypes = { down: "", id: "1", name: "test", up: "" };
     expect(true).toBe(true);
   });
 });

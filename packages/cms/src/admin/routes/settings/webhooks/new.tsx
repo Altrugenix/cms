@@ -1,23 +1,24 @@
-import { useState, type FormEvent } from "react";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Route as settingsRoute } from "@/routes/settings/index";
+import { ArrowLeft } from "lucide-react";
+import { useState, type FormEvent } from "react";
+
 import { useToast } from "@/components/toast-provider";
-import { useCreateWebhook } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { useCreateWebhook } from "@/lib/hooks";
+import { Route as settingsRoute } from "@/routes/settings/index";
 
 const WEBHOOK_EVENTS = [
-  { value: "collection:created", label: "Entry Created" },
-  { value: "collection:updated", label: "Entry Updated" },
-  { value: "collection:deleted", label: "Entry Deleted" },
+  { label: "Entry Created", value: "collection:created" },
+  { label: "Entry Updated", value: "collection:updated" },
+  { label: "Entry Deleted", value: "collection:deleted" },
 ];
 
 export const Route = createRoute({
+  component: CreateWebhook,
   getParentRoute: () => settingsRoute,
   path: "webhooks/new",
-  component: CreateWebhook,
 });
 
 function CreateWebhook() {
@@ -40,11 +41,11 @@ function CreateWebhook() {
     if (!name || !url || events.length === 0) return;
     try {
       await createWebhook.mutateAsync({
-        name: name.trim(),
-        url: url.trim(),
-        events,
         collection: collection.trim() || "*",
+        events,
+        name: name.trim(),
         secret: secret.trim() || undefined,
+        url: url.trim(),
       });
       toast("Webhook created", "success");
       navigate({ to: "/settings/webhooks" });

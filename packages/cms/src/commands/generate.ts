@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
-import { SchemaLoader } from "@arche-cms/schema";
 import { generateTypesToFile } from "@arche-cms/generators";
+import { SchemaLoader } from "@arche-cms/schema";
 
 export interface GenerateOptions {
   dir?: string;
@@ -43,8 +43,8 @@ export async function generate(options: GenerateOptions): Promise<void> {
     console.log("[cms] Generating TypeScript types...");
     await generateTypesToFile({
       collections,
-      globals,
       components,
+      globals,
       outputPath: `${outDir}/types.ts`,
     });
     console.log(`[cms]   → ${outDir}/types.ts`);

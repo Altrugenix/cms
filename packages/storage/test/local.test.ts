@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, existsSync, readFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+
 import { LocalStorageAdapter } from "../src/local.js";
 
 describe("LocalStorageAdapter", () => {
@@ -15,7 +16,7 @@ describe("LocalStorageAdapter", () => {
   });
 
   afterEach(async () => {
-    await rm(baseDir, { recursive: true, force: true });
+    await rm(baseDir, { force: true, recursive: true });
   });
 
   describe("save", () => {

@@ -15,9 +15,9 @@ run("PostgresAdapter", () => {
     });
     await adapter.connect();
     await adapter.createTable("t_posts", {
-      title: "TEXT NOT NULL",
       body: "TEXT",
       published: "BOOLEAN DEFAULT false",
+      title: "TEXT NOT NULL",
     });
   });
 
@@ -28,8 +28,8 @@ run("PostgresAdapter", () => {
 
   it("creates and finds an entry", async () => {
     const created = await adapter.create("t_posts", {
-      title: "Hello",
       body: "World",
+      title: "Hello",
     });
     expect(created).toHaveProperty("id");
 
@@ -98,8 +98,8 @@ run("PostgresAdapter", () => {
     const { PostgresAdapter } = await import("../src/postgres.js");
     const custom = new PostgresAdapter({
       connectionString: PG_TEST_URL,
-      poolSize: 5,
       idleTimeoutMs: 10000,
+      poolSize: 5,
     });
 
     await custom.connect();

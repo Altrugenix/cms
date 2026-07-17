@@ -1,6 +1,7 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import type { DatabaseAdapter } from "@arche-cms/database";
 import type { AuthConfig } from "@arche-cms/auth";
+import type { DatabaseAdapter } from "@arche-cms/database";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+
 import { AuthService } from "@arche-cms/auth";
 
 export function registerUserRoutes(
@@ -15,8 +16,8 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "List users",
         description: "Returns all registered users",
+        summary: "List users",
         tags: ["Users"],
       },
     },
@@ -31,8 +32,8 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("create", "users")],
       schema: {
-        summary: "Create user",
         description: "Create a new user account (requires create:users permission)",
+        summary: "Create user",
         tags: ["Users"],
       },
     },
@@ -56,8 +57,8 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Get user",
         description: "Returns a single user by ID",
+        summary: "Get user",
         tags: ["Users"],
       },
     },
@@ -74,8 +75,8 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("update", "users")],
       schema: {
-        summary: "Update user",
         description: "Update a user's email, role, or password (requires update:users permission)",
+        summary: "Update user",
         tags: ["Users"],
       },
     },
@@ -93,8 +94,8 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("delete", "users")],
       schema: {
-        summary: "Delete user",
         description: "Delete a user account (requires delete:users permission)",
+        summary: "Delete user",
         tags: ["Users"],
       },
     },

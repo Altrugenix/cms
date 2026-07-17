@@ -1,25 +1,26 @@
-import { useState, type FormEvent } from "react";
 import { createRoute, Link, useParams } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
+import { ArrowLeft } from "lucide-react";
+import { useState, type FormEvent } from "react";
+
+import { FieldInput } from "@/components/field-input";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { useGlobal, useGlobalData, useSaveGlobal } from "@/lib/hooks";
-import { Button } from "@/components/ui/button";
-import { FieldInput } from "@/components/field-input";
-import { ArrowLeft } from "lucide-react";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: EditGlobal,
   getParentRoute: () => rootRoute,
   path: "/globals/$slug",
-  component: EditGlobal,
 });
 
 function EditGlobal() {
   const { slug } = useParams({ from: Route.id });
   const { toast } = useToast();
   const { global: globalDef, isLoading: gLoading } = useGlobal(slug);
-  const { data: existingData, isLoading: dataLoading, error: gError } = useGlobalData(slug);
+  const { data: existingData, error: gError, isLoading: dataLoading } = useGlobalData(slug);
   const [initialized, setInitialized] = useState(false);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});

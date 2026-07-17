@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import {
   defineCollection,
   defineGlobal,
@@ -37,9 +38,9 @@ import {
 describe("defineCollection", () => {
   it("creates a collection with defaults", () => {
     const posts = defineCollection({
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [text("title")],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     });
     expect(posts.slug).toBe("posts");
     expect(posts.labels.singular).toBe("Post");
@@ -52,9 +53,9 @@ describe("defineCollection", () => {
 describe("defineGlobal", () => {
   it("creates a global definition", () => {
     const settings = defineGlobal({
-      slug: "settings",
-      label: "Site Settings",
       fields: [text("siteName")],
+      label: "Site Settings",
+      slug: "settings",
     });
     expect(settings.slug).toBe("settings");
     expect(settings.label).toBe("Site Settings");
@@ -64,9 +65,9 @@ describe("defineGlobal", () => {
 describe("defineComponent", () => {
   it("creates a component definition", () => {
     const seo = defineComponent({
-      slug: "seo",
-      label: "SEO",
       fields: [text("title"), textarea("description")],
+      label: "SEO",
+      slug: "seo",
     });
     expect(seo.slug).toBe("seo");
     expect(seo.fields).toHaveLength(2);
@@ -88,7 +89,7 @@ describe("field helpers", () => {
   });
 
   it("creates a number field", () => {
-    const f = number("age", { validation: { min: 0, max: 150 } });
+    const f = number("age", { validation: { max: 150, min: 0 } });
     expect(f.type).toBe("number");
     expect(f.validation?.min).toBe(0);
   });
@@ -189,7 +190,7 @@ describe("field helpers", () => {
   });
 
   it("creates a relation field", () => {
-    const f = relation("author", { to: "users", kind: "manyToOne" });
+    const f = relation("author", { kind: "manyToOne", to: "users" });
     expect(f.type).toBe("relation");
     expect(f.to).toBe("users");
     expect(f.kind).toBe("manyToOne");
@@ -221,8 +222,8 @@ describe("field helpers", () => {
   it("creates a tabs field", () => {
     const f = tabsField("settings", {
       tabs: [
-        { label: "General", fields: [text("name")] },
-        { label: "SEO", fields: [text("metaTitle")] },
+        { fields: [text("name")], label: "General" },
+        { fields: [text("metaTitle")], label: "SEO" },
       ],
     });
     expect(f.type).toBe("tabs");
@@ -250,9 +251,9 @@ describe("validateCollection", () => {
   it("validates a valid collection", () => {
     const result = validateCollection(
       defineCollection({
-        slug: "posts",
-        labels: { singular: "Post", plural: "Posts" },
         fields: [text("title")],
+        labels: { plural: "Posts", singular: "Post" },
+        slug: "posts",
       }),
     );
     expect(result.valid).toBe(true);
@@ -261,9 +262,9 @@ describe("validateCollection", () => {
 
   it("rejects collection with invalid slug", () => {
     const result = validateCollection({
-      slug: "Posts With Spaces",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [text("title")],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "Posts With Spaces",
     });
     expect(result.valid).toBe(false);
     expect(result.issues.some((i) => i.path === "slug")).toBe(true);
@@ -271,9 +272,9 @@ describe("validateCollection", () => {
 
   it("rejects collection with duplicate field names", () => {
     const result = validateCollection({
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [text("title"), text("title")],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     });
     expect(result.valid).toBe(false);
     expect(result.issues.some((i) => i.message.includes("Duplicate"))).toBe(true);
@@ -281,9 +282,9 @@ describe("validateCollection", () => {
 
   it("warns on empty fields", () => {
     const result = validateCollection({
-      slug: "empty",
-      labels: { singular: "Empty", plural: "Empties" },
       fields: [],
+      labels: { plural: "Empties", singular: "Empty" },
+      slug: "empty",
     });
     expect(result.valid).toBe(true);
     expect(result.issues.some((i) => i.severity === "warning")).toBe(true);
@@ -291,27 +292,27 @@ describe("validateCollection", () => {
 
   it("rejects select field without options", () => {
     const result = validateCollection({
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
       fields: [select("status", { options: [] })],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     });
     expect(result.valid).toBe(false);
   });
 
   it("rejects relation field without target", () => {
     const result = validateCollection({
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
       fields: [relation("author", { to: "" })],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     });
     expect(result.valid).toBe(false);
   });
 
   it("rejects invalid field name", () => {
     const result = validateCollection({
-      slug: "test",
-      labels: { singular: "Test", plural: "Tests" },
       fields: [text("123invalid")],
+      labels: { plural: "Tests", singular: "Test" },
+      slug: "test",
     });
     expect(result.valid).toBe(false);
   });

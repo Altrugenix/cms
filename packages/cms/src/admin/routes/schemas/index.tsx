@@ -1,29 +1,30 @@
-import { useEffect, useState } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
-import { Skeleton } from "@/components/skeleton";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/toast-provider";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { fetchSchemas, deleteSchema, type SchemaInfo } from "@/lib/api";
 import { Plus, Pencil, Trash2, FileText, Globe, Puzzle, Layers } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Skeleton } from "@/components/skeleton";
+import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
+import { fetchSchemas, deleteSchema, type SchemaInfo } from "@/lib/api";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: SchemasList,
   getParentRoute: () => rootRoute,
   path: "/schemas",
-  component: SchemasList,
 });
 
 const typeIcons: Record<string, typeof FileText> = {
   collection: FileText,
-  global: Globe,
   component: Puzzle,
+  global: Globe,
 };
 
 const typeColors: Record<string, string> = {
   collection: "text-blue-500",
-  global: "text-emerald-500",
   component: "text-purple-500",
+  global: "text-emerald-500",
 };
 
 function SchemasList() {
@@ -77,8 +78,8 @@ function SchemasList() {
 
   const grouped = {
     collection: schemas.filter((s) => s.type === "collection"),
-    global: schemas.filter((s) => s.type === "global"),
     component: schemas.filter((s) => s.type === "component"),
+    global: schemas.filter((s) => s.type === "global"),
   };
 
   return (
@@ -134,7 +135,7 @@ function SchemasList() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Link to="/schemas/$type/$slug" params={{ type: s.type, slug: s.slug }}>
+                    <Link to="/schemas/$type/$slug" params={{ slug: s.slug, type: s.type }}>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -143,7 +144,7 @@ function SchemasList() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => setConfirmDelete({ type: s.type, slug: s.slug })}
+                      onClick={() => setConfirmDelete({ slug: s.slug, type: s.type })}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>

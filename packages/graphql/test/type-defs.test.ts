@@ -1,35 +1,37 @@
-import { describe, it, expect } from "vitest";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
 import { generateTypeDefs } from "../src/type-defs.js";
 
 const postCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "body", type: "richText" },
-    { name: "author", type: "relation", to: "users" },
+    { name: "author", to: "users", type: "relation" },
     {
       name: "status",
-      type: "select",
       options: [
         { label: "Draft", value: "draft" },
         { label: "Published", value: "published" },
       ],
+      type: "select",
     },
     { name: "views", type: "number" },
     { name: "published", type: "boolean" },
-    { name: "tags", type: "multiSelect", options: [{ label: "News", value: "news" }] },
+    { name: "tags", options: [{ label: "News", value: "news" }], type: "multiSelect" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 const userCollection: CollectionDefinition = {
-  slug: "users",
-  labels: { singular: "User", plural: "Users" },
   fields: [
     { name: "email", type: "email", validation: { required: true } },
     { name: "name", type: "text" },
   ],
+  labels: { plural: "Users", singular: "User" },
+  slug: "users",
 };
 
 describe("generateTypeDefs", () => {
@@ -108,9 +110,9 @@ describe("generateTypeDefs", () => {
 
   it("handles hyphens in collection slug", () => {
     const collection: CollectionDefinition = {
-      slug: "blog-posts",
-      labels: { singular: "Blog Post", plural: "Blog Posts" },
       fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Blog Posts", singular: "Blog Post" },
+      slug: "blog-posts",
     };
     const sdl = generateTypeDefs([collection]);
     expect(sdl).toContain("type BlogPosts");

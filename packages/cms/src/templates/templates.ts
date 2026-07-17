@@ -18,34 +18,24 @@ export function pluginTemplate(slug: string): { files: Record<string, string> } 
     files: {
       "package.json": JSON.stringify(
         {
-          name: `@arche-cms/plugin-${slug}`,
-          version: "0.0.1",
-          private: true,
-          type: "module",
-          main: "dist/index.js",
-          types: "dist/index.d.ts",
-          files: ["dist"],
-          scripts: {
-            build: "tsc",
-            dev: "tsc --watch",
-            clean: "rm -rf dist",
-          },
           dependencies: {
             "@arche-cms/types": "workspace:*",
           },
+          files: ["dist"],
+          main: "dist/index.js",
+          name: `@arche-cms/plugin-${slug}`,
           peerDependencies: {
             "@arche-cms/core": "workspace:*",
           },
-        },
-        null,
-        2,
-      ),
-      "tsconfig.json": JSON.stringify(
-        {
-          extends: "../../tsconfig.base.json",
-          compilerOptions: { outDir: "dist", rootDir: "src" },
-          include: ["src"],
-          references: [{ path: "../types" }, { path: "../core" }],
+          private: true,
+          scripts: {
+            build: "tsc",
+            clean: "rm -rf dist",
+            dev: "tsc --watch",
+          },
+          type: "module",
+          types: "dist/index.d.ts",
+          version: "0.0.1",
         },
         null,
         2,
@@ -66,6 +56,16 @@ const plugin: PluginDefinition = {
 
 export default plugin;
 `,
+      "tsconfig.json": JSON.stringify(
+        {
+          compilerOptions: { outDir: "dist", rootDir: "src" },
+          extends: "../../tsconfig.base.json",
+          include: ["src"],
+          references: [{ path: "../types" }, { path: "../core" }],
+        },
+        null,
+        2,
+      ),
     },
   };
 }

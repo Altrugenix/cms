@@ -1,7 +1,7 @@
-import { randomBytes } from "node:crypto";
 import type { DatabaseAdapter } from "@arche-cms/database";
-import { JwtService } from "./jwt.js";
-import { hashPassword, verifyPassword } from "./password.js";
+
+import { randomBytes } from "node:crypto";
+
 import type {
   AuthConfig,
   AuthUser,
@@ -12,6 +12,9 @@ import type {
   ForgotPasswordInput,
   ResetPasswordInput,
 } from "./types.js";
+
+import { JwtService } from "./jwt.js";
+import { hashPassword, verifyPassword } from "./password.js";
 
 const RESET_TOKENS_TABLE = "__cms_password_resets";
 const USERS_TABLE = "__cms_users";
@@ -48,17 +51,17 @@ export class AuthService {
   async init(): Promise<void> {
     if (this.initialized) return;
     await this.db.createTable(USERS_TABLE, {
+      createdAt: "TEXT NOT NULL",
       email: "TEXT NOT NULL UNIQUE",
       password: "TEXT NOT NULL",
       role: "TEXT NOT NULL DEFAULT 'editor'",
-      createdAt: "TEXT NOT NULL",
       updatedAt: "TEXT NOT NULL",
     });
     await this.db.createTable(RESET_TOKENS_TABLE, {
-      email: "TEXT NOT NULL",
-      token: "TEXT NOT NULL",
-      expiresAt: "TEXT NOT NULL",
       createdAt: "TEXT NOT NULL",
+      email: "TEXT NOT NULL",
+      expiresAt: "TEXT NOT NULL",
+      token: "TEXT NOT NULL",
     });
     this.initialized = true;
   }
@@ -70,10 +73,10 @@ export class AuthService {
     const passwordHash = await hashPassword(password);
     const now = new Date().toISOString();
     const created = await this.db.create(USERS_TABLE, {
+      createdAt: now,
       email: "admin@arche-cms.com",
       password: passwordHash,
       role: "admin",
-      createdAt: now,
       updatedAt: now,
     });
 
@@ -90,10 +93,10 @@ export class AuthService {
     const passwordHash = await hashPassword(input.password);
     const now = new Date().toISOString();
     const created = await this.db.create(USERS_TABLE, {
+      createdAt: now,
       email: input.email,
       password: passwordHash,
       role: "editor",
-      createdAt: now,
       updatedAt: now,
     });
 
@@ -104,7 +107,7 @@ export class AuthService {
     const user = toPublicUser(castAuthUser(created));
     const tokens = await this.generateTokens(user);
 
-    return { user, tokens };
+    return { tokens, user };
   }
 
   async login(input: LoginInput): Promise<{ user: PublicUser; tokens: TokenPair }> {
@@ -121,7 +124,7 @@ export class AuthService {
     const publicUser = toPublicUser(user);
     const tokens = await this.generateTokens(publicUser);
 
-    return { user: publicUser, tokens };
+    return { tokens, user: publicUser };
   }
 
   async refresh(refreshToken: string): Promise<TokenPair> {
@@ -155,10 +158,10 @@ export class AuthService {
     const now = new Date();
 
     await this.db.create(RESET_TOKENS_TABLE, {
-      email: input.email,
-      token: hashedToken,
-      expiresAt: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
       createdAt: now.toISOString(),
+      email: input.email,
+      expiresAt: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
+      token: hashedToken,
     });
 
     return {
@@ -240,8 +243,8 @@ export class AuthService {
 
   private async findByEmail(email: string): Promise<AuthUser | null> {
     const results = await this.db.findMany(USERS_TABLE, {
-      where: { email },
       limit: 1,
+      where: { email },
     });
     const row = results.data[0];
     if (!row || !isAuthUser(row)) return null;
@@ -255,7 +258,7 @@ export class AuthService {
   }
 
   private async generateTokens(user: PublicUser): Promise<TokenPair> {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { email: user.email, role: user.role, sub: user.id };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.generateAccessToken(payload),
       this.jwt.generateRefreshToken(payload),

@@ -1,8 +1,9 @@
+import type { FastifyInstance } from "fastify";
+
+import fastifyStatic from "@fastify/static";
 import { existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { FastifyInstance } from "fastify";
-import fastifyStatic from "@fastify/static";
 
 const currentFile = fileURLToPath(import.meta.url);
 
@@ -46,8 +47,8 @@ export async function registerAdminStatic(
   fastify.log.info(`Serving admin panel from ${adminDir}`);
 
   await fastify.register(fastifyStatic, {
-    root: adminDir,
     prefix: "/",
+    root: adminDir,
     wildcard: false,
   });
 

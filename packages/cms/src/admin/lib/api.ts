@@ -51,8 +51,8 @@ export async function createSchema(
   },
 ): Promise<void> {
   await apiFetch(`/api/schemas/${type}`, {
-    method: "POST",
     body: JSON.stringify(data),
+    method: "POST",
   });
 }
 
@@ -62,15 +62,15 @@ export async function saveSchema(
   data: { fields?: FieldDefinition[]; meta?: Record<string, unknown>; label?: string },
 ): Promise<void> {
   await apiFetch(`/api/schemas/${type}/${slug}`, {
-    method: "PUT",
     body: JSON.stringify(data),
+    method: "PUT",
   });
 }
 
 export async function bulkDelete(path: string, ids: string[]): Promise<void> {
   await apiFetch(`/api/${path}/bulk-delete`, {
-    method: "POST",
     body: JSON.stringify({ ids }),
+    method: "POST",
   });
 }
 
@@ -96,9 +96,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     const refreshToken = localStorage.getItem("cms_refresh");
     if (refreshToken) {
       const refreshRes = await fetch(`${API_URL}/api/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
       });
       if (refreshRes.ok) {
         const data = (await refreshRes.json()) as { accessToken: string; refreshToken: string };
@@ -188,8 +188,8 @@ export async function saveGlobal(
   data: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   return apiFetch(`/api/globals/${slug}`, {
-    method: "PUT",
     body: JSON.stringify(data),
+    method: "PUT",
   });
 }
 
@@ -223,7 +223,7 @@ export async function createRole(data: {
   description: string;
   permissions: Array<{ action: string; resource: string }>;
 }): Promise<RoleMeta> {
-  return apiFetch("/api/roles", { method: "POST", body: JSON.stringify(data) });
+  return apiFetch("/api/roles", { body: JSON.stringify(data), method: "POST" });
 }
 
 export async function updateRole(
@@ -234,7 +234,7 @@ export async function updateRole(
     permissions: Array<{ action: string; resource: string }>;
   }>,
 ): Promise<RoleMeta> {
-  return apiFetch(`/api/roles/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+  return apiFetch(`/api/roles/${id}`, { body: JSON.stringify(data), method: "PATCH" });
 }
 
 export async function deleteRole(id: string): Promise<void> {
@@ -243,8 +243,8 @@ export async function deleteRole(id: string): Promise<void> {
 
 export async function createUser(email: string, password: string): Promise<void> {
   await apiFetch("/api/users", {
-    method: "POST",
     body: JSON.stringify({ email, password }),
+    method: "POST",
   });
 }
 
@@ -252,7 +252,7 @@ export async function updateUser(
   id: string,
   data: { email?: string; role?: string; password?: string },
 ): Promise<UserMeta> {
-  return apiFetch(`/api/users/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+  return apiFetch(`/api/users/${id}`, { body: JSON.stringify(data), method: "PATCH" });
 }
 
 export async function deleteUser(id: string): Promise<void> {
@@ -300,17 +300,17 @@ export async function uploadMedia(
     new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ""),
   );
   const body: Record<string, unknown> = {
+    alt: alt ?? "",
+    data: base64,
     fileName: file.name,
     mimeType: file.type,
-    data: base64,
-    alt: alt ?? "",
   };
   if (folderId !== undefined) {
     body.folderId = folderId;
   }
   return apiFetch("/api/media", {
-    method: "POST",
     body: JSON.stringify(body),
+    method: "POST",
   });
 }
 
@@ -319,8 +319,8 @@ export async function updateMedia(
   updates: { originalName?: string; alt?: string; folderId?: string | null },
 ): Promise<MediaMeta> {
   return apiFetch(`/api/media/${id}`, {
-    method: "PATCH",
     body: JSON.stringify(updates),
+    method: "PATCH",
   });
 }
 
@@ -346,8 +346,8 @@ export async function createFolder(name: string, parentId?: number | null): Prom
     body.parentId = parentId;
   }
   return apiFetch("/api/media/folders", {
-    method: "POST",
     body: JSON.stringify(body),
+    method: "POST",
   });
 }
 
@@ -356,8 +356,8 @@ export async function updateFolder(
   data: { name?: string; parentId?: number | null },
 ): Promise<MediaFolder> {
   return apiFetch(`/api/media/folders/${id}`, {
-    method: "PATCH",
     body: JSON.stringify(data),
+    method: "PATCH",
   });
 }
 
@@ -405,8 +405,8 @@ export async function createApiToken(data: {
   description?: string;
 }): Promise<{ token: ApiTokenMeta; rawToken: string }> {
   return apiFetch("/api/settings/api-tokens", {
-    method: "POST",
     body: JSON.stringify(data),
+    method: "POST",
   });
 }
 
@@ -442,8 +442,8 @@ export async function createWebhook(data: {
   secret?: string;
 }): Promise<WebhookMeta> {
   return apiFetch("/api/settings/webhooks", {
-    method: "POST",
     body: JSON.stringify(data),
+    method: "POST",
   });
 }
 
@@ -459,8 +459,8 @@ export async function updateWebhook(
   }>,
 ): Promise<WebhookMeta> {
   return apiFetch(`/api/settings/webhooks/${id}`, {
-    method: "PUT",
     body: JSON.stringify(data),
+    method: "PUT",
   });
 }
 

@@ -1,39 +1,39 @@
 import type { PluginDefinition } from "@arche-cms/types";
 
 const seoPlugin: PluginDefinition = {
-  slug: "seo",
-  name: "SEO",
+  adminPanels: [
+    { component: "SEOSettings", icon: "Search", label: "SEO Settings", slug: "seo-settings" },
+  ],
   description:
     "Adds meta fields (metaTitle, metaDescription, metaImage, og fields) to collections and generates sitemap.xml",
-  version: "0.1.0",
   fields: {
     "*": [
       {
+        admin: { description: "Overrides the page title for search engines" },
+        label: "Meta Title",
         name: "metaTitle",
         type: "text",
-        label: "Meta Title",
-        admin: { description: "Overrides the page title for search engines" },
       },
       {
+        admin: { description: "Short description for search results" },
+        label: "Meta Description",
         name: "metaDescription",
         type: "textarea",
-        label: "Meta Description",
-        admin: { description: "Short description for search results" },
       },
       {
+        admin: { description: "Open Graph / Twitter card image" },
+        label: "Social Share Image",
         name: "metaImage",
         type: "media",
-        label: "Social Share Image",
-        admin: { description: "Open Graph / Twitter card image" },
       },
-      { name: "metaKeywords", type: "text", label: "Meta Keywords" },
-      { name: "isIndexed", type: "boolean", label: "Allow Indexing", defaultValue: true },
-      { name: "canonicalUrl", type: "url", label: "Canonical URL" },
+      { label: "Meta Keywords", name: "metaKeywords", type: "text" },
+      { defaultValue: true, label: "Allow Indexing", name: "isIndexed", type: "boolean" },
+      { label: "Canonical URL", name: "canonicalUrl", type: "url" },
     ],
   },
-  adminPanels: [
-    { slug: "seo-settings", label: "SEO Settings", icon: "Search", component: "SEOSettings" },
-  ],
+  name: "SEO",
+  slug: "seo",
+  version: "0.1.0",
 };
 
 export default seoPlugin;
