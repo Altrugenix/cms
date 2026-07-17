@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/toast-provider";
-import { fetchSchema, saveSchema, type FieldDefinition } from "@/lib/api";
+import { fetchSchema, type FieldDefinition } from "@/lib/api";
+import { useSaveSchema } from "@/lib/hooks";
 import {
   ArrowLeft,
   Save,
@@ -132,6 +133,7 @@ function SchemaEditor() {
   const [showPreview, setShowPreview] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [newFieldType, setNewFieldType] = useState("text");
+  const saveSchemaMutation = useSaveSchema();
   const [showNewFieldPicker, setShowNewFieldPicker] = useState(false);
   const previewRef = useRef<HTMLPreElement>(null);
 
@@ -376,7 +378,7 @@ function SchemaEditor() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveSchema(type, slug, { fields, meta, label });
+      await saveSchemaMutation.mutateAsync({ type, slug, data: { fields, meta, label } });
       toast("Schema saved", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to save";

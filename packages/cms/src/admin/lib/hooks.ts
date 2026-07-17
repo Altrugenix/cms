@@ -7,6 +7,7 @@ import {
   fetchWebhooks,
   fetchWebhook,
   fetchPlugins,
+  saveSchema,
   createApiToken,
   deleteApiToken,
   createWebhook,
@@ -15,6 +16,7 @@ import {
   apiFetch,
   type CollectionMeta,
   type GlobalMeta,
+  type FieldDefinition,
 } from "@/lib/api";
 
 export function useCollections() {
@@ -282,6 +284,25 @@ export function useDeleteWebhook() {
     mutationFn: (id: string) => deleteWebhook(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+    },
+  });
+}
+
+export function useSaveSchema() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      type,
+      slug,
+      data,
+    }: {
+      type: string;
+      slug: string;
+      data: { fields?: FieldDefinition[]; meta?: Record<string, unknown>; label?: string };
+    }) => saveSchema(type, slug, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      queryClient.invalidateQueries({ queryKey: ["globals"] });
     },
   });
 }
