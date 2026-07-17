@@ -168,11 +168,13 @@ function SchemaEditor() {
     setSelectedIdx((prev) => (prev === idx ? null : prev));
   };
 
-  const addField = () => {
-    const field = defaultField(newFieldType);
+  const addField = (type?: string) => {
+    const t = type ?? newFieldType;
+    const field = defaultField(t);
     field.name = `field_${fields.length + 1}`;
     setFields((prev) => [...prev, field]);
     setSelectedIdx(fields.length);
+    setNewFieldType(t);
     setShowNewFieldPicker(false);
   };
 
@@ -475,10 +477,7 @@ function SchemaEditor() {
                       {types.map(([key, cfg]) => (
                         <button
                           key={key}
-                          onClick={() => {
-                            setNewFieldType(key);
-                            addField();
-                          }}
+                          onClick={() => addField(key)}
                           className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors hover:bg-muted ${newFieldType === key ? "border-primary bg-primary/5" : ""}`}
                         >
                           <cfg.icon className="h-3 w-3" />

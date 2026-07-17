@@ -1,5 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 let tsxRegistered = false;
 async function ensureTsSupport(): Promise<void> {
@@ -75,7 +76,14 @@ export class SchemaLoader {
 
       if (filtered.some((f) => f.endsWith(".ts"))) await ensureTsSupport();
 
-      const mods = await Promise.all(filtered.map((file) => import(resolve(dir, file))));
+      const mods = await Promise.all(
+        filtered.map((file) => {
+          const filePath = resolve(dir, file);
+          const url = new URL(pathToFileURL(filePath).href);
+          url.searchParams.set("t", String(Date.now()));
+          return import(url.href);
+        }),
+      );
 
       for (const mod of mods) {
         const def = mod.default ?? mod;
