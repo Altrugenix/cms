@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useCollections, useGlobals } from "@/lib/data";
+import { useCollections, useGlobals } from "@/lib/hooks";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -30,8 +30,8 @@ type SidebarProps = {
 
 export function Sidebar({ collapsed, mobileOpen, onToggle, onMobileClose }: SidebarProps) {
   const location = useLocation();
-  const { collections } = useCollections();
-  const { globals } = useGlobals();
+  const { data: collections = [] } = useCollections();
+  const { data: globals = [] } = useGlobals();
 
   return (
     <>

@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createRoute } from "@tanstack/react-router";
 import { Route as settingsRoute } from "@/routes/settings/index";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
-import { fetchApiTokens, createApiToken, deleteApiToken, type ApiTokenMeta } from "@/lib/api";
+import { type ApiTokenMeta } from "@/lib/api";
+import { useApiTokensList, useCreateApiToken, useDeleteApiToken } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,14 +19,14 @@ export const Route = createRoute({
 
 function ApiTokensPage() {
   const { toast } = useToast();
-  const [tokens, setTokens] = useState<ApiTokenMeta[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: tokensData, isLoading: loading, error } = useApiTokensList();
+  const createApiToken = useCreateApiToken();
+  const deleteApiToken = useDeleteApiToken();
+  const tokens: ApiTokenMeta[] = tokensData?.data ?? [];
+  const total = tokensData?.total ?? 0;
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [creating, setCreating] = useState(false);
   const [createdToken, setCreatedToken] = useState<{
     name: string;
     rawToken: string;
@@ -33,37 +34,14 @@ function ApiTokensPage() {
   const [copied, setCopied] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await fetchApiTokens();
-        if (cancelled) return;
-        setTokens(data.data);
-        setTotal(data.total);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load tokens");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    setCreating(true);
     try {
-      const result = await createApiToken({
+      const result = await createApiToken.mutateAsync({
         name: newName.trim(),
         description: newDescription.trim() || undefined,
       });
-      setTokens((prev) => [result.token, ...prev]);
-      setTotal((prev) => prev + 1);
       setCreatedToken({ name: result.token.name, rawToken: result.rawToken });
       setNewName("");
       setNewDescription("");
@@ -72,8 +50,6 @@ function ApiTokensPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create token";
       toast(msg, "error");
-    } finally {
-      setCreating(false);
     }
   };
 
@@ -95,9 +71,7 @@ function ApiTokensPage() {
   const handleConfirmDelete = async () => {
     if (!confirmDeleteId) return;
     try {
-      await deleteApiToken(confirmDeleteId);
-      setTokens((prev) => prev.filter((t) => t.id !== confirmDeleteId));
-      setTotal((prev) => prev - 1);
+      await deleteApiToken.mutateAsync(confirmDeleteId);
       setConfirmDeleteId(null);
       toast("Token revoked", "success");
     } catch (err) {
@@ -156,7 +130,9 @@ function ApiTokensPage() {
         </Button>
       </div>
 
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error.message}</div>
+      )}
 
       {showForm && (
         <div className="rounded-lg border p-6">
@@ -182,8 +158,8 @@ function ApiTokensPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={creating || !newName.trim()}>
-                {creating ? "Creating..." : "Create"}
+              <Button type="submit" disabled={createApiToken.isPending || !newName.trim()}>
+                {createApiToken.isPending ? "Creating..." : "Create"}
               </Button>
               <Button
                 type="button"

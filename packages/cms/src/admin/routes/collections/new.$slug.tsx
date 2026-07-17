@@ -4,7 +4,7 @@ import { Route as rootRoute } from "@/routes/__root";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { apiFetch, ApiError } from "@/lib/api";
-import { useCollection } from "@/lib/data";
+import { useCollection } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { FieldInput } from "@/components/field-input";
 import { ArrowLeft } from "lucide-react";

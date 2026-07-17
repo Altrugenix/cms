@@ -1,9 +1,9 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { Route as settingsRoute } from "@/routes/settings/index";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
-import { fetchWebhook, updateWebhook, type WebhookMeta } from "@/lib/api";
+import { useWebhook, useUpdateWebhook } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,40 +25,25 @@ function EditWebhook() {
   const { id } = useParams({ from: Route.id });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [webhook, setWebhook] = useState<WebhookMeta | null>(null);
+  const { data: webhook, isLoading: loading, error } = useWebhook(id);
+  const updateWebhook = useUpdateWebhook();
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [events, setEvents] = useState<string[]>([]);
   const [collection, setCollection] = useState("*");
   const [enabled, setEnabled] = useState(true);
   const [secret, setSecret] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await fetchWebhook(id);
-        if (cancelled) return;
-        setWebhook(data);
-        setName(data.name);
-        setUrl(data.url);
-        setEvents(data.events);
-        setCollection(data.collection);
-        setEnabled(data.enabled);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load webhook");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  if (webhook && !initialized) {
+    setName(webhook.name);
+    setUrl(webhook.url);
+    setEvents(webhook.events);
+    setCollection(webhook.collection);
+    setEnabled(webhook.enabled);
+    setInitialized(true);
+  }
 
   const toggleEvent = (evt: string) => {
     setEvents((prev) => (prev.includes(evt) ? prev.filter((e) => e !== evt) : [...prev, evt]));
@@ -67,24 +52,24 @@ function EditWebhook() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!webhook || !name || !url || events.length === 0) return;
-    setSaving(true);
     try {
-      await updateWebhook(id, {
-        name: name.trim(),
-        url: url.trim(),
-        events,
-        collection: collection.trim() || "*",
-        enabled,
-        secret: secret.trim() || undefined,
+      await updateWebhook.mutateAsync({
+        id,
+        data: {
+          name: name.trim(),
+          url: url.trim(),
+          events,
+          collection: collection.trim() || "*",
+          enabled,
+          secret: secret.trim() || undefined,
+        },
       });
       toast("Webhook updated", "success");
       navigate({ to: "/settings/webhooks" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to update webhook";
-      setError(msg);
+      setFormError(msg);
       toast(msg, "error");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -110,7 +95,7 @@ function EditWebhook() {
     );
   }
   if (error)
-    return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
+    return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error.message}</div>;
   if (!webhook) return null;
 
   return (
@@ -126,7 +111,9 @@ function EditWebhook() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
-        {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+        {formError && (
+          <div className="rounded-md bg-destructive/10 p-4 text-destructive">{formError}</div>
+        )}
 
         <div className="flex items-center gap-3">
           <Label htmlFor="enabled" className="cursor-pointer">
@@ -201,8 +188,8 @@ function EditWebhook() {
         </div>
 
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={saving || events.length === 0}>
-            {saving ? "Saving..." : "Save Changes"}
+          <Button type="submit" disabled={updateWebhook.isPending || events.length === 0}>
+            {updateWebhook.isPending ? "Saving..." : "Save Changes"}
           </Button>
           <Link to="/settings/webhooks">
             <Button type="button" variant="outline">

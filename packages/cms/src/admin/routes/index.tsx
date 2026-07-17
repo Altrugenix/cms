@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
-import { fetchUsers, fetchMedia, apiFetch, fetchActivity, type ActivityEntry } from "@/lib/api";
-import { useCollections } from "@/lib/data";
+import { type ActivityEntry } from "@/lib/api";
+import { useCollections, useDashboardData } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/skeleton";
 import { Plus, Users, FileText, Database, Image, Clock, Trash2, Pencil, Check } from "lucide-react";
@@ -96,56 +95,23 @@ function RecentActivity({ loading, activity }: { loading: boolean; activity: Act
 }
 
 function Dashboard() {
-  const { collections: colMetas } = useCollections();
-  const [collections, setCollections] = useState<CollectionInfo[]>([]);
-  const [userCount, setUserCount] = useState(0);
-  const [mediaCount, setMediaCount] = useState(0);
-  const [activity, setActivity] = useState<ActivityEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const { data: colMetas = [] } = useCollections();
+  const colSlugs = colMetas.map((c: { slug: string }) => c.slug);
+  const { data: dashData, isLoading: loading, error: dashError } = useDashboardData(colSlugs);
 
-  useEffect(() => {
-    if (colMetas.length === 0) return;
-    let cancelled = false;
-    async function load() {
-      try {
-        const counts = await Promise.all(
-          colMetas.map(async (c) => {
-            try {
-              const data = await apiFetch<{ total: number }>(`/api/${c.slug}`);
-              return { slug: c.slug, label: c.label, entryCount: data.total };
-            } catch {
-              return { slug: c.slug, label: c.label, entryCount: 0 };
-            }
-          }),
-        );
-        if (cancelled) return;
-        setCollections(counts);
+  const collections: CollectionInfo[] = colMetas.map((c: { slug: string; label: string }) => {
+    const count = dashData?.counts.find((cnt: { slug: string }) => cnt.slug === c.slug);
+    return { slug: c.slug, label: c.label, entryCount: count?.entryCount ?? 0 };
+  });
 
-        const [usersRes, mediaRes, activityRes] = await Promise.all([
-          fetchUsers(),
-          fetchMedia(),
-          fetchActivity().catch(() => ({ data: [], total: 0 })),
-        ]);
-        if (!cancelled) {
-          setUserCount(usersRes.total);
-          setMediaCount(mediaRes.total);
-          setActivity(activityRes.data);
-        }
-      } catch (err) {
-        if (!cancelled)
-          setDashboardError(err instanceof Error ? err.message : "Failed to load dashboard");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [colMetas]);
+  const userCount = dashData?.usersRes.total ?? 0;
+  const mediaCount = dashData?.mediaRes.total ?? 0;
+  const activity: ActivityEntry[] = dashData?.activityRes.data ?? [];
 
-  const totalEntries = collections.reduce((sum, c) => sum + c.entryCount, 0);
+  const totalEntries = collections.reduce(
+    (sum: number, c: CollectionInfo) => sum + c.entryCount,
+    0,
+  );
 
   const stats = [
     { label: "Collections", value: collections.length, icon: Database },
@@ -161,8 +127,8 @@ function Dashboard() {
         <p className="text-muted-foreground">Welcome to Arche CMS</p>
       </div>
 
-      {dashboardError && (
-        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{dashboardError}</div>
+      {dashError && (
+        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{dashError.message}</div>
       )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

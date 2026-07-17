@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
 import { Route as settingsRoute } from "@/routes/settings/index";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
-import { fetchWebhooks, deleteWebhook, updateWebhook, type WebhookMeta } from "@/lib/api";
+import { type WebhookMeta } from "@/lib/api";
+import { useWebhooksList, useDeleteWebhook, useUpdateWebhook } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Pencil, Trash2, Plus, Webhook } from "lucide-react";
@@ -16,37 +17,20 @@ export const Route = createRoute({
 
 function WebhooksList() {
   const { toast } = useToast();
-  const [webhooks, setWebhooks] = useState<WebhookMeta[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: webhooksData, isLoading: loading, error } = useWebhooksList();
+  const updateWebhook = useUpdateWebhook();
+  const deleteWebhook = useDeleteWebhook();
+  const webhooks: WebhookMeta[] = webhooksData?.data ?? [];
+  const total = webhooksData?.total ?? 0;
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await fetchWebhooks();
-        if (cancelled) return;
-        setWebhooks(data.data);
-        setTotal(data.total);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load webhooks");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleToggle = async (webhook: WebhookMeta) => {
     try {
-      const updated = await updateWebhook(webhook.id, { enabled: !webhook.enabled });
-      setWebhooks((prev) => prev.map((w) => (w.id === webhook.id ? updated : w)));
-      toast(`Webhook ${updated.enabled ? "enabled" : "disabled"}`, "success");
+      await updateWebhook.mutateAsync({
+        id: webhook.id,
+        data: { enabled: !webhook.enabled },
+      });
+      toast(`Webhook ${!webhook.enabled ? "enabled" : "disabled"}`, "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to toggle webhook";
       toast(msg, "error");
@@ -60,9 +44,7 @@ function WebhooksList() {
   const handleConfirmDelete = async () => {
     if (!confirmDeleteId) return;
     try {
-      await deleteWebhook(confirmDeleteId);
-      setWebhooks((prev) => prev.filter((w) => w.id !== confirmDeleteId));
-      setTotal((prev) => prev - 1);
+      await deleteWebhook.mutateAsync(confirmDeleteId);
       setConfirmDeleteId(null);
       toast("Webhook deleted", "success");
     } catch (err) {
@@ -123,7 +105,9 @@ function WebhooksList() {
         </Link>
       </div>
 
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error.message}</div>
+      )}
 
       {webhooks.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-lg border p-12 text-center">

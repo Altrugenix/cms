@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
-import { uploadMedia, getMediaUrl, apiFetch } from "@/lib/api";
+import { uploadMedia, getMediaUrl } from "@/lib/api";
+import { useRelationEntries } from "@/lib/hooks";
 
 type FieldDef = {
   name: string;
@@ -203,32 +204,7 @@ function RelationPicker({
   onChange: (val: string) => void;
   error?: string;
 }) {
-  const [entries, setEntries] = useState<Array<{ id: string; label: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await apiFetch<{ data: Array<Record<string, unknown>> }>(`/api/${field.to}`);
-        if (cancelled) return;
-        setEntries(
-          data.data.map((e) => ({
-            id: String(e.id),
-            label: (e.title ?? e.name ?? e.id) as string,
-          })),
-        );
-      } catch {
-        // silently fail — dropdown will just be empty
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [field.to]);
+  const { data: entries = [], isLoading: loading } = useRelationEntries(field.to ?? "");
 
   return (
     <div className="space-y-2">

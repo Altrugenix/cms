@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
 import { createRoute } from "@tanstack/react-router";
 import { Route as settingsRoute } from "@/routes/settings/index";
 import { Skeleton } from "@/components/skeleton";
-import { fetchPlugins, type PluginMeta } from "@/lib/api";
+import { type PluginMeta } from "@/lib/api";
+import { usePluginsList } from "@/lib/hooks";
 import { Puzzle } from "lucide-react";
 
 export const Route = createRoute({
@@ -12,30 +12,9 @@ export const Route = createRoute({
 });
 
 function PluginsPage() {
-  const [plugins, setPlugins] = useState<PluginMeta[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await fetchPlugins();
-        if (cancelled) return;
-        setPlugins(data.data);
-        setTotal(data.total);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load plugins");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: pluginsData, isLoading: loading, error } = usePluginsList();
+  const plugins: PluginMeta[] = pluginsData?.data ?? [];
+  const total = pluginsData?.total ?? 0;
 
   if (loading) {
     return (
@@ -78,7 +57,9 @@ function PluginsPage() {
         </div>
       </div>
 
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error.message}</div>
+      )}
 
       {plugins.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-lg border p-12 text-center">

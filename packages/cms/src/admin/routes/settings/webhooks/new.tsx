@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Route as settingsRoute } from "@/routes/settings/index";
 import { useToast } from "@/components/toast-provider";
-import { createWebhook } from "@/lib/api";
+import { useCreateWebhook } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +23,12 @@ export const Route = createRoute({
 function CreateWebhook() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const createWebhook = useCreateWebhook();
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [events, setEvents] = useState<string[]>(["collection:created"]);
   const [collection, setCollection] = useState("*");
   const [secret, setSecret] = useState("");
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const toggleEvent = (evt: string) => {
@@ -38,9 +38,8 @@ function CreateWebhook() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !url || events.length === 0) return;
-    setSaving(true);
     try {
-      await createWebhook({
+      await createWebhook.mutateAsync({
         name: name.trim(),
         url: url.trim(),
         events,
@@ -53,8 +52,6 @@ function CreateWebhook() {
       const msg = err instanceof Error ? err.message : "Failed to create webhook";
       setError(msg);
       toast(msg, "error");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -144,8 +141,8 @@ function CreateWebhook() {
         </div>
 
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={saving || events.length === 0}>
-            {saving ? "Creating..." : "Create Webhook"}
+          <Button type="submit" disabled={createWebhook.isPending || events.length === 0}>
+            {createWebhook.isPending ? "Creating..." : "Create Webhook"}
           </Button>
           <Link to="/settings/webhooks">
             <Button type="button" variant="outline">

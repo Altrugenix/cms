@@ -1,7 +1,7 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { Skeleton } from "@/components/skeleton";
-import { useGlobals } from "@/lib/data";
+import { useGlobals } from "@/lib/hooks";
 import { Settings, ArrowRight } from "lucide-react";
 
 export const Route = createRoute({
@@ -11,7 +11,7 @@ export const Route = createRoute({
 });
 
 function GlobalsList() {
-  const { globals, isLoading: loading, error } = useGlobals();
+  const { data: globals = [], isLoading: loading, error } = useGlobals();
 
   if (loading) {
     return (

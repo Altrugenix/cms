@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createRoute, Link, useParams } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
-import { apiFetch } from "@/lib/api";
-import { useCollection } from "@/lib/data";
+import {
+  useCollection,
+  useEntries,
+  useDeleteEntry,
+  useBulkDelete,
+  usePublishEntry,
+  useUnpublishEntry,
+  useRestoreEntry,
+} from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ArrowLeft, Plus, Pencil, Trash2, CheckCircle, XCircle, RefreshCw } from "lucide-react";
@@ -22,43 +29,23 @@ function CollectionEntries() {
   const { slug } = useParams({ from: Route.id });
   const { toast } = useToast();
   const { collection, isLoading: colLoading } = useCollection(slug);
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [locale, setLocale] = useState("en");
 
-  useEffect(() => {
-    if (!collection) return;
-    let cancelled = false;
-    async function load() {
-      try {
-        const params = new URLSearchParams();
-        if (showDeleted) params.set("deleted", "true");
-        params.set("locale", locale);
-        const url = `/api/${slug}?${params}`;
-        const data = await apiFetch<{ data: Entry[]; total: number }>(url);
-        if (cancelled) return;
-        setEntries(data.data);
-        setTotal(data.total);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load entries");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, showDeleted, locale, collection]);
+  const searchParams: Record<string, string> = { locale };
+  if (showDeleted) searchParams.deleted = "true";
+
+  const { data: entriesData, isLoading: loading, error } = useEntries(slug, searchParams);
+  const entries: Entry[] = (entriesData?.data ?? []) as Entry[];
+  const total = entriesData?.total ?? 0;
+  const deleteEntry = useDeleteEntry(slug);
+  const bulkDelete = useBulkDelete(slug);
+  const publishEntry = usePublishEntry(slug);
+  const unpublishEntry = useUnpublishEntry(slug);
+  const restoreEntry = useRestoreEntry(slug);
 
   const handleDelete = (id: string) => {
     setConfirmDeleteId(id);
@@ -67,9 +54,7 @@ function CollectionEntries() {
   const handleConfirmDelete = async () => {
     if (!confirmDeleteId) return;
     try {
-      await apiFetch(`/api/${slug}/${confirmDeleteId}`, { method: "DELETE" });
-      setEntries((prev) => prev.filter((e) => e.id !== confirmDeleteId));
-      setTotal((prev) => prev - 1);
+      await deleteEntry.mutateAsync(confirmDeleteId);
       setConfirmDeleteId(null);
       toast("Entry deleted", "success");
     } catch (err) {
@@ -80,21 +65,13 @@ function CollectionEntries() {
   const handleBulkDelete = async () => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    setDeleting(true);
     try {
-      await apiFetch(`/api/${slug}/bulk-delete`, {
-        method: "POST",
-        body: JSON.stringify({ ids }),
-      });
-      setEntries((prev) => prev.filter((e) => !ids.includes(e.id)));
-      setTotal((prev) => prev - ids.length);
+      await bulkDelete.mutateAsync(ids);
       setSelected(new Set());
       setConfirmDelete(false);
       toast(`Deleted ${ids.length} entr${ids.length === 1 ? "y" : "ies"}`, "success");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to delete entries", "error");
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -218,12 +195,7 @@ function CollectionEntries() {
 
   const handlePublish = async (id: string) => {
     try {
-      await apiFetch(`/api/${slug}/${id}/publish`, { method: "POST" });
-      const data = await apiFetch<{ data: Entry[]; total: number }>(
-        `/api/${slug}?locale=${locale}`,
-      );
-      setEntries(data.data);
-      setTotal(data.total);
+      await publishEntry.mutateAsync(id);
       toast("Entry published", "success");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to publish entry", "error");
@@ -232,11 +204,7 @@ function CollectionEntries() {
 
   const handleRestore = async (id: string) => {
     try {
-      await apiFetch(`/api/${slug}/${id}/restore`, { method: "POST" });
-      const url = showDeleted ? `/api/${slug}?deleted=true` : `/api/${slug}`;
-      const data = await apiFetch<{ data: Entry[]; total: number }>(url);
-      setEntries(data.data);
-      setTotal(data.total);
+      await restoreEntry.mutateAsync(id);
       toast("Entry restored", "success");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to restore entry", "error");
@@ -245,12 +213,7 @@ function CollectionEntries() {
 
   const handleUnpublish = async (id: string) => {
     try {
-      await apiFetch(`/api/${slug}/${id}/unpublish`, { method: "POST" });
-      const data = await apiFetch<{ data: Entry[]; total: number }>(
-        `/api/${slug}?locale=${locale}`,
-      );
-      setEntries(data.data);
-      setTotal(data.total);
+      await unpublishEntry.mutateAsync(id);
       toast("Entry unpublished", "success");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to unpublish entry", "error");
@@ -404,7 +367,7 @@ function CollectionEntries() {
             ? "Entries will be soft-deleted and can be restored from Trash."
             : "This action cannot be undone."
         }
-        loading={deleting}
+        loading={bulkDelete.isPending}
         onConfirm={handleBulkDelete}
         onCancel={() => setConfirmDelete(false)}
       />

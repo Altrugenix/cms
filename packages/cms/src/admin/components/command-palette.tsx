@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { useCollections, useGlobals } from "@/lib/data";
+import { useCollections, useGlobals } from "@/lib/hooks";
 import { useTheme } from "@/components/theme-provider";
 import {
   LayoutDashboard,
@@ -105,8 +105,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         : "light"
       : theme;
 
-  const { collections } = useCollections();
-  const { globals } = useGlobals();
+  const { data: collections = [] } = useCollections();
+  const { data: globals = [] } = useGlobals();
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);

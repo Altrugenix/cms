@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { apiFetch, ApiError } from "@/lib/api";
-import { useCollection } from "@/lib/data";
+import { useCollection, useEntry } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { FieldInput } from "@/components/field-input";
 import { ArrowLeft, CheckCircle } from "lucide-react";
@@ -20,42 +20,28 @@ function EditEntry() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { collection, isLoading: colLoading } = useCollection(slug);
+  const { data: entry, isLoading: entryLoading, error: entryError } = useEntry(slug, id, locale);
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [entryStatus, setEntryStatus] = useState<string>("");
   const [publishing, setPublishing] = useState(false);
   const [locale, setLocale] = useState("en");
+  const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    if (!collection) return;
-    let cancelled = false;
-    async function load() {
-      try {
-        const entry = await apiFetch<Record<string, unknown>>(
-          `/api/${slug}/${id}?locale=${locale}`,
-        );
-        if (cancelled) return;
-        const initial: Record<string, string> = {};
-        for (const f of collection.fields) {
-          const val = entry[f.name];
-          initial[f.name] = typeof val === "string" ? val : val != null ? String(val) : "";
-        }
-        setValues(initial);
-        setEntryStatus((entry._status as string) ?? "");
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load entry");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  if (collection && entry && !initialized) {
+    const initial: Record<string, string> = {};
+    for (const f of collection.fields) {
+      const val = entry[f.name];
+      initial[f.name] = typeof val === "string" ? val : val != null ? String(val) : "";
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, id, locale, collection]);
+    setValues(initial);
+    setEntryStatus((entry._status as string) ?? "");
+    setInitialized(true);
+  }
+
+  const loading = colLoading || entryLoading;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -94,7 +80,7 @@ function EditEntry() {
         setErrors((prev) => ({ ...prev, ...fieldErrors }));
       } else {
         const msg = err instanceof Error ? err.message : "Failed to update entry";
-        setError(msg);
+        setFormError(msg);
         toast(msg, "error");
       }
     } finally {
@@ -128,7 +114,7 @@ function EditEntry() {
     }
   };
 
-  if (!collection || colLoading)
+  if (loading)
     return (
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="flex items-center gap-4">
@@ -152,35 +138,11 @@ function EditEntry() {
         </div>
       </div>
     );
-  if (error)
-    return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
-  if (!collection) return null;
-
-  if (loading) {
+  if (entryError)
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-5 w-5" />
-          <div>
-            <Skeleton className="h-8 w-40" />
-            <Skeleton className="mt-1 h-5 w-32" />
-          </div>
-        </div>
-        <div className="space-y-4 rounded-lg border p-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="space-y-2">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-10 w-full rounded-md" />
-            </div>
-          ))}
-          <div className="flex items-center gap-2 pt-4">
-            <Skeleton className="h-10 w-28 rounded-md" />
-            <Skeleton className="h-10 w-20 rounded-md" />
-          </div>
-        </div>
-      </div>
+      <div className="rounded-md bg-destructive/10 p-4 text-destructive">{entryError.message}</div>
     );
-  }
+  if (!collection || !entry) return null;
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
@@ -221,7 +183,9 @@ function EditEntry() {
         </div>
       </div>
 
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+      {formError && (
+        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{formError}</div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-6">
         {collection.fields.map((f) => (

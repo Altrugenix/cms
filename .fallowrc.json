@@ -25,7 +25,8 @@
     "lucide-react",
     "react",
     "tailwind-merge",
-    "@tailwindcss/vite"
+    "@tailwindcss/vite",
+    "@tanstack/react-query"
   ],
   "audit": {
     "gate": "new-only"

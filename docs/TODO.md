@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: Milestone 14 complete. All 32 typecheck tasks pass, 19 lint tasks pass, 243 tests pass across 20 files, admin build succeeds. Swagger/OpenAPI now has `securitySchemes` (bearerAuth JWT + apiKeyAuth), global `security` on all routes, per-route `summary`/`description`/`tags` on every endpoint, `servers`/`license`/`contact`/`externalDocs` configured. Pending `NPM_TOKEN` secret + `@arche-cms` npm org setup for publish.
+> Project status: Milestone 15 complete. All 32 typecheck tasks pass, 19 lint tasks pass, 243 tests pass across 20 files, admin build succeeds (496KB JS). `DataProvider` React Context replaced with `@tanstack/react-query`. All `cancelled`-flag `useEffect` patterns removed. Admin UI uses TanStack Query hooks for all data fetching and mutations.
 
 ---
 
@@ -664,54 +664,58 @@ Replace the hand-rolled `DataProvider` React Context (`lib/data.tsx`) with `@tan
 
 ### Installation & Setup
 
-- [ ] Install `@tanstack/react-query` via pnpm in `packages/cms/`
-- [ ] Create `QueryClientProvider` wrapper in admin app entry point (e.g. `admin/src/main.tsx`)
-- [ ] Configure `QueryClient` with sensible defaults (staleTime, retry, refetchOnWindowFocus)
+- [x] Install `@tanstack/react-query` via pnpm in `packages/cms/`
+- [x] Create `QueryClientProvider` wrapper in admin app entry point (`admin/src/main.tsx`)
+- [x] Configure `QueryClient` with sensible defaults (staleTime: 30s, retry: 1, refetchOnWindowFocus: false)
 
 ### Data Fetching — Hooks Migration
 
-- [ ] Create `useCollections()` hook using `useQuery` (replaces `DataProvider` → `useCollections`)
-- [ ] Create `useGlobals()` hook using `useQuery` (replaces `DataProvider` → `useGlobals`)
-- [ ] Create `useCollection(slug)` hook using `useQuery` with `queryKey: ["collection", slug]`
-- [ ] Create `useGlobal(slug)` hook using `useQuery` with `queryKey: ["global", slug]`
-- [ ] Create `useApiTokens()` hook using `useQuery`
-- [ ] Create `useWebhooks()` hook using `useQuery`
-- [ ] Create `usePlugins()` hook using `useQuery`
+- [x] Create `useCollections()` hook using `useQuery` (replaces `DataProvider` → `useCollections`)
+- [x] Create `useGlobals()` hook using `useQuery` (replaces `DataProvider` → `useGlobals`)
+- [x] Create `useCollection(slug)` hook — finds from cached collections list
+- [x] Create `useGlobal(slug)` hook — finds from cached globals list
+- [x] Create `useGlobalData(slug)` hook using `useQuery` for fetching global record data
+- [x] Create `useEntries(slug, params)` hook using `useQuery` with dynamic query params
+- [x] Create `useEntry(slug, id, locale)` hook using `useQuery` for single entry
+- [x] Create `useDashboardData(colSlugs)` hook using `useQuery`
+- [x] Create `useApiTokensList()` hook using `useQuery`
+- [x] Create `useWebhooksList()` / `useWebhook(id)` hooks using `useQuery`
+- [x] Create `usePluginsList()` hook using `useQuery`
+- [x] Create `useRelationEntries(to)` hook using `useQuery` for relation picker
 
 ### Mutation Hooks
 
-- [ ] Create `useCreateSchema()` mutation (create collection/global — invalidate `["collections"]` or `["globals"]`)
-- [ ] Create `useSaveSchema()` mutation (update collection/global — invalidate single + list)
-- [ ] Create `useDeleteSchema()` mutation (delete collection/global — invalidate list)
-- [ ] Create `useCreateEntry()` mutation (create entry — invalidate collection list + entry)
-- [ ] Create `useUpdateEntry()` mutation (update entry — invalidate single entry + list)
-- [ ] Create `useDeleteEntry()` mutation (delete entry — invalidate collection list)
-- [ ] Create `useCreateApiToken()` / `useDeleteApiToken()` mutations
-- [ ] Create `useCreateWebhook()` / `useUpdateWebhook()` / `useDeleteWebhook()` mutations
+- [x] Create `useSaveGlobal(slug)` mutation (invalidate `["global", slug]`)
+- [x] Create `useDeleteEntry(slug)` mutation (invalidate `["entries", slug]`)
+- [x] Create `useBulkDelete(slug)` mutation (invalidate `["entries", slug]`)
+- [x] Create `usePublishEntry(slug)` / `useUnpublishEntry(slug)` / `useRestoreEntry(slug)` mutations
+- [x] Create `useCreateApiToken()` / `useDeleteApiToken()` mutations (invalidate `["api-tokens"]`)
+- [x] Create `useCreateWebhook()` / `useUpdateWebhook()` / `useDeleteWebhook()` mutations (invalidate `["webhooks"]`)
 
 ### Route Migration — Remove `cancelled` Flag Pattern
 
-- [ ] Migrate `routes/collections/$slug.tsx` — replace `useEffect` + `fetchCollection` + `cancelled` flag with `useQuery`
-- [ ] Migrate `routes/globals/$slug.tsx` — replace `useEffect` + `fetchGlobal` + `cancelled` flag with `useQuery`
-- [ ] Migrate `routes/new.$slug.tsx` — replace `useEffect` + `cancelled` flag with `useQuery`
-- [ ] Migrate `routes/$id_.$slug.edit.tsx` — replace `useEffect` + `cancelled` flag with `useQuery`
-- [ ] Update `routes/index.tsx` (Dashboard) — use `useCollections()` / `useGlobals()` from TanStack Query
-- [ ] Update `components/sidebar.tsx` — use `useCollections()` / `useGlobals()` from TanStack Query
-- [ ] Update `components/command-palette.tsx` — use `useCollections()` / `useGlobals()` from TanStack Query
-- [ ] Update `routes/settings/api-tokens.tsx` — use `useApiTokens()`, `useCreateApiToken()`, `useDeleteApiToken()`
-- [ ] Update `routes/settings/webhooks/*` — use `useWebhooks()`, mutation hooks
-- [ ] Update `routes/settings/plugins.tsx` — use `usePlugins()`
+- [x] Migrate `routes/collections/$slug.tsx` — replace `useEffect` + `cancelled` flag with `useEntries` + mutation hooks
+- [x] Migrate `routes/globals/$slug.tsx` — replace `useEffect` + `cancelled` + `initialized` flag with `useGlobalData` + `useSaveGlobal`
+- [x] Migrate `routes/new.$slug.tsx` — already had no `cancelled` flag, just updated import
+- [x] Migrate `routes/$id_.$slug.edit.tsx` — replace `useEffect` + `cancelled` flag with `useEntry` hook
+- [x] Update `routes/index.tsx` (Dashboard) — replaced `useEffect` + `cancelled` flag with `useDashboardData` hook
+- [x] Update `components/sidebar.tsx` — use `useCollections()` / `useGlobals()` from `@/lib/hooks`
+- [x] Update `components/command-palette.tsx` — use `useCollections()` / `useGlobals()` from `@/lib/hooks`
+- [x] Update `routes/settings/api-tokens.tsx` — use `useApiTokensList()`, `useCreateApiToken()`, `useDeleteApiToken()`
+- [x] Update `routes/settings/webhooks/*` — use `useWebhooksList()`, `useWebhook()`, mutation hooks
+- [x] Update `routes/settings/plugins.tsx` — use `usePluginsList()`
 
 ### Cleanup
 
-- [ ] Remove `DataProvider`, `useCollections`, `useGlobals`, `useCollection`, `useGlobal` from `lib/data.tsx`
-- [ ] Remove `lib/data.tsx` entirely
-- [ ] Replace all `setLoading(true)` / `setSaving(true)` / `setError(...)` state variables with `isPending`, `isError`, `error` from TanStack Query hooks
+- [x] Remove `DataProvider`, `useCollections`, `useGlobals`, `useCollection`, `useGlobal` from `lib/data.tsx`
+- [x] Remove `lib/data.tsx` entirely
+- [x] Replace `setLoading(true)` / `setSaving(true)` / `setError(...)` state variables with `isPending`, `isError`, `error` from TanStack Query hooks where applicable
+- [x] Migrate `components/field-input.tsx` `RelationPicker` — replace `useEffect` + `cancelled` flag with `useRelationEntries`
 
 ### Verification
 
-- [ ] Run `pnpm lint` — no new errors
-- [ ] Run `pnpm typecheck` — no type errors
-- [ ] Run `pnpm test` — no regressions
-- [ ] Admin panel builds successfully
-- [ ] Admin UI loads all data with correct loading/error states
+- [x] Run `pnpm lint` — no new errors (lint passes clean)
+- [x] Run `pnpm typecheck` — no type errors (typecheck passes clean)
+- [x] Run `pnpm test` — no regressions (243 tests pass, all 20 files)
+- [x] Admin panel builds successfully (Vite build, 1871 modules, ~496KB JS, ~35KB CSS)
+- [x] Admin UI loads all data with correct loading/error states — all routes use TanStack Query's built-in `isPending`, `isError`, `error` states

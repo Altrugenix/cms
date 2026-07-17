@@ -2,7 +2,7 @@ import { createRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Route as rootRoute } from "@/routes/__root";
 import { Skeleton } from "@/components/skeleton";
-import { useCollections } from "@/lib/data";
+import { useCollections } from "@/lib/hooks";
 import { FileText, Plus } from "lucide-react";
 
 export const Route = createRoute({
@@ -12,7 +12,7 @@ export const Route = createRoute({
 });
 
 function CollectionsList() {
-  const { collections, isLoading: loading, error } = useCollections();
+  const { data: collections = [], isLoading: loading, error } = useCollections();
 
   if (loading) {
     return (
