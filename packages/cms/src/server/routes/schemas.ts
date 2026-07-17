@@ -4,7 +4,9 @@ import { existsSync } from "node:fs";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { ServerConfig } from "../config.js";
 import { SchemaLoader } from "@arche-cms/schema";
-import type { FieldDefinition } from "@arche-cms/types";
+import { MigrationGenerator, MigrationRunner } from "@arche-cms/database";
+import type { DatabaseAdapter } from "@arche-cms/database";
+import type { FieldDefinition, CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
 
 interface SchemaInfo {
   slug: string;
@@ -14,7 +16,131 @@ interface SchemaInfo {
   meta: Record<string, unknown>;
 }
 
-export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerConfig): void {
+interface CollectionMeta {
+  slug: string;
+  label: string;
+  labels?: { singular: string; plural: string };
+  versions?: {
+    drafts: boolean;
+    maxPerDoc?: number;
+    softDelete?: boolean;
+    scheduledPublishing?: boolean;
+  };
+  fields: Array<{
+    name: string;
+    type: string;
+    label: string;
+    required: boolean;
+    to?: string;
+    options?: string[];
+  }>;
+}
+
+interface GlobalMeta {
+  slug: string;
+  label: string;
+  fields: Array<{
+    name: string;
+    type: string;
+    label: string;
+    required: boolean;
+    to?: string;
+    options?: string[];
+  }>;
+}
+
+function normalizeOptions(opts: unknown[]): string[] {
+  return opts.map((o) => {
+    if (typeof o === "string") return o;
+    if (o && typeof o === "object" && "value" in o) return String((o as { value: string }).value);
+    return String(o);
+  });
+}
+
+function buildCollectionMeta(collections: CollectionDefinition[]): CollectionMeta[] {
+  return collections.map((c) => ({
+    slug: c.slug,
+    label: c.labels?.plural ?? c.slug,
+    labels: c.labels,
+    versions: c.versions,
+    fields: (c.fields ?? []).map((f) => {
+      const base = {
+        name: f.name,
+        type: f.type,
+        label: f.label ?? f.name,
+        required: f.validation?.required ?? false,
+      };
+      if (f.type === "relation") {
+        return { ...base, to: (f as { to?: string }).to ?? "" };
+      }
+      if (f.type === "select" || f.type === "multiSelect" || f.type === "radio") {
+        const opts = (f as { options?: unknown[] }).options ?? [];
+        return { ...base, options: normalizeOptions(opts) };
+      }
+      return base;
+    }),
+  }));
+}
+
+function buildGlobalMeta(globals: GlobalDefinition[]): GlobalMeta[] {
+  return globals.map((g) => ({
+    slug: g.slug,
+    label: g.label,
+    fields: (g.fields ?? []).map((f) => {
+      const base = {
+        name: f.name,
+        type: f.type,
+        label: f.label ?? f.name,
+        required: f.validation?.required ?? false,
+      };
+      if (f.type === "relation") {
+        return { ...base, to: (f as { to?: string }).to ?? "" };
+      }
+      if (f.type === "select" || f.type === "multiSelect" || f.type === "radio") {
+        const opts = (f as { options?: unknown[] }).options ?? [];
+        return { ...base, options: normalizeOptions(opts) };
+      }
+      return base;
+    }),
+  }));
+}
+
+async function syncSchemaAndMetadata(
+  adapter: DatabaseAdapter,
+  config: ServerConfig,
+  onSchemasUpdated: (
+    collections: Record<string, unknown>[],
+    globals: Record<string, unknown>[],
+  ) => void,
+): Promise<void> {
+  const loader = new SchemaLoader({ baseDir: resolve(config.schema.baseDir) });
+  const loaded = await loader.load();
+  const collections = Array.from(loaded.collections.values());
+  const globals = Array.from(loaded.globals.values());
+
+  const existingSchema = await adapter.getExistingSchema();
+  const generator = new MigrationGenerator();
+  const migrations = generator.generate(collections, existingSchema, globals);
+  if (migrations.length > 0) {
+    const runner = new MigrationRunner(adapter);
+    await runner.run(migrations);
+  }
+
+  onSchemasUpdated(
+    buildCollectionMeta(collections) as unknown as Record<string, unknown>[],
+    buildGlobalMeta(globals) as unknown as Record<string, unknown>[],
+  );
+}
+
+export function registerSchemaRoutes(
+  fastify: FastifyInstance,
+  config: ServerConfig,
+  adapter?: DatabaseAdapter,
+  onSchemasUpdated?: (
+    collections: Record<string, unknown>[],
+    globals: Record<string, unknown>[],
+  ) => void,
+): void {
   const baseDir = resolve(config.schema.baseDir);
 
   async function loadSchemas(): Promise<SchemaInfo[]> {
@@ -477,6 +603,10 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
         const code = generateSchemaCode(type, body.slug, fields, meta);
         await writeFile(filePath, code, "utf-8");
 
+        if (adapter && onSchemasUpdated) {
+          await syncSchemaAndMetadata(adapter, config, onSchemasUpdated);
+        }
+
         return reply.status(201).send({ message: "Schema created", slug: body.slug, type });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to create schema";
@@ -548,6 +678,10 @@ export function registerSchemaRoutes(fastify: FastifyInstance, config: ServerCon
 
         const code = generateSchemaCode(type, slug, fields, meta);
         await writeFile(filePath, code, "utf-8");
+
+        if (adapter && onSchemasUpdated) {
+          await syncSchemaAndMetadata(adapter, config, onSchemasUpdated);
+        }
 
         return reply.send({ message: "Schema saved", slug, type });
       } catch (err) {

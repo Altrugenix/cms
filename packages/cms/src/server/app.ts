@@ -106,10 +106,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
 
   await options.pluginManager?.runHook("afterRouteRegister");
 
-  registerSchemaRoutes(fastify, config);
-
-  // Pre-compute metadata for admin UI (avoids re-mapping on every request)
-  const collectionMeta = (collections ?? []).map((c) => ({
+  let collectionMeta: Record<string, unknown>[] = (collections ?? []).map((c) => ({
     slug: c.slug,
     label: c.labels?.plural ?? c.slug,
     labels: c.labels,
@@ -133,7 +130,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
     }),
   }));
 
-  const globalMeta = (globals ?? []).map((g) => ({
+  let globalMeta: Record<string, unknown>[] = (globals ?? []).map((g) => ({
     slug: g.slug,
     label: g.label,
     // fallow-ignore-next-line complexity
@@ -154,6 +151,11 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
       return base;
     }),
   }));
+
+  registerSchemaRoutes(fastify, config, adapter, (newCollections, newGlobals) => {
+    collectionMeta = newCollections;
+    globalMeta = newGlobals;
+  });
 
   fastify.get(
     "/api/collections",
