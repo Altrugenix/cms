@@ -77,8 +77,6 @@ arche-cms/
 │   ├── storage/        # File storage adapters (local, S3, R2)
 │   ├── rest-api/       # REST API generator
 │   ├── graphql/        # GraphQL schema generator
-│   ├── admin-ui/       # Shared admin UI components & blocks
-│   ├── builder/        # Visual schema builder (drag & drop UI)
 │   ├── plugins/        # Plugin system + official plugins
 │   ├── cli/            # CLI tools (cms dev, build, generate, etc.)
 │   ├── generators/     # Code generation pipeline (types, routes, migrations, SDK)

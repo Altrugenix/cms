@@ -83,7 +83,6 @@ arche-cms/
 │   ├── generators/     # Code generation pipeline
 │   ├── storage/        # Local, S3, R2 adapters
 │   ├── plugins/        # Plugin system + official plugins
-│   ├── admin-ui/       # Shared admin components
 │   ├── sdk/            # TypeScript client SDK
 │   └── types/          # Shared TypeScript types
 ```

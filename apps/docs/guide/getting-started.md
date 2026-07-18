@@ -52,8 +52,6 @@ cms/
 │   ├── validation/     # Zod validation generator
 │   ├── generators/     # Code generation pipeline
 │   ├── plugins/        # Plugin system + official plugins
-│   ├── admin-ui/       # Shared admin UI components
-│   ├── builder/        # Visual schema builder
 │   ├── types/          # Shared TypeScript types
 │   └── sdk/            # TypeScript client SDK
 ├── cms/

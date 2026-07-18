@@ -125,5 +125,4 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
 | `@arche-cms/plugins`     | Plugin system + official plugins                   |
 | `@arche-cms/generators`  | Code generation pipeline                           |
 | `@arche-cms/cms`         | CLI tools + server                                 |
-| `@arche-cms/admin-ui`    | Shared admin UI components                         |
 | `@arche-cms/sdk`         | TypeScript client SDK                              |

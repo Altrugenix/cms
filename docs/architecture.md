@@ -34,8 +34,6 @@ packages/
 ├── graphql/        # GraphQL schema generator
 ├── validation/     # Zod validation schema generator
 ├── plugins/        # Plugin system + official plugins
-├── admin-ui/       # Shared admin UI components
-├── builder/        # Visual schema builder
 ├── generators/     # Code generation pipeline
 ├── sdk/            # TypeScript client SDK
 └── cli/            # CLI tools

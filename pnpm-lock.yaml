@@ -103,8 +103,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/cms
 
-  packages/admin-ui: {}
-
   packages/auth:
     dependencies:
       '@arche-cms/database':
@@ -123,8 +121,6 @@ importers:
       '@types/bcryptjs':
         specifier: ^3.0.0
         version: 3.0.0
-
-  packages/builder: {}
 
   packages/cms:
     dependencies:
