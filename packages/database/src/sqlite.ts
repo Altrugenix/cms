@@ -62,7 +62,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
       const val = where[key];
       if (Array.isArray(val)) {
         conditions.push(`"${key}" IN (${val.map(() => "?").join(", ")})`);
-        values.push(...val);
+        values.push(...(val as unknown[]));
       } else {
         conditions.push(`"${key}" = ?`);
         values.push(val);

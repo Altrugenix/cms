@@ -51,19 +51,22 @@ async function loadPluginDefinition(
   slug: string,
 ): Promise<DiscoveredPlugin | null> {
   try {
-    const mod = await import(join(pkgPath, "dist/index.js"));
-    const def = mod.default ?? mod;
+    const mod = (await import(join(pkgPath, "dist/index.js"))) as Record<string, unknown>;
+    const def = (mod.default ?? mod) as Record<string, unknown>;
     if (def && typeof def === "object" && def.slug && def.name) {
-      return { definition: def as PluginDefinition, path: pkgPath, slug };
+      return { definition: def as unknown as PluginDefinition, path: pkgPath, slug };
     }
   } catch {
     try {
-      const pkg = await import(join(pkgPath, "package.json"), { with: { type: "json" } });
-      const main = (pkg as { default?: { main?: string } })?.default?.main ?? "dist/index.js";
-      const mod = await import(join(pkgPath, main));
-      const def = mod.default ?? mod;
+      const pkg = (await import(join(pkgPath, "package.json"), {
+        with: { type: "json" },
+      })) as Record<string, unknown>;
+      const main = ((pkg as { default?: { main?: string } })?.default?.main ??
+        "dist/index.js") as string;
+      const mod = (await import(join(pkgPath, main))) as Record<string, unknown>;
+      const def = (mod.default ?? mod) as Record<string, unknown>;
       if (def && typeof def === "object" && def.slug && def.name) {
-        return { definition: def as PluginDefinition, path: pkgPath, slug };
+        return { definition: def as unknown as PluginDefinition, path: pkgPath, slug };
       }
     } catch {
       return null;

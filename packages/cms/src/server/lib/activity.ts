@@ -5,8 +5,8 @@ export type ActivityAction = "create" | "update" | "delete" | "bulkDelete" | "up
 export interface ActivityEntry {
   action: ActivityAction;
   collection: string;
-  documentId?: string;
-  label?: string;
+  documentId?: string | undefined;
+  label?: string | undefined;
 }
 
 const TABLE = process.env.CMS_ACTIVITY_TABLE || "__cms_activity";

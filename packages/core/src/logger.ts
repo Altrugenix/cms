@@ -1,8 +1,8 @@
 import type { Logger } from "@arche-cms/types";
 
 export interface LoggerOptions {
-  level?: "debug" | "info" | "warn" | "error" | "fatal";
-  prefix?: string;
+  level?: "debug" | "info" | "warn" | "error" | "fatal" | undefined;
+  prefix?: string | undefined;
 }
 
 const levels = { debug: 0, error: 3, fatal: 4, info: 1, warn: 2 } as const;

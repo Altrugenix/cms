@@ -21,13 +21,15 @@ interface SchemaInfo {
 interface CollectionMeta {
   slug: string;
   label: string;
-  labels?: { singular: string; plural: string };
-  versions?: {
-    drafts: boolean;
-    maxPerDoc?: number;
-    softDelete?: boolean;
-    scheduledPublishing?: boolean;
-  };
+  labels?: { singular: string; plural: string } | undefined;
+  versions?:
+    | {
+        drafts: boolean;
+        maxPerDoc?: number | undefined;
+        softDelete?: boolean | undefined;
+        scheduledPublishing?: boolean | undefined;
+      }
+    | undefined;
   fields: Array<Record<string, unknown>>;
 }
 

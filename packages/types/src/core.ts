@@ -7,9 +7,9 @@ export interface Logger {
 }
 
 export interface LifecycleHooks {
-  onInit?: () => Promise<void>;
-  onReady?: () => Promise<void>;
-  onShutdown?: () => Promise<void>;
+  onInit?: (() => Promise<void>) | undefined;
+  onReady?: (() => Promise<void>) | undefined;
+  onShutdown?: (() => Promise<void>) | undefined;
 }
 
 export interface Config {

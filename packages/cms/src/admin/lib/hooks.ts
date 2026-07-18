@@ -164,7 +164,7 @@ export function useSaveGlobal(slug: string) {
       return saveGlobal(slug, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["global", slug] });
+      void queryClient.invalidateQueries({ queryKey: ["global", slug] });
     },
   });
 }
@@ -176,7 +176,7 @@ export function useDeleteEntry(slug: string) {
       await apiFetch(`/api/${slug}/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
   });
 }
@@ -191,7 +191,7 @@ export function useBulkDelete(slug: string) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
   });
 }
@@ -225,7 +225,7 @@ export function useCreateApiToken() {
   return useMutation({
     mutationFn: (data: { name: string; description?: string }) => createApiToken(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["api-tokens"] });
+      void queryClient.invalidateQueries({ queryKey: ["api-tokens"] });
     },
   });
 }
@@ -235,7 +235,7 @@ export function useDeleteApiToken() {
   return useMutation({
     mutationFn: (id: string) => deleteApiToken(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["api-tokens"] });
+      void queryClient.invalidateQueries({ queryKey: ["api-tokens"] });
     },
   });
 }
@@ -251,7 +251,7 @@ export function useCreateWebhook() {
       secret?: string;
     }) => createWebhook(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      void queryClient.invalidateQueries({ queryKey: ["webhooks"] });
     },
   });
 }
@@ -274,7 +274,7 @@ export function useUpdateWebhook() {
       }>;
     }) => updateWebhook(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      void queryClient.invalidateQueries({ queryKey: ["webhooks"] });
     },
   });
 }
@@ -284,7 +284,7 @@ export function useDeleteWebhook() {
   return useMutation({
     mutationFn: (id: string) => deleteWebhook(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["webhooks"] });
+      void queryClient.invalidateQueries({ queryKey: ["webhooks"] });
     },
   });
 }
@@ -302,8 +302,8 @@ export function useSaveSchema() {
       data: { fields?: FieldDefinition[]; meta?: Record<string, unknown>; label?: string };
     }) => saveSchema(type, slug, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
-      queryClient.invalidateQueries({ queryKey: ["globals"] });
+      void queryClient.invalidateQueries({ queryKey: ["collections"] });
+      void queryClient.invalidateQueries({ queryKey: ["globals"] });
     },
   });
 }

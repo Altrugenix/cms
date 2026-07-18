@@ -1,8 +1,8 @@
 import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
 
 export interface GraphQLGeneratorConfig {
-  maxPageSize?: number;
-  defaultPageSize?: number;
+  maxPageSize?: number | undefined;
+  defaultPageSize?: number | undefined;
 }
 
 export interface GraphQLSchema {

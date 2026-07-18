@@ -12,14 +12,16 @@ import type { StorageAdapter } from "./types.js";
 
 export interface S3AdapterOptions {
   bucket: string;
-  region?: string;
-  endpoint?: string;
-  credentials?: {
-    accessKeyId: string;
-    secretAccessKey: string;
-  };
-  baseDir?: string;
-  forcePathStyle?: boolean;
+  region?: string | undefined;
+  endpoint?: string | undefined;
+  credentials?:
+    | {
+        accessKeyId: string;
+        secretAccessKey: string;
+      }
+    | undefined;
+  baseDir?: string | undefined;
+  forcePathStyle?: boolean | undefined;
 }
 
 export class S3Adapter implements StorageAdapter {
@@ -32,10 +34,13 @@ export class S3Adapter implements StorageAdapter {
     this.baseDir = options.baseDir ?? "";
 
     const clientConfig: S3ClientConfig = {
-      endpoint: options.endpoint,
       forcePathStyle: options.forcePathStyle ?? !!options.endpoint,
       region: options.region ?? "us-east-1",
     };
+
+    if (options.endpoint) {
+      clientConfig.endpoint = options.endpoint;
+    }
 
     if (options.credentials) {
       clientConfig.credentials = options.credentials;

@@ -26,12 +26,12 @@ import { loadConfig } from "../server/config.js";
 const RELOAD_DEBOUNCE_MS = 300;
 
 export interface DevOptions {
-  dir?: string;
-  port?: number;
-  host?: string;
-  dbUrl?: string;
-  dbAdapter?: string;
-  vite?: boolean;
+  dir?: string | undefined;
+  port?: number | undefined;
+  host?: string | undefined;
+  dbUrl?: string | undefined;
+  dbAdapter?: string | undefined;
+  vite?: boolean | undefined;
 }
 
 async function startViteDevServer(
@@ -188,25 +188,33 @@ export async function dev(options: DevOptions): Promise<void> {
 
     if (reloadTimer) clearTimeout(reloadTimer);
 
-    reloadTimer = setTimeout(async () => {
+    reloadTimer = setTimeout(() => {
       reloadTimer = null;
       logger.info("Reloading schemas and restarting server...");
 
-      try {
-        if (currentServer) {
-          await currentServer.stop();
+      void (async () => {
+        try {
+          if (currentServer) {
+            await currentServer.stop();
+          }
+
+          const { collections, globals } = await connectAndLoad(config, adapter, logger);
+
+          logger.info(`Reloaded ${collections.length} collection(s), ${globals.length} global(s)`);
+
+          currentServer = await createAndStartApp(
+            config,
+            adapter,
+            collections,
+            globals,
+            pluginHooks,
+          );
+
+          logger.info("Server restarted successfully");
+        } catch (err) {
+          logger.error("Failed to reload:", err instanceof Error ? err.message : String(err));
         }
-
-        const { collections, globals } = await connectAndLoad(config, adapter, logger);
-
-        logger.info(`Reloaded ${collections.length} collection(s), ${globals.length} global(s)`);
-
-        currentServer = await createAndStartApp(config, adapter, collections, globals, pluginHooks);
-
-        logger.info("Server restarted successfully");
-      } catch (err) {
-        logger.error("Failed to reload:", err instanceof Error ? err.message : String(err));
-      }
+      })();
     }, RELOAD_DEBOUNCE_MS);
   }
 
@@ -214,16 +222,20 @@ export async function dev(options: DevOptions): Promise<void> {
 
   // File watching with hot-reload
   const watcher = new SchemaWatcher(schemaDir);
-  watcher.on("change", handleSchemaChange);
+  watcher.on("change", (event: SchemaChangeEvent) => {
+    void handleSchemaChange(event);
+  });
   await watcher.start();
 
-  process.on("SIGINT", async () => {
-    logger.info("Shutting down...");
-    await watcher.stop();
-    if (currentServer) await currentServer.stop();
-    if (viteServer) await viteServer.close();
-    await adapter.disconnect();
-    process.exit(0);
+  process.on("SIGINT", () => {
+    void (async () => {
+      logger.info("Shutting down...");
+      await watcher.stop();
+      if (currentServer) await currentServer.stop();
+      if (viteServer) await viteServer.close();
+      await adapter.disconnect();
+      process.exit(0);
+    })();
   });
 
   await new Promise(() => {});

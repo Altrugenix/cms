@@ -49,3 +49,14 @@ jobs:
             echo "::error::Admin JS bundle exceeds 600KB threshold (${ADMIN_KB}KB)"
             exit 1
           fi
+      - name: Secret scanning (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+      - name: Dependency audit
+        run: pnpm audit --audit-level=moderate
+        continue-on-error: true
+      - name: Fallow audit
+        run: pnpm fallow audit --quiet
+        continue-on-error: true

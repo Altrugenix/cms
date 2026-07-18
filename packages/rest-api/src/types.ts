@@ -11,7 +11,7 @@ export interface RouteHandlerContext {
 export interface RouteHandlerResult {
   statusCode: number;
   body: unknown;
-  headers?: Record<string, string>;
+  headers?: Record<string, string> | undefined;
 }
 
 export type RouteHandler = (context: RouteHandlerContext) => Promise<RouteHandlerResult>;
@@ -41,15 +41,15 @@ export type AfterHook = (
 ) => Promise<RouteHandlerResult>;
 
 export interface MiddlewareHooks {
-  before?: BeforeHook[];
-  after?: AfterHook[];
+  before?: BeforeHook[] | undefined;
+  after?: AfterHook[] | undefined;
 }
 
 export interface RouteGeneratorConfig {
-  basePath?: string;
-  maxPageSize?: number;
-  defaultPageSize?: number;
-  hooks?: MiddlewareHooks;
+  basePath?: string | undefined;
+  maxPageSize?: number | undefined;
+  defaultPageSize?: number | undefined;
+  hooks?: MiddlewareHooks | undefined;
 }
 
 export type CreateCollectionRouter = (

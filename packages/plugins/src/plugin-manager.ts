@@ -124,14 +124,14 @@ export class PluginManager {
   getAdminPanels(): Array<{
     slug: string;
     label: string;
-    icon?: string;
+    icon?: string | undefined;
     component: string;
     plugin: string;
   }> {
     const panels: Array<{
       slug: string;
       label: string;
-      icon?: string;
+      icon?: string | undefined;
       component: string;
       plugin: string;
     }> = [];

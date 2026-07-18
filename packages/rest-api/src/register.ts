@@ -43,8 +43,10 @@ export function registerRoutes(router: RouterAdapter, routes: RouteDefinition[])
             }
             r.send(result.body);
           })
-          .catch((err: Error) => {
-            reply.status(500).send({ error: err.message ?? "Internal server error" });
+          .catch((err: unknown) => {
+            reply
+              .status(500)
+              .send({ error: err instanceof Error ? err.message : "Internal server error" });
           });
       },
       method: route.method,

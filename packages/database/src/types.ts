@@ -1,10 +1,10 @@
 export interface QueryOptions {
   limit?: number;
   offset?: number;
-  sort?: Record<string, "asc" | "desc">;
-  where?: Record<string, unknown>;
-  select?: string[];
-  populate?: string[];
+  sort?: Record<string, "asc" | "desc"> | undefined;
+  where?: Record<string, unknown> | undefined;
+  select?: string[] | undefined;
+  populate?: string[] | undefined;
 }
 
 export interface Migration {
@@ -12,7 +12,7 @@ export interface Migration {
   name: string;
   up: string;
   down: string;
-  executedAt?: Date;
+  executedAt?: Date | undefined;
 }
 
 export interface ExistingSchema {

@@ -6,9 +6,9 @@ export interface GeneratedFile {
 }
 
 export interface GenerationOptions {
-  collections?: CollectionDefinition[];
-  globals?: GlobalDefinition[];
-  components?: ComponentDefinition[];
+  collections?: CollectionDefinition[] | undefined;
+  globals?: GlobalDefinition[] | undefined;
+  components?: ComponentDefinition[] | undefined;
   outputDir: string;
 }
 

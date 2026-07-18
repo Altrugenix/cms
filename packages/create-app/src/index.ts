@@ -161,7 +161,7 @@ Creates a new Arche CMS project in the specified directory.
   scaffold(projectDir, { dbAdapter, defaultLocale });
 }
 
-main().catch((err) => {
-  console.error("Error:", err.message);
+main().catch((err: unknown) => {
+  console.error("Error:", err instanceof Error ? err.message : String(err));
   process.exit(1);
 });

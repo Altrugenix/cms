@@ -22,13 +22,13 @@ interface WithSlug {
 
 export interface SchemaLoaderOptions {
   baseDir: string;
-  watch?: boolean;
-  onBeforeLoad?: () => Promise<void>;
+  watch?: boolean | undefined;
+  onBeforeLoad?: (() => Promise<void>) | undefined;
   onAfterLoad?: (schema: {
     collections: Map<string, CollectionDefinition>;
     globals: Map<string, GlobalDefinition>;
     components: Map<string, ComponentDefinition>;
-  }) => Promise<void>;
+  }) => Promise<void> | undefined;
 }
 
 export interface LoadedSchema {
@@ -86,7 +86,7 @@ export class SchemaLoader {
       );
 
       for (const mod of mods) {
-        const def = mod.default ?? mod;
+        const def = ((mod as Record<string, unknown>).default ?? mod) as Record<string, unknown>;
         if (validate(def)) {
           map.set(def.slug, def);
         }

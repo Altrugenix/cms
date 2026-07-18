@@ -6,8 +6,8 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export interface BuildOptions {
-  clean?: boolean;
-  outDir?: string;
+  clean?: boolean | undefined;
+  outDir?: string | undefined;
 }
 
 export function printBuildHelp(): void {

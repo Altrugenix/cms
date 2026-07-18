@@ -25,7 +25,7 @@ function findAdminDir(): string | null {
 }
 
 export interface AdminStaticOptions {
-  adminDir?: string;
+  adminDir?: string | undefined;
 }
 
 export async function registerAdminStatic(

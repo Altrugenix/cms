@@ -21,12 +21,17 @@ export interface PluginHooks {
   getAdminPanels(): Array<{
     slug: string;
     label: string;
-    icon?: string;
+    icon?: string | undefined;
     component: string;
     plugin: string;
   }>;
   getAll(): Array<{
-    plugin: { slug: string; name: string; description?: string; version?: string };
+    plugin: {
+      slug: string;
+      name: string;
+      description?: string | undefined;
+      version?: string | undefined;
+    };
     enabled: boolean;
   }>;
 }
@@ -64,11 +69,11 @@ export function ensureDevAuthSecret(logger: Logger): void {
 }
 
 export function applyCliOverrides(options: {
-  port?: number;
-  host?: string;
-  dir?: string;
-  dbUrl?: string;
-  dbAdapter?: string;
+  port?: number | undefined;
+  host?: string | undefined;
+  dir?: string | undefined;
+  dbUrl?: string | undefined;
+  dbAdapter?: string | undefined;
 }): void {
   if (options.port) process.env.PORT = String(options.port);
   if (options.host) process.env.HOST = options.host;

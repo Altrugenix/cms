@@ -13,11 +13,11 @@ import {
 import { loadConfig } from "../server/config.js";
 
 export interface StartOptions {
-  dir?: string;
-  port?: number;
-  host?: string;
-  dbUrl?: string;
-  dbAdapter?: string;
+  dir?: string | undefined;
+  port?: number | undefined;
+  host?: string | undefined;
+  dbUrl?: string | undefined;
+  dbAdapter?: string | undefined;
 }
 
 export function printStartHelp(): void {
@@ -88,11 +88,13 @@ export async function start(options: StartOptions): Promise<void> {
 
     const server = await createAndStartApp(config, adapter, collections, globals, pluginHooks);
 
-    process.on("SIGINT", async () => {
-      logger.info("Shutting down...");
-      await server.stop();
-      await adapter.disconnect();
-      process.exit(0);
+    process.on("SIGINT", () => {
+      void (async () => {
+        logger.info("Shutting down...");
+        await server.stop();
+        await adapter.disconnect();
+        process.exit(0);
+      })();
     });
 
     await new Promise(() => {});

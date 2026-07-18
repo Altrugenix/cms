@@ -50,7 +50,7 @@ export async function dispatchWebhooks(
     const body = JSON.stringify({ collection, data, event, id: documentId, timestamp });
 
     for (const webhook of rows) {
-      const eventList: string[] = JSON.parse(webhook.events ?? "[]");
+      const eventList: string[] = JSON.parse(webhook.events ?? "[]") as string[];
       if (!eventList.includes(event)) continue;
 
       fireWebhook(webhook.url, body, webhook.secret).catch(() => {

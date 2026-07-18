@@ -9,9 +9,9 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 
 export interface TypeGenOptions {
-  collections?: CollectionDefinition[];
-  globals?: GlobalDefinition[];
-  components?: ComponentDefinition[];
+  collections?: CollectionDefinition[] | undefined;
+  globals?: GlobalDefinition[] | undefined;
+  components?: ComponentDefinition[] | undefined;
   outputPath: string;
 }
 

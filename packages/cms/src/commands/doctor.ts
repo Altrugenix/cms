@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 export interface DoctorOptions {
-  dir?: string;
+  dir?: string | undefined;
 }
 
 export function printDoctorHelp(): void {

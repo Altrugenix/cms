@@ -5,7 +5,7 @@ export interface R2AdapterOptions {
   accountId: string;
   accessKeyId: string;
   secretAccessKey: string;
-  baseDir?: string;
+  baseDir?: string | undefined;
 }
 
 export class R2Adapter extends S3Adapter {

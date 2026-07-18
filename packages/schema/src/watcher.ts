@@ -12,7 +12,7 @@ export interface SchemaChangeEvent {
   type: "added" | "changed" | "removed";
   category: SchemaCategory;
   slug: string;
-  definition?: SchemaDefinition;
+  definition?: SchemaDefinition | undefined;
 }
 
 const CATEGORY_DIRS: SchemaCategory[] = ["collections", "globals", "components"];
@@ -96,13 +96,13 @@ export class SchemaWatcher extends EventEmitter {
     try {
       const url = new URL(pathToFileURL(fullPath).href);
       url.searchParams.set("t", String(Date.now()));
-      const mod = await import(url.href);
-      const def = mod.default ?? mod;
+      const mod = (await import(url.href)) as Record<string, unknown>;
+      const def = (mod.default ?? mod) as Record<string, unknown>;
       if (def && typeof def === "object" && "slug" in def) {
         this.emit("change", {
           category,
-          definition: def as SchemaDefinition,
-          slug: def.slug ?? slug,
+          definition: def as unknown as SchemaDefinition,
+          slug: (def.slug as string) ?? slug,
           type: "changed",
         } satisfies SchemaChangeEvent);
       }

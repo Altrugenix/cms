@@ -5,16 +5,16 @@ export type Resolver<T> = () => Promise<T>;
 interface Registration<T> {
   factory: Factory<T>;
   singleton: boolean;
-  instance?: T;
+  instance?: T | undefined;
 }
 
 export interface ContainerOptions {
-  parent?: Container;
+  parent?: Container | undefined;
 }
 
 export class Container {
   private readonly registrations = new Map<string, Registration<unknown>>();
-  private readonly parent?: Container;
+  private readonly parent: Container | undefined;
 
   constructor(options?: ContainerOptions) {
     this.parent = options?.parent;

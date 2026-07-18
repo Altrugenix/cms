@@ -91,9 +91,9 @@ function generateCollectionSchema(collection: CollectionDefinition): Record<stri
 }
 
 export interface OpenApiOptions {
-  title?: string;
-  version?: string;
-  description?: string;
+  title?: string | undefined;
+  version?: string | undefined;
+  description?: string | undefined;
 }
 
 export function generateOpenApiSpec(

@@ -37,24 +37,31 @@ function normalizeOptions(opts: unknown[]): string[] {
 export interface AppOptions {
   config: ServerConfig;
   adapter: DatabaseAdapter;
-  storageAdapter?: StorageAdapter;
-  collections?: CollectionDefinition[];
-  globals?: GlobalDefinition[];
-  pluginManager?: {
-    runHook(hookName: "beforeRouteRegister" | "afterRouteRegister"): Promise<void>;
-    getCustomFields(): Record<string, unknown[]>;
-    getAdminPanels(): Array<{
-      slug: string;
-      label: string;
-      icon?: string;
-      component: string;
-      plugin: string;
-    }>;
-    getAll(): Array<{
-      plugin: { slug: string; name: string; description?: string; version?: string };
-      enabled: boolean;
-    }>;
-  };
+  storageAdapter?: StorageAdapter | undefined;
+  collections?: CollectionDefinition[] | undefined;
+  globals?: GlobalDefinition[] | undefined;
+  pluginManager?:
+    | {
+        runHook(hookName: "beforeRouteRegister" | "afterRouteRegister"): Promise<void>;
+        getCustomFields(): Record<string, unknown[]>;
+        getAdminPanels(): Array<{
+          slug: string;
+          label: string;
+          icon?: string | undefined;
+          component: string;
+          plugin: string;
+        }>;
+        getAll(): Array<{
+          plugin: {
+            slug: string;
+            name: string;
+            description?: string | undefined;
+            version?: string | undefined;
+          };
+          enabled: boolean;
+        }>;
+      }
+    | undefined;
 }
 
 export async function createApp(options: AppOptions): Promise<FastifyInstance> {

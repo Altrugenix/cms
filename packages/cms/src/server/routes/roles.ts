@@ -90,8 +90,9 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
         permissions?: Array<{ action: string; resource: string }>;
       };
       const role = await ac.updateRole(id, {
-        ...body,
-        permissions: body.permissions as Permission[] | undefined,
+        ...(body.name != null && { name: body.name }),
+        ...(body.description != null && { description: body.description }),
+        ...(body.permissions != null && { permissions: body.permissions as Permission[] }),
       });
       if (!role) return reply.status(404).send({ error: "Role not found" });
       return reply.send(role);

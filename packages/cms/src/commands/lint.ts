@@ -3,8 +3,8 @@
 import { SchemaLoader, validateCollection } from "@arche-cms/schema";
 
 export interface LintOptions {
-  dir?: string;
-  fix?: boolean;
+  dir?: string | undefined;
+  fix?: boolean | undefined;
 }
 
 export function printLintHelp(): void {

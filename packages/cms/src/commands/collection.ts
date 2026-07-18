@@ -7,7 +7,7 @@ import { collectionTemplate, collectionCreateHelp } from "../templates/templates
 
 export interface CollectionCreateOptions {
   slug: string;
-  dir?: string;
+  dir?: string | undefined;
 }
 
 export async function collectionCreate(options: CollectionCreateOptions): Promise<void> {

@@ -4,8 +4,8 @@ import { generateTypesToFile } from "@arche-cms/generators";
 import { SchemaLoader } from "@arche-cms/schema";
 
 export interface TypegenOptions {
-  dir?: string;
-  out?: string;
+  dir?: string | undefined;
+  out?: string | undefined;
 }
 
 export function printTypegenHelp(): void {

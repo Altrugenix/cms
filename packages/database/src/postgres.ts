@@ -4,8 +4,8 @@ import type { DatabaseAdapter, ExistingSchema, Migration, QueryOptions } from ".
 
 export interface PostgresAdapterOptions {
   connectionString: string;
-  poolSize?: number;
-  idleTimeoutMs?: number;
+  poolSize?: number | undefined;
+  idleTimeoutMs?: number | undefined;
 }
 
 export class PostgresAdapter implements DatabaseAdapter {
@@ -41,7 +41,7 @@ export class PostgresAdapter implements DatabaseAdapter {
     _options?: QueryOptions,
   ): Promise<Record<string, unknown> | null> {
     const result = await this.query(`SELECT * FROM "${collection}" WHERE id = $1`, [id]);
-    return result.rows[0] ?? null;
+    return (result.rows[0] as Record<string, unknown>) ?? null;
   }
 
   async findMany(
@@ -59,7 +59,7 @@ export class PostgresAdapter implements DatabaseAdapter {
       if (Array.isArray(val)) {
         const placeholders = val.map(() => `$${++paramIndex}`);
         conditions.push(`"${key}" IN (${placeholders.join(", ")})`);
-        values.push(...val);
+        values.push(...(val as unknown[]));
       } else {
         paramIndex++;
         conditions.push(`"${key}" = $${paramIndex}`);
@@ -73,7 +73,7 @@ export class PostgresAdapter implements DatabaseAdapter {
       `SELECT COUNT(*) as count FROM "${collection}" ${whereClause}`,
       values,
     );
-    const total = Number(countResult.rows[0]?.count ?? 0);
+    const total = Number((countResult.rows[0] as Record<string, unknown>)?.count ?? 0);
 
     const sortClause = options?.sort
       ? `ORDER BY ${Object.entries(options.sort)
@@ -89,7 +89,7 @@ export class PostgresAdapter implements DatabaseAdapter {
       values,
     );
 
-    return { data: dataResult.rows, total };
+    return { data: dataResult.rows as Array<Record<string, unknown>>, total };
   }
 
   async create(
@@ -97,7 +97,7 @@ export class PostgresAdapter implements DatabaseAdapter {
     data: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const keys = Object.keys(data);
-    const values = Object.values(data);
+    const values = Object.values(data) as unknown[];
     const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
     const columns = keys.map((k) => `"${k}"`).join(", ");
 
@@ -114,14 +114,14 @@ export class PostgresAdapter implements DatabaseAdapter {
     data: Record<string, unknown>,
   ): Promise<Record<string, unknown> | null> {
     const keys = Object.keys(data);
-    const values = Object.values(data);
+    const values = Object.values(data) as unknown[];
     const setClause = keys.map((k, i) => `"${k}" = $${i + 1}`).join(", ");
 
     const result = await this.query(
       `UPDATE "${collection}" SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`,
       [...values, id],
     );
-    return result.rows[0] ?? null;
+    return (result.rows[0] as Record<string, unknown>) ?? null;
   }
 
   async delete(collection: string, id: string): Promise<boolean> {
@@ -180,7 +180,7 @@ export class PostgresAdapter implements DatabaseAdapter {
 
   async getExecutedMigrations(): Promise<string[]> {
     const result = await this.query("SELECT id FROM __cms_migrations ORDER BY executed_at ASC");
-    return result.rows.map((r) => r.id as string);
+    return result.rows.map((r) => (r as Record<string, unknown>).id as string);
   }
 
   async getExistingSchema(): Promise<ExistingSchema> {
@@ -189,8 +189,9 @@ export class PostgresAdapter implements DatabaseAdapter {
       "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name LIKE '__cms_%' ORDER BY table_name, ordinal_position",
     );
     for (const row of result.rows) {
-      const tableName = row.table_name as string;
-      const columnName = row.column_name as string;
+      const record = row as Record<string, unknown>;
+      const tableName = record.table_name as string;
+      const columnName = record.column_name as string;
       if (!tables.has(tableName)) tables.set(tableName, []);
       const cols = tables.get(tableName);
       if (cols) cols.push(columnName);
