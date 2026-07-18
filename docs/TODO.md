@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: Milestone 18 complete — code quality guards in place. ESLint configured with perfectionist (import/object sorting), no-secrets, security, vitest plugins, plus max-lines (300), max-params (4), max-depth (3) rules. 0 errors, 71 warnings. Commitlint enforces conventional commits. Pre-push hook runs typecheck + lint + tests. CI adds format:check, ESLint, build verification, bundle size check. Fallow maxCrap lowered to 30. All 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass.
+> Project status: Milestone 18 complete — code quality guards in place. ESLint configured with perfectionist (import/object sorting), no-secrets, security, vitest plugins, plus max-lines (300), max-params (4), max-depth (3) rules. 0 errors, 71 warnings. Commitlint enforces conventional commits. Pre-push hook runs typecheck + lint + tests. CI adds format:check, ESLint, build verification, bundle size check, gitleaks secret scanning, pnpm audit, fallow audit. Fallow maxCrap lowered to 30. CODEOWNERS added. Stricter TypeScript ESLint rules enabled (no-floating-promises, no-misused-promises, no-unsafe-*, only-throw-error). Explicit `| undefined` on all optional properties. All 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass.
 
 ---
 
@@ -895,7 +895,7 @@ Add comprehensive code quality automation and enforcements to prevent regression
 - [x] Add workflow step: build check (ensure all packages build successfully)
 - [x] Add workflow step: bundle size check with warning threshold (admin JS < 600KB)
 - [ ] Add workflow step: dependency diff check (deferred)
-- [ ] Add workflow step: `fallow audit` full project scan (deferred)
+- [x] Add workflow step: `fallow audit` full project scan
 - [x] Update CI to run on PRs to main (already configured)
 
 ### Fallow Config — Quality Thresholds
@@ -911,8 +911,8 @@ Add comprehensive code quality automation and enforcements to prevent regression
 
 - [x] Add `eslint-plugin-security` — detect common security antipatterns (eval, `child_process.exec` with interpolation, regex DoS)
 - [x] Add `eslint-plugin-no-unsanitized` — prevent XSS via `dangerouslySetInnerHTML` and `innerHTML`
-- [ ] Run `npm audit` in CI — fail on critical/moderate severity (deferred)
-- [ ] Add secret scanning step in CI (via `trufflehog` or `gitleaks`) (deferred)
+- [x] Run `npm audit` in CI — fail on critical/moderate severity
+- [x] Add secret scanning step in CI (via `gitleaks`)
 
 ### Testing Quality
 
@@ -927,7 +927,7 @@ Add comprehensive code quality automation and enforcements to prevent regression
 
 - [ ] Add `// @tsdoc` linting for public API surface (deferred)
 - [ ] Add README linting step (deferred)
-- [ ] Add CODEOWNERS for package-level ownership (deferred)
+- [x] Add CODEOWNERS for package-level ownership
 
 ### Verification
 
