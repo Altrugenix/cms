@@ -4,6 +4,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 import { AccessControl } from "@arche-cms/permissions";
 
+import { recordActivity } from "../lib/activity.js";
+import { dispatchWebhooks } from "../lib/webhooks.js";
 import {
   createRoleBodySchema,
   errorSchema,
@@ -21,15 +23,28 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
     {
       preHandler: [fastify.authenticate],
       schema: {
-        description: "Returns all roles with their permissions",
+        description: "Returns all roles with their permissions (with pagination)",
+        querystring: {
+          properties: {
+            limit: { description: "Max items per page", type: "number" },
+            offset: { description: "Number of items to skip", type: "number" },
+          },
+          type: "object",
+        },
         response: roleListResponseSchema,
         summary: "List roles",
         tags: ["Roles"],
       },
     },
-    async (_request: FastifyRequest, reply: FastifyReply) => {
-      const roles = await ac.getAllRoles();
-      return reply.send({ data: roles, total: roles.length });
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const query = request.query as { limit?: string; offset?: string };
+      const limit = query.limit ? Math.max(1, Number(query.limit)) : undefined;
+      const offset = query.offset ? Math.max(0, Number(query.offset)) : undefined;
+      const allRoles = await ac.getAllRoles();
+      const total = allRoles.length;
+      const roles =
+        limit !== undefined ? allRoles.slice(offset ?? 0, (offset ?? 0) + limit) : allRoles;
+      return reply.send({ data: roles, total });
     },
   );
 
@@ -83,6 +98,19 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
           body.description,
           body.permissions as Permission[],
         );
+        const roleRec = role as unknown as Record<string, unknown>;
+        const roleId = roleRec.id != null ? String(roleRec.id) : undefined;
+        recordActivity(adapter, {
+          action: "create",
+          collection: "roles",
+          documentId: roleId,
+          label: body.name,
+        }).catch((e: unknown) => {
+          console.error("[activity] record failed:", e);
+        });
+        dispatchWebhooks(adapter, "role:created", "roles", roleId, roleRec).catch((e: unknown) => {
+          console.error("[webhooks] dispatch failed:", e);
+        });
         return reply.status(201).send(role);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to create role";
@@ -128,6 +156,23 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
         ...(body.permissions != null && { permissions: body.permissions as Permission[] }),
       });
       if (!role) return reply.status(404).send({ error: "Role not found" });
+      recordActivity(adapter, {
+        action: "update",
+        collection: "roles",
+        documentId: id,
+        label: body.name ?? "",
+      }).catch((e: unknown) => {
+        console.error("[activity] record failed:", e);
+      });
+      dispatchWebhooks(
+        adapter,
+        "role:updated",
+        "roles",
+        id,
+        role as unknown as Record<string, unknown>,
+      ).catch((e: unknown) => {
+        console.error("[webhooks] dispatch failed:", e);
+      });
       return reply.send(role);
     },
   );
@@ -155,6 +200,16 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
       const { id } = request.params as { id: string };
       const deleted = await ac.deleteRole(id);
       if (!deleted) return reply.status(404).send({ error: "Role not found" });
+      recordActivity(adapter, {
+        action: "delete",
+        collection: "roles",
+        documentId: id,
+      }).catch((e: unknown) => {
+        console.error("[activity] record failed:", e);
+      });
+      dispatchWebhooks(adapter, "role:deleted", "roles", id).catch((e: unknown) => {
+        console.error("[webhooks] dispatch failed:", e);
+      });
       return reply.send({ message: "Role deleted" });
     },
   );

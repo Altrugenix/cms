@@ -10,6 +10,7 @@ import { resolve } from "node:path";
 
 import type { ServerConfig } from "../config.js";
 
+import { normalizeOptions } from "../lib/utils.js";
 import {
   errorSchema,
   messageResponseSchema,
@@ -46,14 +47,6 @@ interface GlobalMeta {
   slug: string;
   label: string;
   fields: Array<Record<string, unknown>>;
-}
-
-function normalizeOptions(opts: unknown[]): string[] {
-  return opts.map((o) => {
-    if (typeof o === "string") return o;
-    if (o && typeof o === "object" && "value" in o) return String((o as { value: string }).value);
-    return String(o);
-  });
 }
 
 const SLUG_PATTERN = /^[a-zA-Z0-9_-]+$/;

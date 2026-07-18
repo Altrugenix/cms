@@ -4,6 +4,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 import { randomUUID } from "node:crypto";
 
+import { recordActivity } from "../lib/activity.js";
+import { dispatchWebhooks } from "../lib/webhooks.js";
 import {
   createMediaFolderBodySchema,
   errorSchema,
@@ -97,6 +99,8 @@ export function registerMediaRoutes(
         querystring: {
           properties: {
             folderId: { description: "Filter by folder ID (or 'null' for root)", type: "string" },
+            limit: { description: "Max items per page", type: "number" },
+            offset: { description: "Number of items to skip", type: "number" },
           },
           type: "object",
         },
@@ -108,6 +112,8 @@ export function registerMediaRoutes(
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const query = request.query as Record<string, string>;
+      const limit = query.limit ? Math.max(1, Number(query.limit)) : undefined;
+      const offset = query.offset ? Math.max(0, Number(query.offset)) : undefined;
       if (query.folderId) {
         const id = safeInteger(query.folderId);
         if (id === null) {
@@ -117,17 +123,25 @@ export function registerMediaRoutes(
           sort: { createdAt: "desc" as const },
           where: { folderId: id },
         });
-        return reply.send({ data: results.data, total: results.total });
+        const data =
+          limit !== undefined
+            ? results.data.slice(offset ?? 0, (offset ?? 0) + limit)
+            : results.data;
+        return reply.send({ data, total: results.total });
       }
       if (query.folderId === "" || query.folderId === "null") {
         const rows = await adapter.raw(
           `SELECT * FROM "${MEDIA_TABLE}" WHERE "folderId" IS NULL ORDER BY "createdAt" DESC`,
         );
-        const data = rows as Record<string, unknown>[];
-        return reply.send({ data, total: data.length });
+        const allData = rows as Record<string, unknown>[];
+        const data =
+          limit !== undefined ? allData.slice(offset ?? 0, (offset ?? 0) + limit) : allData;
+        return reply.send({ data, total: allData.length });
       }
       const results = await adapter.findMany(MEDIA_TABLE, { sort: { createdAt: "desc" as const } });
-      return reply.send({ data: results.data, total: results.total });
+      const data =
+        limit !== undefined ? results.data.slice(offset ?? 0, (offset ?? 0) + limit) : results.data;
+      return reply.send({ data, total: results.total });
     },
   );
 
@@ -227,6 +241,20 @@ export function registerMediaRoutes(
         updatedAt: now,
       });
 
+      const rec = record as Record<string, unknown>;
+      const docId = rec.id != null ? String(rec.id) : undefined;
+      recordActivity(adapter, {
+        action: "create",
+        collection: "media",
+        documentId: docId,
+        label: body.fileName,
+      }).catch((e: unknown) => {
+        console.error("[activity] record failed:", e);
+      });
+      dispatchWebhooks(adapter, "media:created", "media", docId, rec).catch((e: unknown) => {
+        console.error("[webhooks] dispatch failed:", e);
+      });
+
       return reply.status(201).send(record);
     },
   );
@@ -274,6 +302,19 @@ export function registerMediaRoutes(
       updates.updatedAt = new Date().toISOString();
 
       const updated = await adapter.update(MEDIA_TABLE, id, updates);
+
+      recordActivity(adapter, {
+        action: "update",
+        collection: "media",
+        documentId: id,
+        label: (updates.originalName as string) ?? "",
+      }).catch((e: unknown) => {
+        console.error("[activity] record failed:", e);
+      });
+      dispatchWebhooks(adapter, "media:updated", "media", id, updates).catch((e: unknown) => {
+        console.error("[webhooks] dispatch failed:", e);
+      });
+
       return reply.send(updated);
     },
   );
@@ -302,6 +343,18 @@ export function registerMediaRoutes(
       const typed = record as unknown as MediaRecord;
       await storage.delete(typed.filename);
       await adapter.delete(MEDIA_TABLE, id);
+
+      recordActivity(adapter, {
+        action: "delete",
+        collection: "media",
+        documentId: id,
+        label: typed.originalName,
+      }).catch((e: unknown) => {
+        console.error("[activity] record failed:", e);
+      });
+      dispatchWebhooks(adapter, "media:deleted", "media", id).catch((e: unknown) => {
+        console.error("[webhooks] dispatch failed:", e);
+      });
 
       return reply.send({ message: "Media deleted" });
     },

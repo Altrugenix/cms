@@ -1,6 +1,9 @@
 import type { DatabaseAdapter } from "@arche-cms/database";
 import type { CollectionDefinition } from "@arche-cms/types";
 
+import { recordActivity } from "../lib/activity.js";
+import { dispatchWebhooks } from "../lib/webhooks.js";
+
 function collectionTableName(slug: string): string {
   return `__cms_${slug.replace(/-/g, "_")}`;
 }
@@ -32,6 +35,20 @@ export function createScheduledPublisher(
               _publishedAt: now,
               _status: "published",
             } as Record<string, unknown>);
+            const docId = String(row.id);
+            recordActivity(adapter, {
+              action: "update",
+              collection: collection.slug,
+              documentId: docId,
+              label: "auto-published",
+            }).catch((e: unknown) => {
+              console.error("[activity] record failed:", e);
+            });
+            dispatchWebhooks(adapter, "collection:published", collection.slug, docId).catch(
+              (e: unknown) => {
+                console.error("[webhooks] dispatch failed:", e);
+              },
+            );
           }
         } catch (e) {
           console.error("[scheduled-publisher] publish failed:", e);

@@ -13,6 +13,18 @@ const WEBHOOK_EVENTS = [
   { label: "Entry Created", value: "collection:created" },
   { label: "Entry Updated", value: "collection:updated" },
   { label: "Entry Deleted", value: "collection:deleted" },
+  { label: "Entry Published", value: "collection:published" },
+  { label: "Entry Unpublished", value: "collection:unpublished" },
+  { label: "Global Updated", value: "global:updated" },
+  { label: "Media Created", value: "media:created" },
+  { label: "Media Updated", value: "media:updated" },
+  { label: "Media Deleted", value: "media:deleted" },
+  { label: "User Created", value: "user:created" },
+  { label: "User Updated", value: "user:updated" },
+  { label: "User Deleted", value: "user:deleted" },
+  { label: "Role Created", value: "role:created" },
+  { label: "Role Updated", value: "role:updated" },
+  { label: "Role Deleted", value: "role:deleted" },
 ];
 
 export const Route = createRoute({

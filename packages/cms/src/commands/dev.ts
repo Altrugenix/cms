@@ -227,7 +227,7 @@ export async function dev(options: DevOptions): Promise<void> {
   });
   await watcher.start();
 
-  process.on("SIGINT", () => {
+  const shutdown = () => {
     void (async () => {
       logger.info("Shutting down...");
       await watcher.stop();
@@ -236,7 +236,10 @@ export async function dev(options: DevOptions): Promise<void> {
       await adapter.disconnect();
       process.exit(0);
     })();
-  });
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 
   await new Promise(() => {});
 }

@@ -4,6 +4,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 import { AuthService } from "@arche-cms/auth";
 
+import { recordActivity } from "../lib/activity.js";
+import { dispatchWebhooks } from "../lib/webhooks.js";
 import {
   createUserBodySchema,
   errorSchema,
@@ -24,15 +26,28 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("read", "users")],
       schema: {
-        description: "Returns all registered users",
+        description: "Returns all registered users (with pagination)",
+        querystring: {
+          properties: {
+            limit: { description: "Max items per page", type: "number" },
+            offset: { description: "Number of items to skip", type: "number" },
+          },
+          type: "object",
+        },
         response: userListResponseSchema,
         summary: "List users",
         tags: ["Users"],
       },
     },
-    async (_request: FastifyRequest, reply: FastifyReply) => {
-      const users = await authService.listUsers();
-      return reply.send({ data: users, total: users.length });
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const query = request.query as { limit?: string; offset?: string };
+      const limit = query.limit ? Math.max(1, Number(query.limit)) : undefined;
+      const offset = query.offset ? Math.max(0, Number(query.offset)) : undefined;
+      const allUsers = await authService.listUsers();
+      const total = allUsers.length;
+      const users =
+        limit !== undefined ? allUsers.slice(offset ?? 0, (offset ?? 0) + limit) : allUsers;
+      return reply.send({ data: users, total });
     },
   );
 
@@ -58,6 +73,24 @@ export function registerUserRoutes(
       }
       try {
         const user = await authService.register(body);
+        const userId = user.user?.id != null ? String(user.user.id) : undefined;
+        recordActivity(adapter, {
+          action: "create",
+          collection: "users",
+          documentId: userId,
+          label: body.email,
+        }).catch((e: unknown) => {
+          console.error("[activity] record failed:", e);
+        });
+        dispatchWebhooks(
+          adapter,
+          "user:created",
+          "users",
+          userId,
+          user.user as unknown as Record<string, unknown>,
+        ).catch((e: unknown) => {
+          console.error("[webhooks] dispatch failed:", e);
+        });
         return reply.status(201).send({ user: user.user });
       } catch (error) {
         const msg = error instanceof Error ? error.message : "User creation failed";
@@ -122,6 +155,23 @@ export function registerUserRoutes(
 
       const user = await authService.updateUser(id, body);
       if (!user) return reply.status(404).send({ error: "User not found" });
+      recordActivity(adapter, {
+        action: "update",
+        collection: "users",
+        documentId: id,
+        label: body.email ?? "",
+      }).catch((e: unknown) => {
+        console.error("[activity] record failed:", e);
+      });
+      dispatchWebhooks(
+        adapter,
+        "user:updated",
+        "users",
+        id,
+        user as unknown as Record<string, unknown>,
+      ).catch((e: unknown) => {
+        console.error("[webhooks] dispatch failed:", e);
+      });
       return reply.send(user);
     },
   );
@@ -149,6 +199,16 @@ export function registerUserRoutes(
       const { id } = request.params as { id: string };
       const deleted = await authService.deleteUser(id);
       if (!deleted) return reply.status(404).send({ error: "User not found" });
+      recordActivity(adapter, {
+        action: "delete",
+        collection: "users",
+        documentId: id,
+      }).catch((e: unknown) => {
+        console.error("[activity] record failed:", e);
+      });
+      dispatchWebhooks(adapter, "user:deleted", "users", id).catch((e: unknown) => {
+        console.error("[webhooks] dispatch failed:", e);
+      });
       return reply.send({ message: "User deleted" });
     },
   );
