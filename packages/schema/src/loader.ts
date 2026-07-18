@@ -91,8 +91,10 @@ export class SchemaLoader {
           map.set(def.slug, def);
         }
       }
-    } catch {
-      // Directory doesn't exist yet
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        console.error(`[SchemaLoader] Error loading ${dirName} from ${dir}:`, err);
+      }
     }
 
     return map;
