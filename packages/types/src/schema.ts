@@ -14,41 +14,51 @@ export interface CollectionDefinition {
   slug: string;
   labels: Labels;
   fields: FieldDefinition[];
-  timestamps?: Partial<CollectionTimestamps>;
-  auth?: boolean;
-  admin?: {
-    group?: string;
-    defaultSort?: string;
-    defaultPageSize?: number;
-    hide?: boolean;
-    description?: string;
-    useAsTitle?: string;
-  };
-  versions?: {
-    drafts: boolean;
-    maxPerDoc?: number;
-    softDelete?: boolean;
-    scheduledPublishing?: boolean;
-  };
-  slugField?: {
-    source?: string;
-    unique?: boolean;
-  };
-  localization?: {
-    locales: string[];
-    defaultLocale: string;
-  };
+  timestamps?: Partial<CollectionTimestamps> | undefined;
+  auth?: boolean | undefined;
+  admin?:
+    | {
+        group?: string | undefined;
+        defaultSort?: string | undefined;
+        defaultPageSize?: number | undefined;
+        hide?: boolean | undefined;
+        description?: string | undefined;
+        useAsTitle?: string | undefined;
+      }
+    | undefined;
+  versions?:
+    | {
+        drafts: boolean;
+        maxPerDoc?: number | undefined;
+        softDelete?: boolean | undefined;
+        scheduledPublishing?: boolean | undefined;
+      }
+    | undefined;
+  slugField?:
+    | {
+        source?: string | undefined;
+        unique?: boolean | undefined;
+      }
+    | undefined;
+  localization?:
+    | {
+        locales: string[];
+        defaultLocale: string;
+      }
+    | undefined;
 }
 
 export interface GlobalDefinition {
   slug: string;
   label: string;
   fields: FieldDefinition[];
-  admin?: {
-    group?: string;
-    description?: string;
-    hide?: boolean;
-  };
+  admin?:
+    | {
+        group?: string | undefined;
+        description?: string | undefined;
+        hide?: boolean | undefined;
+      }
+    | undefined;
 }
 
 export interface ComponentDefinition {

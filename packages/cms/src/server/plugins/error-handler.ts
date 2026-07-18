@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { FastifyError } from "fastify";
+
 import { AppError } from "../lib/errors.js";
 
 export function registerErrorHandler(fastify: FastifyInstance): void {

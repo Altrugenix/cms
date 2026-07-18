@@ -1,14 +1,23 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import type { FastifyInstance } from "fastify";
 import type { DatabaseAdapter } from "@arche-cms/database";
-import { createApp } from "../src/server/app.js";
+import type { FastifyInstance } from "fastify";
+
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 import type { ServerConfig } from "../src/server/config.js";
+
+import { createApp } from "../src/server/app.js";
 import { recordActivity } from "../src/server/lib/activity.js";
 
 function createMockAdapter(): DatabaseAdapter {
   const activity: Array<Record<string, unknown>> = [];
   return {
-    findOne: async () => null,
+    connect: async () => {},
+    create: async () => ({}),
+    createTable: async () => {},
+    delete: async () => true,
+    deleteMany: async () => 0,
+    disconnect: async () => {},
+    dropTable: async () => {},
     findMany: async (_table, options) => {
       if (_table === "__cms_activity") {
         const filtered = options?.where?.email ? [] : [...activity].reverse();
@@ -16,22 +25,17 @@ function createMockAdapter(): DatabaseAdapter {
       }
       return { data: [], total: 0 };
     },
-    create: async () => ({}),
-    update: async () => null,
-    delete: async () => true,
-    deleteMany: async () => 0,
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
+    findOne: async () => null,
+    getExecutedMigrations: async () => [],
     raw: async (sql: string, params?: unknown[]) => {
       if (sql.includes("INSERT INTO __cms_activity")) {
         const entry = {
-          id: String(activity.length + 1),
           action: params?.[0] ?? "",
           collection: params?.[1] ?? "",
-          documentId: params?.[2] ?? null,
-          label: params?.[3] ?? "",
           createdAt: new Date().toISOString(),
+          documentId: params?.[2] ?? null,
+          id: String(activity.length + 1),
+          label: params?.[3] ?? "",
         };
         activity.push(entry);
         return [];
@@ -41,28 +45,27 @@ function createMockAdapter(): DatabaseAdapter {
       }
       return [];
     },
-    createTable: async () => {},
-    dropTable: async () => {},
     runMigration: async () => {},
-    getExecutedMigrations: async () => [],
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
+    update: async () => null,
   };
 }
 
 const testConfig: ServerConfig = {
-  port: 0,
-  host: "localhost",
-  logger: { level: "silent" },
-  cors: { origin: "*" },
-  rateLimit: { max: 1000, timeWindow: "1 minute" },
-  swagger: { title: "Test API", version: "1.0.0", description: "Test" },
-  schema: { baseDir: "./cms" },
-  database: { adapter: "sqlite", url: ":memory:" },
   auth: {
-    secret: "test-secret-at-least-32-chars-long-for-security!!",
     accessTokenExpiresIn: "15m",
     refreshTokenExpiresIn: "7d",
+    secret: "test-secret-at-least-32-chars-long-for-security!!",
   },
+  cors: { origin: "*" },
+  database: { adapter: "sqlite", url: ":memory:" },
+  host: "localhost",
+  logger: { level: "silent" },
+  port: 0,
+  rateLimit: { max: 1000, timeWindow: "1 minute" },
+  schema: { baseDir: "./cms" },
   storage: { baseDir: "./uploads" },
+  swagger: { description: "Test", title: "Test API", version: "1.0.0" },
 };
 
 describe("Activity Route", () => {
@@ -71,7 +74,7 @@ describe("Activity Route", () => {
 
   beforeAll(async () => {
     adapter = createMockAdapter();
-    app = await createApp({ config: testConfig, adapter, collections: [] });
+    app = await createApp({ adapter, collections: [], config: testConfig });
   });
 
   afterAll(async () => {

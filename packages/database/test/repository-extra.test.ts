@@ -1,24 +1,26 @@
 import { describe, it, expect, vi } from "vitest";
-import { Repository } from "../src/repository.js";
+
 import type { DatabaseAdapter } from "../src/types.js";
+
+import { Repository } from "../src/repository.js";
 
 function createMockAdapter(): DatabaseAdapter {
   return {
     connect: vi.fn(),
-    disconnect: vi.fn(),
-    findOne: vi.fn().mockResolvedValue(null),
-    findMany: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     create: vi.fn().mockResolvedValue({}),
-    update: vi.fn().mockResolvedValue(null),
+    createTable: vi.fn(),
     delete: vi.fn().mockResolvedValue(true),
     deleteMany: vi.fn().mockResolvedValue(0),
-    transaction: vi.fn(async (fn: () => Promise<unknown>) => fn()),
-    raw: vi.fn(),
-    createTable: vi.fn(),
+    disconnect: vi.fn(),
     dropTable: vi.fn(),
-    runMigration: vi.fn(),
+    findMany: vi.fn().mockResolvedValue({ data: [], total: 0 }),
+    findOne: vi.fn().mockResolvedValue(null),
     getExecutedMigrations: vi.fn().mockResolvedValue([]),
     getExistingSchema: vi.fn(),
+    raw: vi.fn(),
+    runMigration: vi.fn(),
+    transaction: vi.fn(async (fn: () => Promise<unknown>) => fn()),
+    update: vi.fn().mockResolvedValue(null),
   };
 }
 

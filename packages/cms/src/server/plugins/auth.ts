@@ -1,7 +1,9 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import type { DatabaseAdapter } from "@arche-cms/database";
-import { AuthService, JwtService } from "@arche-cms/auth";
 import type { AuthConfig } from "@arche-cms/auth";
+import type { DatabaseAdapter } from "@arche-cms/database";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+
+import { AuthService, JwtService } from "@arche-cms/auth";
+
 import { verifyApiToken, ensureApiTokensTable } from "../routes/api-tokens.js";
 
 const publicSchema = {
@@ -64,8 +66,8 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        summary: "Register a new user",
         description: "Create a new user account (requires setup to be complete)",
+        summary: "Register a new user",
         tags: ["Auth"],
       },
     },
@@ -80,13 +82,13 @@ export async function registerAuth(
         if (!emailRegex.test(email)) {
           return reply
             .status(400)
-            .send({ error: "Invalid email format", code: "VALIDATION_ERROR" });
+            .send({ code: "VALIDATION_ERROR", error: "Invalid email format" });
         }
 
         if (password && password.length < 8) {
           return reply
             .status(400)
-            .send({ error: "Password must be at least 8 characters", code: "VALIDATION_ERROR" });
+            .send({ code: "VALIDATION_ERROR", error: "Password must be at least 8 characters" });
         }
 
         const result = await authService.register({ ...request.body, role: undefined });
@@ -103,8 +105,8 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        summary: "Login",
         description: "Authenticate with email and password, returns JWT tokens",
+        summary: "Login",
         tags: ["Auth"],
       },
     },
@@ -127,8 +129,8 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        summary: "Refresh tokens",
         description: "Exchange a refresh token for a new access token and refresh token pair",
+        summary: "Refresh tokens",
         tags: ["Auth"],
       },
     },
@@ -148,9 +150,9 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        summary: "Forgot password",
         description:
           "Request a password reset email (always returns success to prevent email enumeration)",
+        summary: "Forgot password",
         tags: ["Auth"],
       },
     },
@@ -160,7 +162,7 @@ export async function registerAuth(
         if (!emailRegex.test(request.body.email)) {
           return reply
             .status(400)
-            .send({ error: "Invalid email format", code: "VALIDATION_ERROR" });
+            .send({ code: "VALIDATION_ERROR", error: "Invalid email format" });
         }
         await authService.forgotPassword(request.body);
         return reply.send({
@@ -178,8 +180,8 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        summary: "Reset password",
         description: "Reset password using a token from the forgot-password email",
+        summary: "Reset password",
         tags: ["Auth"],
       },
     },
@@ -202,8 +204,8 @@ export async function registerAuth(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        summary: "Get current user",
         description: "Returns the authenticated user's profile",
+        summary: "Get current user",
         tags: ["Auth"],
       },
     },
@@ -225,10 +227,10 @@ export async function registerAuth(
     "/api/auth/setup-status",
     {
       schema: {
-        summary: "Setup status",
         description: "Check if the CMS has been set up (at least one admin user exists)",
-        tags: ["Auth"],
         security: [],
+        summary: "Setup status",
+        tags: ["Auth"],
       },
     },
     async () => {

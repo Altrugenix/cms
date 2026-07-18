@@ -1,36 +1,37 @@
 import type { CollectionDefinition, GlobalDefinition, FieldDefinition } from "@arche-cms/types";
+
 import type { Migration, ExistingSchema } from "./types.js";
 
 const fieldToSqlType: Record<string, string> = {
-  text: "TEXT",
-  textarea: "TEXT",
-  number: "REAL",
+  array: "JSONB",
   boolean: "INTEGER",
-  date: "TEXT",
-  datetime: "TEXT",
-  email: "TEXT",
-  password: "TEXT",
-  url: "TEXT",
-  json: "TEXT",
-  richText: "TEXT",
-  markdown: "TEXT",
+  checkbox: "INTEGER",
   code: "TEXT",
   color: "TEXT",
-  media: "TEXT",
-  upload: "TEXT",
-  select: "TEXT",
-  multiSelect: "TEXT",
-  radio: "TEXT",
-  checkbox: "INTEGER",
-  relation: "TEXT",
   component: "JSONB",
+  date: "TEXT",
+  datetime: "TEXT",
   dynamicZone: "JSONB",
-  array: "JSONB",
-  object: "JSONB",
-  tabs: "JSONB",
+  email: "TEXT",
   group: "JSONB",
+  json: "TEXT",
+  markdown: "TEXT",
+  media: "TEXT",
+  multiSelect: "TEXT",
+  number: "REAL",
+  object: "JSONB",
+  password: "TEXT",
+  radio: "TEXT",
+  relation: "TEXT",
   repeater: "JSONB",
+  richText: "TEXT",
+  select: "TEXT",
   slug: "TEXT",
+  tabs: "JSONB",
+  text: "TEXT",
+  textarea: "TEXT",
+  upload: "TEXT",
+  url: "TEXT",
 };
 
 function sqlTypeForField(field: FieldDefinition): string {
@@ -159,10 +160,10 @@ export class MigrationGenerator {
     const down = `DROP TABLE IF EXISTS "${tableName}";`;
 
     return {
+      down,
       id: `mig_${timestamp}_create_global_${globalDef.slug}`,
       name: `create_global_${globalDef.slug}`,
       up,
-      down,
     };
   }
 
@@ -180,10 +181,10 @@ export class MigrationGenerator {
     );
 
     return {
+      down: downLines.join("\n"),
       id: `mig_${timestamp}_add_global_fields_${tableName}`,
       name: `add_global_fields_${tableName}`,
       up: upLines.join("\n"),
-      down: downLines.join("\n"),
     };
   }
 
@@ -211,19 +212,19 @@ export class MigrationGenerator {
     const down = `DROP TABLE IF EXISTS "${tableName}";`;
 
     return {
+      down,
       id: `mig_${timestamp}_create_${collection.slug}`,
       name: `create_${collection.slug}`,
       up,
-      down,
     };
   }
 
   private createVersionsTableMigration(timestamp: string): Migration {
     return {
+      down: `DROP TABLE IF EXISTS "${VERSIONS_TABLE}";`,
       id: `mig_${timestamp}_create_versions`,
       name: "create_versions",
       up: `CREATE TABLE IF NOT EXISTS "${VERSIONS_TABLE}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  collection TEXT NOT NULL,\n  entryId TEXT NOT NULL,\n  version INTEGER NOT NULL,\n  data TEXT NOT NULL,\n  createdAt TEXT NOT NULL\n);`,
-      down: `DROP TABLE IF EXISTS "${VERSIONS_TABLE}";`,
     };
   }
 
@@ -264,10 +265,10 @@ export class MigrationGenerator {
     ];
 
     return {
+      down: downLines.join("\n"),
       id: `mig_${timestamp}_add_fields_${collection.slug}`,
       name: `add_fields_${collection.slug}`,
       up: upLines.join("\n"),
-      down: downLines.join("\n"),
     };
   }
 }

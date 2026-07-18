@@ -1,26 +1,28 @@
 import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
+
 import type { RouteDefinition } from "./types.js";
+
 import { pascalCase } from "./route-generator.js";
 
 const SIMPLE_OPENAPI_TYPES: Record<string, Record<string, unknown> | undefined> = {
-  number: { type: "number" },
+  array: { items: { properties: {}, type: "object" }, type: "array" },
   boolean: { type: "boolean" },
   checkbox: { type: "boolean" },
+  color: { format: "color", type: "string" },
+  component: { properties: {}, type: "object" },
+  date: { format: "date-time", type: "string" },
+  datetime: { format: "date-time", type: "string" },
+  dynamicZone: { items: { type: "object" }, type: "array" },
+  group: { properties: {}, type: "object" },
   json: { type: "object" },
-  multiSelect: { type: "array", items: { type: "string" } },
+  media: { description: "Media file ID reference", type: "string" },
+  multiSelect: { items: { type: "string" }, type: "array" },
+  number: { type: "number" },
+  object: { properties: {}, type: "object" },
   relation: { type: "string" },
-  date: { type: "string", format: "date-time" },
-  datetime: { type: "string", format: "date-time" },
-  color: { type: "string", format: "color" },
-  url: { type: "string", format: "uri" },
-  media: { type: "string", description: "Media file ID reference" },
-  upload: { type: "string", description: "Media file ID reference" },
-  component: { type: "object", properties: {} },
-  dynamicZone: { type: "array", items: { type: "object" } },
-  array: { type: "array", items: { type: "object", properties: {} } },
-  repeater: { type: "array", items: { type: "object", properties: {} } },
-  object: { type: "object", properties: {} },
-  group: { type: "object", properties: {} },
+  repeater: { items: { properties: {}, type: "object" }, type: "array" },
+  upload: { description: "Media file ID reference", type: "string" },
+  url: { format: "uri", type: "string" },
 };
 
 function fieldToOpenApiType(field: FieldDefinition): Record<string, unknown> {
@@ -30,7 +32,7 @@ function fieldToOpenApiType(field: FieldDefinition): Record<string, unknown> {
     const tabFields: FieldDefinition[] = (
       (field as { tabs?: Array<{ fields: FieldDefinition[] }> }).tabs ?? []
     ).flatMap((t) => t.fields);
-    return { type: "object", properties: generateFlatProperties(tabFields), nullable };
+    return { nullable, properties: generateFlatProperties(tabFields), type: "object" };
   }
 
   if (field.type === "select" || field.type === "radio") {
@@ -64,7 +66,7 @@ function generateFlatProperties(fields: FieldDefinition[]): Record<string, unkno
 
 function generateCollectionSchema(collection: CollectionDefinition): Record<string, unknown> {
   const properties: Record<string, unknown> = {
-    id: { type: "integer", description: "Primary key" },
+    id: { description: "Primary key", type: "integer" },
   };
 
   for (const field of collection.fields) {
@@ -75,23 +77,23 @@ function generateCollectionSchema(collection: CollectionDefinition): Record<stri
   }
 
   if (collection.timestamps?.createdAt !== false) {
-    properties.createdAt = { type: "string", format: "date-time" };
+    properties.createdAt = { format: "date-time", type: "string" };
   }
   if (collection.timestamps?.updatedAt !== false) {
-    properties.updatedAt = { type: "string", format: "date-time" };
+    properties.updatedAt = { format: "date-time", type: "string" };
   }
 
   return {
-    type: "object",
     properties,
     required: collection.fields.filter((f) => f.validation?.required).map((f) => f.name),
+    type: "object",
   };
 }
 
 export interface OpenApiOptions {
-  title?: string;
-  version?: string;
-  description?: string;
+  title?: string | undefined;
+  version?: string | undefined;
+  description?: string | undefined;
 }
 
 export function generateOpenApiSpec(
@@ -111,8 +113,8 @@ export function generateOpenApiSpec(
       createProps[field.name] = fieldToOpenApiType(field);
       updateProps[field.name] = { ...fieldToOpenApiType(field), nullable: true };
     }
-    schemas[`${name}Create`] = { type: "object", properties: createProps };
-    schemas[`${name}Update`] = { type: "object", properties: updateProps };
+    schemas[`${name}Create`] = { properties: createProps, type: "object" };
+    schemas[`${name}Update`] = { properties: updateProps, type: "object" };
   }
 
   const paths: Record<string, unknown> = {};
@@ -120,14 +122,14 @@ export function generateOpenApiSpec(
   for (const route of routes) {
     const operation: Record<string, unknown> = {
       operationId: route.operationId,
-      summary: route.summary,
-      tags: route.tags,
       responses: {
         "200": { description: "OK" },
         "400": { description: "Bad request" },
         "404": { description: "Not found" },
         "500": { description: "Internal server error" },
       },
+      summary: route.summary,
+      tags: route.tags,
     };
 
     if (route.method === "POST") {
@@ -140,17 +142,17 @@ export function generateOpenApiSpec(
 
     if (route.method === "GET" && route.path.endsWith("/:id")) {
       operation.parameters = [
-        { name: "id", in: "path", required: true, schema: { type: "string" } },
+        { in: "path", name: "id", required: true, schema: { type: "string" } },
       ];
     }
 
     if (route.method === "GET" && !route.path.endsWith("/:id")) {
       operation.parameters = [
-        { name: "limit", in: "query", schema: { type: "integer" } },
-        { name: "offset", in: "query", schema: { type: "integer" } },
-        { name: "sort", in: "query", schema: { type: "string" } },
-        { name: "select", in: "query", schema: { type: "string" } },
-        { name: "populate", in: "query", schema: { type: "string" } },
+        { in: "query", name: "limit", schema: { type: "integer" } },
+        { in: "query", name: "offset", schema: { type: "integer" } },
+        { in: "query", name: "sort", schema: { type: "string" } },
+        { in: "query", name: "select", schema: { type: "string" } },
+        { in: "query", name: "populate", schema: { type: "string" } },
       ];
     }
 
@@ -160,15 +162,15 @@ export function generateOpenApiSpec(
   }
 
   return {
-    openapi: "3.1.0",
-    info: {
-      title: options?.title ?? "Arche CMS API",
-      version: options?.version ?? "0.1.0",
-      description: options?.description ?? "Auto-generated REST API for CMS collections",
-    },
-    paths,
     components: {
       schemas,
     },
+    info: {
+      description: options?.description ?? "Auto-generated REST API for CMS collections",
+      title: options?.title ?? "Arche CMS API",
+      version: options?.version ?? "0.1.0",
+    },
+    openapi: "3.1.0",
+    paths,
   };
 }

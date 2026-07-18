@@ -2,7 +2,25 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    testTimeout: 30000,
+    coverage: {
+      all: true,
+      exclude: [
+        "**/types.ts",
+        "**/src/types/**",
+        "**/vitest.config.ts",
+        "**/bin/**",
+        "**/dist/**",
+        "src/admin/**",
+      ],
+      include: ["src/**/*.ts"],
+      provider: "v8",
+      thresholds: {
+        branches: 50,
+        functions: 60,
+        lines: 60,
+        statements: 60,
+      },
+    },
     hookTimeout: 30000,
     pool: "forks",
     poolOptions: {
@@ -13,18 +31,6 @@ export default defineConfig({
     sequence: {
       concurrent: false,
     },
-    coverage: {
-      provider: "v8",
-      all: true,
-      include: ["src/**/*.ts"],
-      exclude: [
-        "**/types.ts",
-        "**/src/types/**",
-        "**/vitest.config.ts",
-        "**/bin/**",
-        "**/dist/**",
-        "src/admin/**",
-      ],
-    },
+    testTimeout: 30000,
   },
 });

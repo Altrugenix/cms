@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { Container, EventBus, Lifecycle, createLogger, createConfigLoader } from "../src/index.js";
 
 describe("package index exports", () => {

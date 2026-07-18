@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+
 import { createConfigLoader } from "../src/config.js";
 
 describe("createConfigLoader", () => {

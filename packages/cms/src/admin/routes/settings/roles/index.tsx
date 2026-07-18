@@ -1,17 +1,18 @@
-import { useEffect, useState } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
-import { Route as settingsRoute } from "@/routes/settings/index";
+import { Pencil, Trash2, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
-import { fetchRoles, deleteRole, type RoleMeta } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { fetchRoles, deleteRole, type RoleMeta } from "@/lib/api";
+import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  component: RolesList,
   getParentRoute: () => settingsRoute,
   path: "roles",
-  component: RolesList,
 });
 
 function RolesList() {

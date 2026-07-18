@@ -1,6 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { fieldToGraphQLType } from "../src/types.js";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
+import { fieldToGraphQLType } from "../src/types.js";
 
 const emptyCollections: CollectionDefinition[] = [];
 

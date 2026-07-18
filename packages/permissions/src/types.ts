@@ -3,12 +3,12 @@ export type PermissionAction = "create" | "read" | "update" | "delete" | "*";
 export interface Permission {
   action: PermissionAction;
   resource: string;
-  fields?: string[];
+  fields?: string[] | undefined;
 }
 
 export interface RoleDefinition {
   name: string;
-  description?: string;
+  description?: string | undefined;
   permissions: Permission[];
 }
 

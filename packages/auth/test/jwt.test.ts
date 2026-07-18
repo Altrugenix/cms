@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
+
 import { JwtService } from "../src/jwt.js";
 
 const config = {
-  secret: "test-secret-at-least-32-chars-long-for-security!!",
   accessTokenExpiresIn: "15m",
   refreshTokenExpiresIn: "7d",
+  secret: "test-secret-at-least-32-chars-long-for-security!!",
 };
 
-const testPayload = { sub: "user-1", email: "test@example.com", role: "admin" };
+const testPayload = { email: "test@example.com", role: "admin", sub: "user-1" };
 
 describe("JwtService", () => {
   it("generates and verifies an access token", async () => {

@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
+
 import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
 export interface PipelineOptions {
@@ -18,7 +19,7 @@ export class GenerationPipeline {
 
     for (const gen of this.generators) {
       const files = await gen.generate(options);
-      results.push({ generator: gen.name, files });
+      results.push({ files, generator: gen.name });
     }
 
     for (const { files } of results) {

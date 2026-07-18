@@ -1,17 +1,18 @@
-import { useState, type FormEvent } from "react";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Route as settingsRoute } from "@/routes/settings/index";
+import { ArrowLeft } from "lucide-react";
+import { useState, type FormEvent } from "react";
+
 import { useToast } from "@/components/toast-provider";
-import { createRole } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { createRole } from "@/lib/api";
+import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  component: CreateRole,
   getParentRoute: () => settingsRoute,
   path: "roles/new",
-  component: CreateRole,
 });
 
 const DEFAULT_ACTIONS = ["create", "read", "update", "delete"];
@@ -50,7 +51,7 @@ function CreateRole() {
     if (!name) return;
     setSaving(true);
     try {
-      await createRole({ name, description, permissions });
+      await createRole({ description, name, permissions });
       toast("Role created", "success");
       navigate({ to: "/settings/roles" });
     } catch (err) {

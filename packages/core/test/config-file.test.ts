@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+
 import { createConfigLoader } from "../src/config.js";
 
 describe("createConfigLoader - loadFile with real file", () => {
@@ -12,11 +13,11 @@ describe("createConfigLoader - loadFile with real file", () => {
   });
 
   afterEach(() => {
-    rmSync(testDir, { recursive: true, force: true });
+    rmSync(testDir, { force: true, recursive: true });
   });
 
   it("reads and parses a valid JSON config file", async () => {
-    const config = { port: 3000, debug: true, name: "test-app" };
+    const config = { debug: true, name: "test-app", port: 3000 };
     writeFileSync(join(testDir, "cms.config.json"), JSON.stringify(config), "utf-8");
 
     const loader = createConfigLoader({ cwd: testDir });
@@ -31,14 +32,14 @@ describe("createConfigLoader - loadFile with real file", () => {
     const config = { db: "sqlite://local.db" };
     writeFileSync(join(testDir, "custom.config.json"), JSON.stringify(config), "utf-8");
 
-    const loader = createConfigLoader({ cwd: testDir, configFile: "custom.config.json" });
+    const loader = createConfigLoader({ configFile: "custom.config.json", cwd: testDir });
     const result = await loader.loadFile();
 
     expect(result.db).toBe("sqlite://local.db");
   });
 
   it("load merges file and env, env overrides file", async () => {
-    const config = { port: 3000, name: "from-file" };
+    const config = { name: "from-file", port: 3000 };
     writeFileSync(join(testDir, "cms.config.json"), JSON.stringify(config), "utf-8");
 
     process.env.CMS_PORT = "5000";

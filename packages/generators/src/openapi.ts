@@ -1,5 +1,6 @@
-import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
 function toPascal(s: string): string {
   return s.replace(/(^\w|[-_]\w)/g, (c) => c.replace(/[-_]/g, "").toUpperCase());
@@ -16,7 +17,7 @@ function fieldToSchemaType(type: string): Record<string, unknown> {
     case "richText":
       return { type: "object" };
     case "multiSelect":
-      return { type: "array", items: { type: "string" } };
+      return { items: { type: "string" }, type: "array" };
     default:
       return { type: "string" };
   }
@@ -30,9 +31,9 @@ function generateOpenApiFile(collections: CollectionDefinition[]): string {
     const name = toPascal(col.slug);
 
     const properties: Record<string, Record<string, unknown>> = {
+      createdAt: { format: "date-time", type: "string" },
       id: { type: "string" },
-      createdAt: { type: "string", format: "date-time" },
-      updatedAt: { type: "string", format: "date-time" },
+      updatedAt: { format: "date-time", type: "string" },
     };
 
     for (const f of col.fields) {
@@ -40,8 +41,8 @@ function generateOpenApiFile(collections: CollectionDefinition[]): string {
     }
 
     schemas[name] = {
-      type: "object",
       properties,
+      type: "object",
     };
 
     const basePath = `/api/collections/${col.slug}`;
@@ -56,6 +57,10 @@ function generateOpenApiFile(collections: CollectionDefinition[]): string {
       },
     };
     paths[`${basePath}/{id}`] = {
+      delete: {
+        operationId: `delete${name}`,
+        responses: { "200": { description: `${name} deleted` } },
+      },
       get: {
         operationId: `get${name}`,
         responses: { "200": { description: `${name} retrieved` } },
@@ -64,37 +69,33 @@ function generateOpenApiFile(collections: CollectionDefinition[]): string {
         operationId: `update${name}`,
         responses: { "200": { description: `${name} updated` } },
       },
-      delete: {
-        operationId: `delete${name}`,
-        responses: { "200": { description: `${name} deleted` } },
-      },
     };
   }
 
   const spec = {
-    openapi: "3.1.0",
+    components: { schemas },
     info: {
       title: "Arche CMS API",
       version: "0.1.0",
     },
+    openapi: "3.1.0",
     paths,
-    components: { schemas },
   };
 
   return JSON.stringify(spec, null, 2);
 }
 
 export const openApiGenerator: Generator = {
-  name: "openapi",
   description: "Generates OpenAPI spec from collection definitions",
   async generate(options: GenerationOptions): Promise<GeneratedFile[]> {
     if (!options.collections || options.collections.length === 0) return [];
 
     return [
       {
-        path: "openapi.json",
         content: generateOpenApiFile(options.collections),
+        path: "openapi.json",
       },
     ];
   },
+  name: "openapi",
 };

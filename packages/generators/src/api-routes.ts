@@ -1,5 +1,6 @@
-import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
 function jsValue(val: unknown): string {
   if (val === null) return "null";
@@ -45,16 +46,16 @@ function generateRoutesFile(collections: CollectionDefinition[]): string {
 }
 
 export const apiRoutesGenerator: Generator = {
-  name: "api-routes",
   description: "Generates API route registration files",
   async generate(options: GenerationOptions): Promise<GeneratedFile[]> {
     if (!options.collections || options.collections.length === 0) return [];
 
     return [
       {
-        path: "routes/index.ts",
         content: generateRoutesFile(options.collections),
+        path: "routes/index.ts",
       },
     ];
   },
+  name: "api-routes",
 };

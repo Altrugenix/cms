@@ -5,8 +5,8 @@ export type ActivityAction = "create" | "update" | "delete" | "bulkDelete" | "up
 export interface ActivityEntry {
   action: ActivityAction;
   collection: string;
-  documentId?: string;
-  label?: string;
+  documentId?: string | undefined;
+  label?: string | undefined;
 }
 
 const TABLE = process.env.CMS_ACTIVITY_TABLE || "__cms_activity";
@@ -57,11 +57,11 @@ export async function fetchRecentActivity(
     [limit],
   );
   return (rows as Array<Record<string, unknown>>).map((r) => ({
-    id: String(r.id),
     action: String(r.action),
     collection: String(r.collection),
-    documentId: r.documentId != null ? String(r.documentId) : null,
-    label: String(r.label),
     createdAt: String(r.createdAt),
+    documentId: r.documentId != null ? String(r.documentId) : null,
+    id: String(r.id),
+    label: String(r.label),
   }));
 }

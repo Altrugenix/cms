@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
-import type { CollectionDefinition } from "@arche-cms/types";
 import type { DatabaseAdapter } from "@arche-cms/database";
+import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@arche-cms/validation", () => ({
   createMutationPayloadSchema: () => ({
@@ -14,44 +15,44 @@ vi.mock("@arche-cms/validation", () => ({
 const { generateResolvers } = await import("../src/resolvers.js");
 
 const mockAdapter: DatabaseAdapter = {
-  findOne: async () => null,
-  findMany: async () => ({ data: [], total: 0 }),
-  create: async () => ({}),
-  update: async () => null,
-  delete: async () => true,
   connect: async () => {},
-  disconnect: async () => {},
-  transaction: async <T>(fn: () => Promise<T>) => fn(),
-  raw: async () => [],
+  create: async () => ({}),
   createTable: async () => {},
+  delete: async () => true,
+  deleteMany: async () => 0,
+  disconnect: async () => {},
   dropTable: async () => {},
-  runMigration: async () => {},
+  findMany: async () => ({ data: [], total: 0 }),
+  findOne: async () => null,
   getExecutedMigrations: async () => [],
   getExistingSchema: async () => ({ tables: new Map() }),
-  deleteMany: async () => 0,
+  raw: async () => [],
+  runMigration: async () => {},
+  transaction: async <T>(fn: () => Promise<T>) => fn(),
+  update: async () => null,
 };
 
 const localizedCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
-    { name: "title", type: "text", localized: true },
+    { localized: true, name: "title", type: "text" },
     { name: "body", type: "text" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
   localization: {
-    locales: ["en", "fr"],
     defaultLocale: "en",
+    locales: ["en", "fr"],
   },
+  slug: "posts",
 };
 
 const numericLocalizedCollection: CollectionDefinition = {
-  slug: "items",
-  labels: { singular: "Item", plural: "Items" },
   fields: [
-    { name: "score", type: "number", localized: true },
+    { localized: true, name: "score", type: "number" },
     { name: "name", type: "text" },
   ],
-  localization: { locales: ["en"], defaultLocale: "en" },
+  labels: { plural: "Items", singular: "Item" },
+  localization: { defaultLocale: "en", locales: ["en"] },
+  slug: "items",
 };
 
 describe("normalizeLocaleData - wrapping primitive localized values", () => {
@@ -69,10 +70,10 @@ describe("normalizeLocaleData - wrapping primitive localized values", () => {
       Mutation: Record<string, (...args: unknown[]) => unknown>;
     };
 
-    await resolvers.Mutation.createPosts({}, { data: { title: "Hello", body: "World" } });
+    await resolvers.Mutation.createPosts({}, { data: { body: "World", title: "Hello" } });
     expect(capturedData).toEqual({
-      title: { en: "Hello" },
       body: "World",
+      title: { en: "Hello" },
     });
   });
 
@@ -90,10 +91,10 @@ describe("normalizeLocaleData - wrapping primitive localized values", () => {
       Mutation: Record<string, (...args: unknown[]) => unknown>;
     };
 
-    await resolvers.Mutation.createItems({}, { data: { score: 42, name: "test" } });
+    await resolvers.Mutation.createItems({}, { data: { name: "test", score: 42 } });
     expect(capturedData).toEqual({
-      score: { en: 42 },
       name: "test",
+      score: { en: 42 },
     });
   });
 
@@ -111,7 +112,7 @@ describe("normalizeLocaleData - wrapping primitive localized values", () => {
       Mutation: Record<string, (...args: unknown[]) => unknown>;
     };
 
-    await resolvers.Mutation.updatePosts({}, { id: "1", data: { title: "Updated" } });
+    await resolvers.Mutation.updatePosts({}, { data: { title: "Updated" }, id: "1" });
     expect(capturedData).toEqual(
       expect.objectContaining({
         title: { en: "Updated" },
@@ -121,13 +122,13 @@ describe("normalizeLocaleData - wrapping primitive localized values", () => {
 
   it("wraps localized primitive boolean value in locale object on create", async () => {
     const boolCollection: CollectionDefinition = {
-      slug: "flags",
-      labels: { singular: "Flag", plural: "Flags" },
       fields: [
-        { name: "active", type: "boolean", localized: true },
+        { localized: true, name: "active", type: "boolean" },
         { name: "label", type: "text" },
       ],
-      localization: { locales: ["en"], defaultLocale: "en" },
+      labels: { plural: "Flags", singular: "Flag" },
+      localization: { defaultLocale: "en", locales: ["en"] },
+      slug: "flags",
     };
 
     let capturedData: unknown;
@@ -152,13 +153,13 @@ describe("normalizeLocaleData - wrapping primitive localized values", () => {
 
   it("wraps array localized value in locale object on create", async () => {
     const arrayCollection: CollectionDefinition = {
-      slug: "lists",
-      labels: { singular: "List", plural: "Lists" },
       fields: [
-        { name: "tags", type: "json", localized: true },
+        { localized: true, name: "tags", type: "json" },
         { name: "name", type: "text" },
       ],
-      localization: { locales: ["en"], defaultLocale: "en" },
+      labels: { plural: "Lists", singular: "List" },
+      localization: { defaultLocale: "en", locales: ["en"] },
+      slug: "lists",
     };
 
     let capturedData: unknown;
@@ -174,10 +175,10 @@ describe("normalizeLocaleData - wrapping primitive localized values", () => {
       Mutation: Record<string, (...args: unknown[]) => unknown>;
     };
 
-    await resolvers.Mutation.createLists({}, { data: { tags: ["a", "b"], name: "test" } });
+    await resolvers.Mutation.createLists({}, { data: { name: "test", tags: ["a", "b"] } });
     expect(capturedData).toEqual({
-      tags: { en: ["a", "b"] },
       name: "test",
+      tags: { en: ["a", "b"] },
     });
   });
 });

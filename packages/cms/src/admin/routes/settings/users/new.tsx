@@ -1,17 +1,18 @@
-import { useState, type FormEvent } from "react";
 import { createRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Route as settingsRoute } from "@/routes/settings/index";
+import { ArrowLeft } from "lucide-react";
+import { useState, type FormEvent } from "react";
+
 import { useToast } from "@/components/toast-provider";
-import { createUser } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { createUser } from "@/lib/api";
+import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  component: CreateUser,
   getParentRoute: () => settingsRoute,
   path: "users/new",
-  component: CreateUser,
 });
 
 function CreateUser() {

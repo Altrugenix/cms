@@ -1,8 +1,9 @@
+import type { CollectionDefinition, GlobalDefinition, ComponentDefinition } from "@arche-cms/types";
+
+import { EventEmitter } from "node:events";
 import { watch, existsSync, mkdirSync } from "node:fs";
 import { resolve, relative } from "node:path";
 import { pathToFileURL } from "node:url";
-import { EventEmitter } from "node:events";
-import type { CollectionDefinition, GlobalDefinition, ComponentDefinition } from "@arche-cms/types";
 
 type SchemaCategory = "collections" | "globals" | "components";
 type SchemaDefinition = CollectionDefinition | GlobalDefinition | ComponentDefinition;
@@ -11,7 +12,7 @@ export interface SchemaChangeEvent {
   type: "added" | "changed" | "removed";
   category: SchemaCategory;
   slug: string;
-  definition?: SchemaDefinition;
+  definition?: SchemaDefinition | undefined;
 }
 
 const CATEGORY_DIRS: SchemaCategory[] = ["collections", "globals", "components"];
@@ -95,22 +96,22 @@ export class SchemaWatcher extends EventEmitter {
     try {
       const url = new URL(pathToFileURL(fullPath).href);
       url.searchParams.set("t", String(Date.now()));
-      const mod = await import(url.href);
-      const def = mod.default ?? mod;
+      const mod = (await import(url.href)) as Record<string, unknown>;
+      const def = (mod.default ?? mod) as Record<string, unknown>;
       if (def && typeof def === "object" && "slug" in def) {
         this.emit("change", {
-          type: "changed",
           category,
-          slug: def.slug ?? slug,
-          definition: def as SchemaDefinition,
+          definition: def as unknown as SchemaDefinition,
+          slug: (def.slug as string) ?? slug,
+          type: "changed",
         } satisfies SchemaChangeEvent);
       }
     } catch {
       // File may have been deleted or contains errors
       this.emit("change", {
-        type: "removed",
         category,
         slug,
+        type: "removed",
       } satisfies SchemaChangeEvent);
     }
   }

@@ -1,16 +1,19 @@
 /* eslint-disable no-console */
 
-import { existsSync } from "node:fs";
-import { execSync } from "node:child_process";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { SchemaWatcher } from "@arche-cms/schema";
 import type { SchemaChangeEvent } from "@arche-cms/schema";
+import type { ViteDevServer } from "vite";
+
+import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
 import { SQLiteAdapter, createPostgresAdapter } from "@arche-cms/database";
 import { PluginManager, seoPlugin, discoverPlugins } from "@arche-cms/plugins";
-import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
-import type { ViteDevServer } from "vite";
-import { loadConfig } from "../server/config.js";
+import { SchemaWatcher } from "@arche-cms/schema";
+import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import type { ServerInstance } from "../server/bootstrap.js";
+
 import {
   ensureDevAuthSecret,
   applyCliOverrides,
@@ -18,17 +21,17 @@ import {
   connectAndLoad,
   createAndStartApp,
 } from "../server/bootstrap.js";
-import type { ServerInstance } from "../server/bootstrap.js";
+import { loadConfig } from "../server/config.js";
 
 const RELOAD_DEBOUNCE_MS = 300;
 
 export interface DevOptions {
-  dir?: string;
-  port?: number;
-  host?: string;
-  dbUrl?: string;
-  dbAdapter?: string;
-  vite?: boolean;
+  dir?: string | undefined;
+  port?: number | undefined;
+  host?: string | undefined;
+  dbUrl?: string | undefined;
+  dbAdapter?: string | undefined;
+  vite?: boolean | undefined;
 }
 
 async function startViteDevServer(
@@ -43,18 +46,18 @@ async function startViteDevServer(
   logger.info(`Starting Vite dev server for admin panel...`);
   const server = await createServer({
     configFile: resolve(adminDir, "vite.config.ts"),
+    define: { "import.meta.env.VITE_API_URL": '""' },
     root: adminDir,
     server: {
       port: 5173,
       proxy: {
         "/api": `http://localhost:${port}`,
-        "/graphql": `http://localhost:${port}`,
-        "/graphiql": `http://localhost:${port}`,
-        "/health": `http://localhost:${port}`,
         "/docs": `http://localhost:${port}`,
+        "/graphiql": `http://localhost:${port}`,
+        "/graphql": `http://localhost:${port}`,
+        "/health": `http://localhost:${port}`,
       },
     },
-    define: { "import.meta.env.VITE_API_URL": '""' },
   });
 
   await server.listen();
@@ -91,8 +94,8 @@ function ensureAdminBuild(logger: ReturnType<typeof createLogger>): void {
     try {
       execSync("pnpm build:admin", {
         cwd: resolve(currentDir, "../.."),
-        stdio: "inherit",
         env: { ...process.env, NODE_ENV: "production" },
+        stdio: "inherit",
       });
       logger.info("Admin panel built at " + bundledAdmin);
     } catch {
@@ -131,9 +134,9 @@ export async function dev(options: DevOptions): Promise<void> {
   const eventBus = new EventBus();
   const lifecycle = new Lifecycle();
   const pluginManager = new PluginManager({
+    context: { config: config as never, container: {}, logger },
     eventBus,
     lifecycle,
-    context: { config: config as never, logger, container: {} },
   });
 
   pluginManager.register(seoPlugin);
@@ -143,20 +146,20 @@ export async function dev(options: DevOptions): Promise<void> {
   }
 
   const pluginHooks = {
-    runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
-      pluginManager.runRouteHook(name),
-    getCustomFields: () => pluginManager.getCustomFields(),
     getAdminPanels: () => pluginManager.getAdminPanels(),
     getAll: () =>
       pluginManager.getAll().map((r) => ({
+        enabled: r.enabled,
         plugin: {
-          slug: r.plugin.slug,
-          name: r.plugin.name,
           description: r.plugin.description,
+          name: r.plugin.name,
+          slug: r.plugin.slug,
           version: r.plugin.version,
         },
-        enabled: r.enabled,
       })),
+    getCustomFields: () => pluginManager.getCustomFields(),
+    runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
+      pluginManager.runRouteHook(name),
   };
 
   let currentServer: ServerInstance | null = null;
@@ -185,25 +188,33 @@ export async function dev(options: DevOptions): Promise<void> {
 
     if (reloadTimer) clearTimeout(reloadTimer);
 
-    reloadTimer = setTimeout(async () => {
+    reloadTimer = setTimeout(() => {
       reloadTimer = null;
       logger.info("Reloading schemas and restarting server...");
 
-      try {
-        if (currentServer) {
-          await currentServer.stop();
+      void (async () => {
+        try {
+          if (currentServer) {
+            await currentServer.stop();
+          }
+
+          const { collections, globals } = await connectAndLoad(config, adapter, logger);
+
+          logger.info(`Reloaded ${collections.length} collection(s), ${globals.length} global(s)`);
+
+          currentServer = await createAndStartApp(
+            config,
+            adapter,
+            collections,
+            globals,
+            pluginHooks,
+          );
+
+          logger.info("Server restarted successfully");
+        } catch (err) {
+          logger.error("Failed to reload:", err instanceof Error ? err.message : String(err));
         }
-
-        const { collections, globals } = await connectAndLoad(config, adapter, logger);
-
-        logger.info(`Reloaded ${collections.length} collection(s), ${globals.length} global(s)`);
-
-        currentServer = await createAndStartApp(config, adapter, collections, globals, pluginHooks);
-
-        logger.info("Server restarted successfully");
-      } catch (err) {
-        logger.error("Failed to reload:", err instanceof Error ? err.message : String(err));
-      }
+      })();
     }, RELOAD_DEBOUNCE_MS);
   }
 
@@ -211,16 +222,20 @@ export async function dev(options: DevOptions): Promise<void> {
 
   // File watching with hot-reload
   const watcher = new SchemaWatcher(schemaDir);
-  watcher.on("change", handleSchemaChange);
+  watcher.on("change", (event: SchemaChangeEvent) => {
+    void handleSchemaChange(event);
+  });
   await watcher.start();
 
-  process.on("SIGINT", async () => {
-    logger.info("Shutting down...");
-    await watcher.stop();
-    if (currentServer) await currentServer.stop();
-    if (viteServer) await viteServer.close();
-    await adapter.disconnect();
-    process.exit(0);
+  process.on("SIGINT", () => {
+    void (async () => {
+      logger.info("Shutting down...");
+      await watcher.stop();
+      if (currentServer) await currentServer.stop();
+      if (viteServer) await viteServer.close();
+      await adapter.disconnect();
+      process.exit(0);
+    })();
   });
 
   await new Promise(() => {});

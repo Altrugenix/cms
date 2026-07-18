@@ -63,9 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (refreshToken) {
         try {
           const r = await fetch(`${API_URL}/api/auth/refresh`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refreshToken }),
+            headers: { "Content-Type": "application/json" },
+            method: "POST",
           });
           if (r.ok) {
             const data = (await r.json()) as {
@@ -102,9 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
       });
       if (!res.ok) {
         const err = (await res.json()) as { error?: string };
@@ -125,9 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
       });
       if (!res.ok) {
         const err = (await res.json()) as { error?: string };
@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isAuthenticated: !!user, login, register, logout, isLoading }}
+      value={{ isAuthenticated: !!user, isLoading, login, logout, register, token, user }}
     >
       {children}
     </AuthContext.Provider>

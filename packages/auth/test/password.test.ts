@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { hashPassword, verifyPassword } from "../src/password.js";
 
 describe("password hashing", () => {

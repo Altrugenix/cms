@@ -1,22 +1,23 @@
 /* eslint-disable no-console */
 
+import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
 import { SQLiteAdapter, createPostgresAdapter } from "@arche-cms/database";
 import { PluginManager, seoPlugin, discoverPlugins } from "@arche-cms/plugins";
-import { EventBus, Lifecycle, createLogger } from "@arche-cms/core";
-import { loadConfig } from "../server/config.js";
+
 import {
   applyCliOverrides,
   autoCreateSqlite,
   connectAndLoad,
   createAndStartApp,
 } from "../server/bootstrap.js";
+import { loadConfig } from "../server/config.js";
 
 export interface StartOptions {
-  dir?: string;
-  port?: number;
-  host?: string;
-  dbUrl?: string;
-  dbAdapter?: string;
+  dir?: string | undefined;
+  port?: number | undefined;
+  host?: string | undefined;
+  dbUrl?: string | undefined;
+  dbAdapter?: string | undefined;
 }
 
 export function printStartHelp(): void {
@@ -53,9 +54,9 @@ export async function start(options: StartOptions): Promise<void> {
   const eventBus = new EventBus();
   const lifecycle = new Lifecycle();
   const pluginManager = new PluginManager({
+    context: { config: config as never, container: {}, logger },
     eventBus,
     lifecycle,
-    context: { config: config as never, logger, container: {} },
   });
 
   pluginManager.register(seoPlugin);
@@ -65,20 +66,20 @@ export async function start(options: StartOptions): Promise<void> {
   }
 
   const pluginHooks = {
-    runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
-      pluginManager.runRouteHook(name),
-    getCustomFields: () => pluginManager.getCustomFields(),
     getAdminPanels: () => pluginManager.getAdminPanels(),
     getAll: () =>
       pluginManager.getAll().map((r) => ({
+        enabled: r.enabled,
         plugin: {
-          slug: r.plugin.slug,
-          name: r.plugin.name,
           description: r.plugin.description,
+          name: r.plugin.name,
+          slug: r.plugin.slug,
           version: r.plugin.version,
         },
-        enabled: r.enabled,
       })),
+    getCustomFields: () => pluginManager.getCustomFields(),
+    runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
+      pluginManager.runRouteHook(name),
   };
 
   try {
@@ -87,11 +88,13 @@ export async function start(options: StartOptions): Promise<void> {
 
     const server = await createAndStartApp(config, adapter, collections, globals, pluginHooks);
 
-    process.on("SIGINT", async () => {
-      logger.info("Shutting down...");
-      await server.stop();
-      await adapter.disconnect();
-      process.exit(0);
+    process.on("SIGINT", () => {
+      void (async () => {
+        logger.info("Shutting down...");
+        await server.stop();
+        await adapter.disconnect();
+        process.exit(0);
+      })();
     });
 
     await new Promise(() => {});

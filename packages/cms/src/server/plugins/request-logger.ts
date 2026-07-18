@@ -5,9 +5,9 @@ export function registerRequestLogger(fastify: FastifyInstance): void {
     fastify.log.info(
       {
         method: request.method,
-        url: request.url,
-        statusCode: reply.statusCode,
         responseTime: reply.elapsedTime,
+        statusCode: reply.statusCode,
+        url: request.url,
       },
       "request completed",
     );

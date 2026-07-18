@@ -2,32 +2,38 @@
 
 import { config } from "dotenv";
 config();
-import { collectionCreate, printCollectionCreateHelp } from "./commands/collection.js";
-import { pluginCreate, printPluginCreateHelp } from "./commands/plugin.js";
-import { dev, printDevHelp } from "./commands/dev.js";
-import { start, printStartHelp } from "./commands/start.js";
 import { build, printBuildHelp } from "./commands/build.js";
-import { migrate, printMigrateHelp } from "./commands/migrate.js";
-import { generate, printGenerateHelp } from "./commands/generate.js";
-import { typegen, printTypegenHelp } from "./commands/typegen.js";
-import { lint, printLintHelp } from "./commands/lint.js";
+import { collectionCreate, printCollectionCreateHelp } from "./commands/collection.js";
+import { dev, printDevHelp } from "./commands/dev.js";
 import { doctor, printDoctorHelp } from "./commands/doctor.js";
+import { generate, printGenerateHelp } from "./commands/generate.js";
+import { lint, printLintHelp } from "./commands/lint.js";
+import { migrate, printMigrateHelp } from "./commands/migrate.js";
+import { pluginCreate, printPluginCreateHelp } from "./commands/plugin.js";
+import { start, printStartHelp } from "./commands/start.js";
+import { typegen, printTypegenHelp } from "./commands/typegen.js";
 
 export interface CmsUserConfig {
   database: {
     adapter: "sqlite" | "postgres";
     url: string;
   };
-  localization?: {
-    defaultLocale: string;
-  };
-  server?: {
-    port?: number;
-    host?: string;
-  };
-  storage?: {
-    baseDir?: string;
-  };
+  localization?:
+    | {
+        defaultLocale: string;
+      }
+    | undefined;
+  server?:
+    | {
+        port?: number | undefined;
+        host?: string | undefined;
+      }
+    | undefined;
+  storage?:
+    | {
+        baseDir?: string | undefined;
+      }
+    | undefined;
 }
 
 export function defineConfig(config: CmsUserConfig): CmsUserConfig {
@@ -71,12 +77,12 @@ function parseArgs(): void {
   const hasHelp = args.includes("--help");
 
   function parseDevFlags(): {
-    port?: number;
-    host?: string;
-    dir?: string;
-    dbUrl?: string;
-    dbAdapter?: string;
-    vite?: boolean;
+    port?: number | undefined;
+    host?: string | undefined;
+    dir?: string | undefined;
+    dbUrl?: string | undefined;
+    dbAdapter?: string | undefined;
+    vite?: boolean | undefined;
   } {
     const portIdx = args.indexOf("--port");
     const hostIdx = args.indexOf("--host");
@@ -84,11 +90,11 @@ function parseArgs(): void {
     const dbUrlIdx = args.indexOf("--db-url");
     const dbAdapterIdx = args.indexOf("--db-adapter");
     return {
-      port: portIdx !== -1 ? Number(args[portIdx + 1]) : undefined,
-      host: hostIdx !== -1 ? args[hostIdx + 1] : undefined,
-      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
-      dbUrl: dbUrlIdx !== -1 ? args[dbUrlIdx + 1] : undefined,
       dbAdapter: dbAdapterIdx !== -1 ? args[dbAdapterIdx + 1] : undefined,
+      dbUrl: dbUrlIdx !== -1 ? args[dbUrlIdx + 1] : undefined,
+      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+      host: hostIdx !== -1 ? args[hostIdx + 1] : undefined,
+      port: portIdx !== -1 ? Number(args[portIdx + 1]) : undefined,
       vite: args.includes("--vite"),
     };
   }
@@ -98,8 +104,8 @@ function parseArgs(): void {
       printDevHelp();
       return;
     }
-    dev(parseDevFlags()).catch((err: Error) => {
-      console.error("Error:", err.message);
+    dev(parseDevFlags()).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "start") {
@@ -107,8 +113,8 @@ function parseArgs(): void {
       printStartHelp();
       return;
     }
-    start(parseDevFlags()).catch((err: Error) => {
-      console.error("Error:", err.message);
+    start(parseDevFlags()).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "build") {
@@ -120,8 +126,8 @@ function parseArgs(): void {
     build({
       clean: args.includes("--clean"),
       outDir: outDirIdx !== -1 ? args[outDirIdx + 1] : undefined,
-    }).catch((err: Error) => {
-      console.error("Error:", err.message);
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "migrate") {
@@ -132,10 +138,10 @@ function parseArgs(): void {
     const dirIdx = args.indexOf("--dir");
     const dbIdx = args.indexOf("--db");
     migrate({
-      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
       db: dbIdx !== -1 ? args[dbIdx + 1] : undefined,
-    }).catch((err: Error) => {
-      console.error("Error:", err.message);
+      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "generate") {
@@ -148,8 +154,8 @@ function parseArgs(): void {
     generate({
       dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
       out: outIdx !== -1 ? args[outIdx + 1] : undefined,
-    }).catch((err: Error) => {
-      console.error("Error:", err.message);
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "typegen") {
@@ -162,8 +168,8 @@ function parseArgs(): void {
     typegen({
       dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
       out: outIdx !== -1 ? args[outIdx + 1] : undefined,
-    }).catch((err: Error) => {
-      console.error("Error:", err.message);
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "lint") {
@@ -175,8 +181,8 @@ function parseArgs(): void {
     lint({
       dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
       fix: args.includes("--fix"),
-    }).catch((err: Error) => {
-      console.error("Error:", err.message);
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "doctor") {
@@ -185,8 +191,8 @@ function parseArgs(): void {
       return;
     }
     const dirIdx = args.indexOf("--dir");
-    doctor({ dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined }).catch((err: Error) => {
-      console.error("Error:", err.message);
+    doctor({ dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "collection" && sub === "create") {
@@ -196,10 +202,10 @@ function parseArgs(): void {
     }
     const dirIdx = args.indexOf("--dir");
     collectionCreate({
-      slug: args[2] ?? "",
       dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
-    }).catch((err: Error) => {
-      console.error("Error:", err.message);
+      slug: args[2] ?? "",
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
     });
   } else if (cmd === "plugin" && sub === "create") {
@@ -208,9 +214,9 @@ function parseArgs(): void {
       return;
     }
     const dirIdx = args.indexOf("--dir");
-    pluginCreate({ slug: args[2] ?? "", dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined }).catch(
-      (err: Error) => {
-        console.error("Error:", err.message);
+    pluginCreate({ dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined, slug: args[2] ?? "" }).catch(
+      (err: unknown) => {
+        console.error("Error:", err instanceof Error ? err.message : String(err));
         process.exit(1);
       },
     );

@@ -1,0 +1,34 @@
+# Code Owners — Arche CMS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @chesteralan
+
+# Packages
+packages/core/ @chesteralan
+packages/types/ @chesteralan
+packages/schema/ @chesteralan
+packages/database/ @chesteralan
+packages/auth/ @chesteralan
+packages/permissions/ @chesteralan
+packages/storage/ @chesteralan
+packages/rest-api/ @chesteralan
+packages/graphql/ @chesteralan
+packages/validation/ @chesteralan
+packages/generators/ @chesteralan
+packages/plugins/ @chesteralan
+packages/cms/ @chesteralan
+packages/admin-ui/ @chesteralan
+packages/builder/ @chesteralan
+packages/cli/ @chesteralan
+packages/sdk/ @chesteralan
+packages/create-app/ @chesteralan
+
+# CI/CD
+.github/ @chesteralan
+
+# Config files
+*.config.js @chesteralan
+*.config.ts @chesteralan
+tsconfig*.json @chesteralan
+.fallowrc.json @chesteralan

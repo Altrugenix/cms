@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 let tmpDir: string;
 let config: { schema: { baseDir: string } };
@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  rmSync(tmpDir, { recursive: true, force: true });
+  rmSync(tmpDir, { force: true, recursive: true });
   vi.restoreAllMocks();
   vi.resetModules();
 });
@@ -29,44 +29,44 @@ function createMockFastify() {
 
   const fastify = {
     authenticate: vi.fn(),
-    get: vi.fn((url: string, _opts: unknown, handler: (...args: unknown[]) => Promise<void>) => {
+    delete: vi.fn((url: string, _opts: unknown, handler: (...args: unknown[]) => Promise<void>) => {
       routes.push({
-        method: "GET",
-        url,
         handler: handler as (
           req: Record<string, unknown>,
           reply: Record<string, unknown>,
         ) => Promise<void>,
+        method: "DELETE",
+        url,
+      });
+    }),
+    get: vi.fn((url: string, _opts: unknown, handler: (...args: unknown[]) => Promise<void>) => {
+      routes.push({
+        handler: handler as (
+          req: Record<string, unknown>,
+          reply: Record<string, unknown>,
+        ) => Promise<void>,
+        method: "GET",
+        url,
       });
     }),
     post: vi.fn((url: string, _opts: unknown, handler: (...args: unknown[]) => Promise<void>) => {
       routes.push({
-        method: "POST",
-        url,
         handler: handler as (
           req: Record<string, unknown>,
           reply: Record<string, unknown>,
         ) => Promise<void>,
+        method: "POST",
+        url,
       });
     }),
     put: vi.fn((url: string, _opts: unknown, handler: (...args: unknown[]) => Promise<void>) => {
       routes.push({
+        handler: handler as (
+          req: Record<string, unknown>,
+          reply: Record<string, unknown>,
+        ) => Promise<void>,
         method: "PUT",
         url,
-        handler: handler as (
-          req: Record<string, unknown>,
-          reply: Record<string, unknown>,
-        ) => Promise<void>,
-      });
-    }),
-    delete: vi.fn((url: string, _opts: unknown, handler: (...args: unknown[]) => Promise<void>) => {
-      routes.push({
-        method: "DELETE",
-        url,
-        handler: handler as (
-          req: Record<string, unknown>,
-          reply: Record<string, unknown>,
-        ) => Promise<void>,
       });
     }),
   };
@@ -77,7 +77,7 @@ function createMockFastify() {
 function makeReply() {
   const status = vi.fn().mockReturnThis();
   const send = vi.fn().mockReturnThis();
-  return { status, send };
+  return { send, status };
 }
 
 describe("registerSchemaRoutes — list & get schemas", () => {
@@ -138,7 +138,7 @@ describe("registerSchemaRoutes — list & get schemas", () => {
       (r) => r.method === "GET" && r.url === "/api/schemas/:type/:slug",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "collection", slug: "posts" } }, reply);
+    await route.handler({ params: { slug: "posts", type: "collection" } }, reply);
     expect(reply.send).toHaveBeenCalledWith(
       expect.objectContaining({ slug: "posts", type: "collection" }),
     );
@@ -152,7 +152,7 @@ describe("registerSchemaRoutes — list & get schemas", () => {
       (r) => r.method === "GET" && r.url === "/api/schemas/:type/:slug",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "collection", slug: "nonexistent" } }, reply);
+    await route.handler({ params: { slug: "nonexistent", type: "collection" } }, reply);
     expect(reply.status).toHaveBeenCalledWith(404);
     expect(reply.send).toHaveBeenCalledWith({ error: "Schema not found" });
   });
@@ -169,21 +169,21 @@ describe("registerSchemaRoutes — field type code generation", () => {
     const reply = makeReply();
     await route.handler(
       {
-        params: { type: "collection" },
         body: {
-          slug: "articles",
           fields: [
             { name: "title", type: "text" },
             { name: "body", type: "richText" },
-            { name: "author", type: "relation", to: "users", kind: "oneToOne" },
+            { kind: "oneToOne", name: "author", to: "users", type: "relation" },
             {
               name: "status",
-              type: "select",
               options: [{ label: "Draft", value: "draft" }, "published"],
+              type: "select",
             },
-            { name: "tags", type: "multiSelect", options: ["a", "b"] },
+            { name: "tags", options: ["a", "b"], type: "multiSelect" },
           ],
+          slug: "articles",
         },
+        params: { type: "collection" },
       },
       reply,
     );
@@ -208,16 +208,16 @@ describe("registerSchemaRoutes — field type code generation", () => {
     const reply = makeReply();
     await route.handler(
       {
-        params: { type: "collection" },
         body: {
-          slug: "pages",
           fields: [
-            { name: "seo", type: "component", component: "seo", repeatable: false },
-            { name: "blocks", type: "dynamicZone", components: ["hero", "cta"] },
-            { name: "items", type: "array", fields: [{ name: "name", type: "text" }] },
-            { name: "meta", type: "object", fields: [{ name: "key", type: "text" }] },
+            { component: "seo", name: "seo", repeatable: false, type: "component" },
+            { components: ["hero", "cta"], name: "blocks", type: "dynamicZone" },
+            { fields: [{ name: "name", type: "text" }], name: "items", type: "array" },
+            { fields: [{ name: "key", type: "text" }], name: "meta", type: "object" },
           ],
+          slug: "pages",
         },
+        params: { type: "collection" },
       },
       reply,
     );
@@ -242,17 +242,17 @@ describe("registerSchemaRoutes — field type code generation", () => {
     const reply = makeReply();
     await route.handler(
       {
-        params: { type: "collection" },
         body: {
-          slug: "mixed",
           fields: [
-            { name: "path", type: "slug", source: "title", unique: true },
-            { name: "css", type: "code", language: "css" },
-            { name: "bg", type: "color", format: "hex" },
-            { name: "image", type: "media", multiple: true, allowedTypes: ["image"] },
-            { name: "file", type: "upload", multiple: false },
+            { name: "path", source: "title", type: "slug", unique: true },
+            { language: "css", name: "css", type: "code" },
+            { format: "hex", name: "bg", type: "color" },
+            { allowedTypes: ["image"], multiple: true, name: "image", type: "media" },
+            { multiple: false, name: "file", type: "upload" },
           ],
+          slug: "mixed",
         },
+        params: { type: "collection" },
       },
       reply,
     );
@@ -278,17 +278,17 @@ describe("registerSchemaRoutes — field type code generation", () => {
     const reply = makeReply();
     await route.handler(
       {
-        params: { type: "collection" },
         body: {
-          slug: "tabbed",
           fields: [
             {
               name: "content",
+              tabs: [{ fields: [{ name: "title", type: "text" }], label: "Main" }],
               type: "tabs",
-              tabs: [{ label: "Main", fields: [{ name: "title", type: "text" }] }],
             },
           ],
+          slug: "tabbed",
         },
+        params: { type: "collection" },
       },
       reply,
     );
@@ -309,7 +309,7 @@ describe("registerSchemaRoutes — field type code generation", () => {
     ) as (typeof routes)[number];
     const reply = makeReply();
     await route.handler(
-      { params: { type: "global" }, body: { slug: "settings", label: "Settings" } },
+      { body: { label: "Settings", slug: "settings" }, params: { type: "global" } },
       reply,
     );
     expect(reply.status).toHaveBeenCalledWith(201);
@@ -330,7 +330,7 @@ describe("registerSchemaRoutes — field type code generation", () => {
     ) as (typeof routes)[number];
     const reply = makeReply();
     await route.handler(
-      { params: { type: "component" }, body: { slug: "hero", label: "Hero" } },
+      { body: { label: "Hero", slug: "hero" }, params: { type: "component" } },
       reply,
     );
     expect(reply.status).toHaveBeenCalledWith(201);
@@ -354,8 +354,8 @@ describe("registerSchemaRoutes — create schema", () => {
     const reply = makeReply();
     await route.handler(
       {
+        body: { fields: [{ name: "name", type: "text" }], slug: "tags" },
         params: { type: "collection" },
-        body: { slug: "tags", fields: [{ name: "name", type: "text" }] },
       },
       reply,
     );
@@ -371,7 +371,7 @@ describe("registerSchemaRoutes — create schema", () => {
       (r) => r.method === "POST" && r.url === "/api/schemas/:type",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "collection" }, body: {} }, reply);
+    await route.handler({ body: {}, params: { type: "collection" } }, reply);
     expect(reply.status).toHaveBeenCalledWith(400);
     expect(reply.send).toHaveBeenCalledWith({ error: "slug is required" });
   });
@@ -384,7 +384,7 @@ describe("registerSchemaRoutes — create schema", () => {
       (r) => r.method === "POST" && r.url === "/api/schemas/:type",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "invalid" }, body: { slug: "test" } }, reply);
+    await route.handler({ body: { slug: "test" }, params: { type: "invalid" } }, reply);
     expect(reply.status).toHaveBeenCalledWith(400);
   });
 
@@ -397,7 +397,7 @@ describe("registerSchemaRoutes — create schema", () => {
       (r) => r.method === "POST" && r.url === "/api/schemas/:type",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "collection" }, body: { slug: "existing" } }, reply);
+    await route.handler({ body: { slug: "existing" }, params: { type: "collection" } }, reply);
     expect(reply.status).toHaveBeenCalledWith(409);
   });
 
@@ -410,7 +410,7 @@ describe("registerSchemaRoutes — create schema", () => {
     ) as (typeof routes)[number];
     const reply = makeReply();
     await route.handler(
-      { params: { type: "global" }, body: { slug: "config", label: "Config" } },
+      { body: { label: "Config", slug: "config" }, params: { type: "global" } },
       reply,
     );
     expect(reply.status).toHaveBeenCalledWith(201);
@@ -426,7 +426,7 @@ describe("registerSchemaRoutes — create schema", () => {
     ) as (typeof routes)[number];
     const reply = makeReply();
     await route.handler(
-      { params: { type: "component" }, body: { slug: "cta", label: "CTA" } },
+      { body: { label: "CTA", slug: "cta" }, params: { type: "component" } },
       reply,
     );
     expect(reply.status).toHaveBeenCalledWith(201);
@@ -449,8 +449,8 @@ describe("registerSchemaRoutes — update schema", () => {
     const reply = makeReply();
     await route.handler(
       {
-        params: { type: "collection", slug: "posts" },
         body: { fields: [{ name: "title", type: "text" }] },
+        params: { slug: "posts", type: "collection" },
       },
       reply,
     );
@@ -469,7 +469,7 @@ describe("registerSchemaRoutes — update schema", () => {
       (r) => r.method === "PUT" && r.url === "/api/schemas/:type/:slug",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "invalid", slug: "test" }, body: {} }, reply);
+    await route.handler({ body: {}, params: { slug: "test", type: "invalid" } }, reply);
     expect(reply.status).toHaveBeenCalledWith(400);
   });
 
@@ -481,7 +481,7 @@ describe("registerSchemaRoutes — update schema", () => {
       (r) => r.method === "PUT" && r.url === "/api/schemas/:type/:slug",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "collection", slug: "nonexistent" }, body: {} }, reply);
+    await route.handler({ body: {}, params: { slug: "nonexistent", type: "collection" } }, reply);
     expect(reply.status).toHaveBeenCalledWith(404);
   });
 });
@@ -500,7 +500,7 @@ describe("registerSchemaRoutes — delete schema", () => {
       (r) => r.method === "DELETE" && r.url === "/api/schemas/:type/:slug",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "collection", slug: "posts" } }, reply);
+    await route.handler({ params: { slug: "posts", type: "collection" } }, reply);
     expect(existsSync(join(tmpDir, "collections", "posts.ts"))).toBe(false);
   });
 
@@ -512,7 +512,7 @@ describe("registerSchemaRoutes — delete schema", () => {
       (r) => r.method === "DELETE" && r.url === "/api/schemas/:type/:slug",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "invalid", slug: "test" } }, reply);
+    await route.handler({ params: { slug: "test", type: "invalid" } }, reply);
     expect(reply.status).toHaveBeenCalledWith(400);
   });
 
@@ -524,7 +524,7 @@ describe("registerSchemaRoutes — delete schema", () => {
       (r) => r.method === "DELETE" && r.url === "/api/schemas/:type/:slug",
     ) as (typeof routes)[number];
     const reply = makeReply();
-    await route.handler({ params: { type: "collection", slug: "nonexistent" } }, reply);
+    await route.handler({ params: { slug: "nonexistent", type: "collection" } }, reply);
     expect(reply.status).toHaveBeenCalledWith(404);
   });
 });

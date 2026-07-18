@@ -1,25 +1,26 @@
-import { useEffect, useState, type FormEvent } from "react";
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
+import { ArrowLeft } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+
+import { FieldInput } from "@/components/field-input";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useCollection } from "@/lib/hooks";
-import { Button } from "@/components/ui/button";
-import { FieldInput } from "@/components/field-input";
-import { ArrowLeft } from "lucide-react";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: CreateEntry,
   getParentRoute: () => rootRoute,
   path: "/collections/$slug/new",
-  component: CreateEntry,
 });
 
 function CreateEntry() {
   const { slug } = useParams({ from: Route.id });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { collection, isLoading: loading, error: loadError } = useCollection(slug);
+  const { collection, error: loadError, isLoading: loading } = useCollection(slug);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -66,11 +67,11 @@ function CreateEntry() {
         payload[f.name] = f.localized ? { [locale]: v } : v;
       }
       await apiFetch(`/api/${slug}`, {
-        method: "POST",
         body: JSON.stringify(payload),
+        method: "POST",
       });
       toast("Entry created", "success");
-      navigate({ to: "/collections/$slug", params: { slug } });
+      navigate({ params: { slug }, to: "/collections/$slug" });
     } catch (err) {
       if (err instanceof ApiError && err.details) {
         const fieldErrors: Record<string, string> = {};

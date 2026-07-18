@@ -1,11 +1,11 @@
-import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 export interface ConfigLoaderOptions {
-  cwd?: string;
-  envPrefix?: string;
-  configFile?: string;
+  cwd?: string | undefined;
+  envPrefix?: string | undefined;
+  configFile?: string | undefined;
 }
 
 function parseEnvValue(value: string): unknown {
@@ -30,7 +30,7 @@ export function createConfigLoader(options?: ConfigLoaderOptions) {
         const configKey = key
           .slice(envPrefix.length)
           .toLowerCase()
-          .replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+          .replace(/_([a-z])/g, (_match: string, c: string) => c.toUpperCase());
         config[configKey] = parseEnvValue(value);
       }
     }

@@ -1,14 +1,15 @@
-import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
-import { mkdir, writeFile, rm } from "node:fs/promises";
-import { resolve } from "node:path";
-import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
+import { mkdir, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
+import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
+
 import { SchemaWatcher, type SchemaChangeEvent } from "../src/index.js";
 
 const testDir = resolve(tmpdir(), `cms-watcher-test-${Date.now()}`);
 
 beforeEach(async () => {
-  await rm(testDir, { recursive: true, force: true });
+  await rm(testDir, { force: true, recursive: true });
   await mkdir(testDir, { recursive: true });
   // Pre-create schema subdirectories so FSEvents doesn't miss events in new dirs
   await mkdir(resolve(testDir, "collections"), { recursive: true });
@@ -17,7 +18,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await rm(testDir, { recursive: true, force: true });
+  await rm(testDir, { force: true, recursive: true });
 });
 
 async function createSchema(dir: string, slug: string) {
@@ -147,7 +148,7 @@ describe("SchemaWatcher", () => {
 
   it("creates baseDir when it does not exist", async () => {
     const uniqueDir = resolve(tmpdir(), `cms-watcher-mkdir-${randomUUID()}`);
-    await rm(uniqueDir, { recursive: true, force: true });
+    await rm(uniqueDir, { force: true, recursive: true });
 
     const watcher = new SchemaWatcher(uniqueDir);
 
@@ -159,7 +160,7 @@ describe("SchemaWatcher", () => {
     expect(existsSync(uniqueDir)).toBe(true);
 
     await watcher.stop();
-    await rm(uniqueDir, { recursive: true, force: true });
+    await rm(uniqueDir, { force: true, recursive: true });
   });
 
   it("filters out non-string filenames (Buffer)", async () => {
@@ -219,7 +220,7 @@ describe("SchemaWatcher", () => {
 
     vi.doUnmock("node:fs");
     vi.resetModules();
-    await rm(uniqueDir, { recursive: true, force: true });
+    await rm(uniqueDir, { force: true, recursive: true });
   });
 
   it("start() is idempotent — calling twice is a no-op", async () => {

@@ -10,7 +10,7 @@ export type Middleware = (
 ) => Promise<void>;
 
 export interface EventBusOptions {
-  middleware?: Middleware[];
+  middleware?: Middleware[] | undefined;
 }
 
 export class EventBus {

@@ -1,32 +1,33 @@
-import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
+
+import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
 function toPascal(s: string): string {
   return s.replace(/(^\w|[-_]\w)/g, (c) => c.replace(/[-_]/g, "").toUpperCase());
 }
 
 const fieldTypeToGraphQL: Record<string, string> = {
-  text: "String",
-  textarea: "String",
-  number: "Float",
   boolean: "Boolean",
+  checkbox: "Boolean",
+  code: "String",
+  color: "String",
   date: "String",
   datetime: "String",
   email: "String",
-  password: "String",
-  url: "String",
   json: "JSON",
-  richText: "JSON",
   markdown: "String",
-  code: "String",
-  color: "String",
   media: "String",
-  upload: "String",
-  select: "String",
   multiSelect: "[String]",
+  number: "Float",
+  password: "String",
   radio: "String",
-  checkbox: "Boolean",
+  richText: "JSON",
+  select: "String",
   slug: "String",
+  text: "String",
+  textarea: "String",
+  upload: "String",
+  url: "String",
 };
 
 function fieldToGraphQLType(field: FieldDefinition): string {
@@ -135,18 +136,18 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
   resolversCode.push(`}`);
   resolversCode.push(``);
 
-  files.push({ path: "graphql/schema.graphql", content: typeDefs.join("\n") });
-  files.push({ path: "graphql/resolvers.ts", content: resolversCode.join("\n") });
+  files.push({ content: typeDefs.join("\n"), path: "graphql/schema.graphql" });
+  files.push({ content: resolversCode.join("\n"), path: "graphql/resolvers.ts" });
 
   return files;
 }
 
 export const graphqlGenerator: Generator = {
-  name: "graphql",
   description: "Generates GraphQL schema and resolvers from collection definitions",
   async generate(options: GenerationOptions): Promise<GeneratedFile[]> {
     if (!options.collections || options.collections.length === 0) return [];
 
     return generateGraphQLFiles(options.collections);
   },
+  name: "graphql",
 };

@@ -1,46 +1,48 @@
-import { describe, it, expect } from "vitest";
-import type { CollectionDefinition } from "@arche-cms/types";
 import type { DatabaseAdapter } from "@arche-cms/database";
+import type { CollectionDefinition } from "@arche-cms/types";
+
+import { describe, it, expect } from "vitest";
+
 import { generateResolvers } from "../src/resolvers.js";
 
 const mockAdapter = {
-  findOne: async () => null,
-  findMany: async () => ({ data: [], total: 0 }),
-  create: async () => ({}),
-  update: async () => null,
-  delete: async () => true,
   connect: async () => {},
-  disconnect: async () => {},
-  transaction: async <T>(fn: () => Promise<T>) => fn(),
-  raw: async () => [],
+  create: async () => ({}),
   createTable: async () => {},
+  delete: async () => true,
+  disconnect: async () => {},
   dropTable: async () => {},
-  runMigration: async () => {},
+  findMany: async () => ({ data: [], total: 0 }),
+  findOne: async () => null,
   getExecutedMigrations: async () => [],
+  raw: async () => [],
+  runMigration: async () => {},
+  transaction: async <T>(fn: () => Promise<T>) => fn(),
+  update: async () => null,
 } satisfies DatabaseAdapter;
 
 const postCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "body", type: "richText" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 const userCollection: CollectionDefinition = {
-  slug: "users",
-  labels: { singular: "User", plural: "Users" },
   fields: [{ name: "name", type: "text" }],
+  labels: { plural: "Users", singular: "User" },
+  slug: "users",
 };
 
 const postWithAuthorCollection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
-    { name: "author", type: "relation", to: "users" },
+    { name: "author", to: "users", type: "relation" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 describe("generateResolvers", () => {
@@ -133,7 +135,7 @@ describe("generateResolvers", () => {
   });
 
   it("createPosts calls adapter.create and returns the row", async () => {
-    const created = { id: 1, title: "New Post", body: "Content" };
+    const created = { body: "Content", id: 1, title: "New Post" };
     const adapter = {
       ...mockAdapter,
       create: async (_collection: string, _data: unknown) => {
@@ -144,11 +146,11 @@ describe("generateResolvers", () => {
       Mutation: Record<string, (...args: unknown[]) => unknown>;
     };
     const result = await resolvers.Mutation.createPosts({}, { data: { title: "New Post" } });
-    expect(result).toEqual({ id: "1", title: "New Post", body: "Content" });
+    expect(result).toEqual({ body: "Content", id: "1", title: "New Post" });
   });
 
   it("updatePosts calls adapter.update", async () => {
-    const updated = { id: "1", title: "Updated", body: "Content" };
+    const updated = { body: "Content", id: "1", title: "Updated" };
     const adapter = {
       ...mockAdapter,
       update: async () => updated,
@@ -158,9 +160,9 @@ describe("generateResolvers", () => {
     };
     const result = await resolvers.Mutation.updatePosts(
       {},
-      { id: "1", data: { title: "Updated" } },
+      { data: { title: "Updated" }, id: "1" },
     );
-    expect(result).toEqual({ id: "1", title: "Updated", body: "Content" });
+    expect(result).toEqual({ body: "Content", id: "1", title: "Updated" });
   });
 
   it("updatePosts throws on not found", async () => {
@@ -172,7 +174,7 @@ describe("generateResolvers", () => {
       Mutation: Record<string, (...args: unknown[]) => unknown>;
     };
     await expect(
-      resolvers.Mutation.updatePosts({}, { id: "999", data: { title: "Nope" } }),
+      resolvers.Mutation.updatePosts({}, { data: { title: "Nope" }, id: "999" }),
     ).rejects.toThrow("Not found");
   });
 
@@ -214,7 +216,7 @@ describe("generateResolvers", () => {
         [userCollection, postWithAuthorCollection],
         adapter,
       ) as Record<string, Record<string, (...args: unknown[]) => unknown>>;
-      const result = await resolvers.Posts.author({ id: "1", title: "Hello", author: "user-1" });
+      const result = await resolvers.Posts.author({ author: "user-1", id: "1", title: "Hello" });
       expect(result).toEqual({ id: "user-1", name: "Alice" });
     });
 
@@ -223,15 +225,15 @@ describe("generateResolvers", () => {
         [userCollection, postWithAuthorCollection],
         mockAdapter,
       ) as Record<string, Record<string, (...args: unknown[]) => unknown>>;
-      const result = await resolvers.Posts.author({ id: "1", title: "Hello", author: null });
+      const result = await resolvers.Posts.author({ author: null, id: "1", title: "Hello" });
       expect(result).toBeNull();
     });
 
     it("resolves missing target collection without error", () => {
       const orphanCollection: CollectionDefinition = {
+        fields: [{ name: "ref", to: "nonexistent", type: "relation" }],
+        labels: { plural: "Orphans", singular: "Orphan" },
         slug: "orphans",
-        labels: { singular: "Orphan", plural: "Orphans" },
-        fields: [{ name: "ref", type: "relation", to: "nonexistent" }],
       };
       const resolvers = generateResolvers([orphanCollection], mockAdapter);
       expect(resolvers).not.toHaveProperty("Orphans");

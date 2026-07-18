@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, mkdirSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { resolve } from "node:path";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 let tmpDir: string;
 let originalArgv: string[];
@@ -20,7 +20,7 @@ beforeEach(() => {
 afterEach(() => {
   process.argv = originalArgv;
   process.cwd = originalCwd;
-  rmSync(tmpDir, { recursive: true, force: true });
+  rmSync(tmpDir, { force: true, recursive: true });
   vi.restoreAllMocks();
   vi.resetModules();
 });
@@ -29,10 +29,10 @@ function mockReadline(responses: string[]) {
   let callIndex = 0;
   vi.doMock("node:readline", () => ({
     createInterface: () => ({
+      close: () => {},
       question: (_query: string, cb: (answer: string) => void) => {
         cb(responses[callIndex++] ?? "");
       },
-      close: () => {},
     }),
   }));
 }
@@ -131,10 +131,10 @@ describe("main - error handling", () => {
 
     vi.doMock("node:readline", () => ({
       createInterface: () => ({
+        close: () => {},
         question: (_query: string, _cb: (answer: string) => void) => {
           throw new Error("readline failure");
         },
-        close: () => {},
       }),
     }));
 

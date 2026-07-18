@@ -1,5 +1,7 @@
-import { createClient } from "@libsql/client";
 import type { InValue } from "@libsql/client";
+
+import { createClient } from "@libsql/client";
+
 import type { DatabaseAdapter, ExistingSchema, Migration, QueryOptions } from "./types.js";
 
 type LibSqlClient = ReturnType<typeof createClient>;
@@ -41,8 +43,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
 
   async findOne(collection: string, id: string): Promise<Record<string, unknown> | null> {
     const result = await this.db.execute({
-      sql: `SELECT * FROM "${collection}" WHERE id = ?`,
       args: [id],
+      sql: `SELECT * FROM "${collection}" WHERE id = ?`,
     });
     return (result.rows[0] as Record<string, unknown> | undefined) ?? null;
   }
@@ -60,7 +62,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
       const val = where[key];
       if (Array.isArray(val)) {
         conditions.push(`"${key}" IN (${val.map(() => "?").join(", ")})`);
-        values.push(...val);
+        values.push(...(val as unknown[]));
       } else {
         conditions.push(`"${key}" = ?`);
         values.push(val);
@@ -70,8 +72,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const countResult = await this.db.execute({
-      sql: `SELECT COUNT(*) as count FROM "${collection}" ${whereClause}`,
       args: toArgs(values),
+      sql: `SELECT COUNT(*) as count FROM "${collection}" ${whereClause}`,
     });
     const total = Number((countResult.rows[0] as Record<string, unknown>).count);
 
@@ -85,8 +87,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
     const offsetClause = options?.offset ? `OFFSET ${options.offset}` : "";
 
     const dataResult = await this.db.execute({
-      sql: `SELECT * FROM "${collection}" ${whereClause} ${sortClause} ${limitClause} ${offsetClause}`,
       args: toArgs(values),
+      sql: `SELECT * FROM "${collection}" ${whereClause} ${sortClause} ${limitClause} ${offsetClause}`,
     });
 
     return { data: dataResult.rows as Record<string, unknown>[], total };
@@ -102,8 +104,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
     const columns = keys.map((k) => `"${k}"`).join(", ");
 
     const result = await this.db.execute({
-      sql: `INSERT INTO "${collection}" (${columns}) VALUES (${placeholders}) RETURNING *`,
       args: values,
+      sql: `INSERT INTO "${collection}" (${columns}) VALUES (${placeholders}) RETURNING *`,
     });
 
     return result.rows[0] as Record<string, unknown>;
@@ -119,8 +121,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
     const setClause = keys.map((k) => `"${k}" = ?`).join(", ");
 
     const result = await this.db.execute({
-      sql: `UPDATE "${collection}" SET ${setClause} WHERE id = ? RETURNING *`,
       args: [...values, id],
+      sql: `UPDATE "${collection}" SET ${setClause} WHERE id = ? RETURNING *`,
     });
 
     return (result.rows[0] as Record<string, unknown> | undefined) ?? null;
@@ -128,8 +130,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
 
   async delete(collection: string, id: string): Promise<boolean> {
     const result = await this.db.execute({
-      sql: `DELETE FROM "${collection}" WHERE id = ?`,
       args: [id],
+      sql: `DELETE FROM "${collection}" WHERE id = ?`,
     });
     return result.rowsAffected > 0;
   }
@@ -138,8 +140,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
     if (ids.length === 0) return 0;
     const placeholders = ids.map(() => "?").join(", ");
     const result = await this.db.execute({
-      sql: `DELETE FROM "${collection}" WHERE id IN (${placeholders})`,
       args: ids,
+      sql: `DELETE FROM "${collection}" WHERE id IN (${placeholders})`,
     });
     return Number(result.rowsAffected);
   }
@@ -157,7 +159,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
   }
 
   async raw(sql: string, params?: unknown[]): Promise<unknown> {
-    const result = await this.db.execute({ sql, args: toArgs(params ?? []) });
+    const result = await this.db.execute({ args: toArgs(params ?? []), sql });
     return result.rows;
   }
 
@@ -177,8 +179,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
   async runMigration(migration: Migration): Promise<void> {
     await this.db.execute(migration.up);
     await this.db.execute({
-      sql: "INSERT INTO __cms_migrations (id, name, executed_at) VALUES (?, ?, ?)",
       args: [migration.id, migration.name, new Date().toISOString()],
+      sql: "INSERT INTO __cms_migrations (id, name, executed_at) VALUES (?, ?, ?)",
     });
   }
 

@@ -1,5 +1,6 @@
-import { createHmac } from "node:crypto";
 import type { DatabaseAdapter } from "@arche-cms/database";
+
+import { createHmac } from "node:crypto";
 
 const WEBHOOKS_TABLE = "__cms_webhooks";
 
@@ -18,14 +19,14 @@ export interface WebhookRow {
 export async function ensureWebhooksTable(adapter: DatabaseAdapter): Promise<void> {
   try {
     await adapter.createTable(WEBHOOKS_TABLE, {
-      name: "TEXT NOT NULL",
-      url: "TEXT NOT NULL",
-      events: "TEXT NOT NULL DEFAULT '[]'",
       collection: "TEXT NOT NULL DEFAULT '*'",
-      enabled: "INTEGER NOT NULL DEFAULT 1",
-      secret: "TEXT NOT NULL DEFAULT ''",
       created_at: "TEXT NOT NULL",
+      enabled: "INTEGER NOT NULL DEFAULT 1",
+      events: "TEXT NOT NULL DEFAULT '[]'",
+      name: "TEXT NOT NULL",
+      secret: "TEXT NOT NULL DEFAULT ''",
       updated_at: "TEXT NOT NULL",
+      url: "TEXT NOT NULL",
     });
   } catch {
     // table already exists
@@ -46,10 +47,10 @@ export async function dispatchWebhooks(
     )) as WebhookRow[];
 
     const timestamp = new Date().toISOString();
-    const body = JSON.stringify({ event, collection, id: documentId, data, timestamp });
+    const body = JSON.stringify({ collection, data, event, id: documentId, timestamp });
 
     for (const webhook of rows) {
-      const eventList: string[] = JSON.parse(webhook.events ?? "[]");
+      const eventList: string[] = JSON.parse(webhook.events ?? "[]") as string[];
       if (!eventList.includes(event)) continue;
 
       fireWebhook(webhook.url, body, webhook.secret).catch(() => {
@@ -77,9 +78,9 @@ async function fireWebhook(url: string, body: string, secret: string): Promise<v
 
   try {
     await fetch(url, {
-      method: "POST",
-      headers,
       body,
+      headers,
+      method: "POST",
       signal: controller.signal,
     });
   } finally {

@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+/* eslint-disable no-secrets/no-secrets */
 import { existsSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
-import { resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { resolve } from "node:path";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 async function scaffold(
   projectDir: string,
@@ -19,7 +20,7 @@ describe("create-app scaffold", () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(tmpDir, { force: true, recursive: true });
   });
 
   it("creates all required directories", async () => {

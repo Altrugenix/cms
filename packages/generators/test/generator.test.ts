@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
+
 import type { Generator, GeneratedFile, GenerationOptions } from "../src/generator.js";
 
 describe("generator interfaces", () => {
   it("GeneratedFile type is usable", () => {
-    const file: GeneratedFile = { path: "test.ts", content: "hello" };
+    const file: GeneratedFile = { content: "hello", path: "test.ts" };
     expect(file.path).toBe("test.ts");
     expect(file.content).toBe("hello");
   });
@@ -18,11 +19,11 @@ describe("generator interfaces", () => {
 
   it("Generator interface is implementable", async () => {
     const gen: Generator = {
-      name: "test",
       description: "test generator",
       async generate() {
-        return [{ path: "out.ts", content: "done" }];
+        return [{ content: "done", path: "out.ts" }];
       },
+      name: "test",
     };
     expect(gen.name).toBe("test");
     const files = await gen.generate({ outputDir: "/tmp" });

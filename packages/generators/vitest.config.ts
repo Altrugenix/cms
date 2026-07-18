@@ -2,17 +2,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    testTimeout: 30000,
-    pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
     coverage: {
-      provider: "v8",
       all: true,
-      include: ["src/**/*.ts"],
       exclude: [
         "**/types.ts",
         "**/src/types/**",
@@ -21,6 +12,21 @@ export default defineConfig({
         "**/dist/**",
         "**/src/generator.ts",
       ],
+      include: ["src/**/*.ts"],
+      provider: "v8",
+      thresholds: {
+        branches: 50,
+        functions: 60,
+        lines: 60,
+        statements: 60,
+      },
     },
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
+    testTimeout: 30000,
   },
 });

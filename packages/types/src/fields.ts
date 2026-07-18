@@ -30,32 +30,34 @@ export type FieldType =
   | "slug";
 
 export interface FieldValidation {
-  required?: boolean;
-  unique?: boolean;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  message?: string;
-  custom?: (value: unknown) => boolean | string;
+  required?: boolean | undefined;
+  unique?: boolean | undefined;
+  min?: number | undefined;
+  max?: number | undefined;
+  minLength?: number | undefined;
+  maxLength?: number | undefined;
+  pattern?: string | undefined;
+  message?: string | undefined;
+  custom?: ((value: unknown) => boolean | string) | undefined;
 }
 
 export interface FieldBase {
   name: string;
   type: FieldType;
-  label?: string;
-  localized?: boolean;
-  defaultValue?: unknown;
-  validation?: FieldValidation;
-  admin?: {
-    description?: string;
-    placeholder?: string;
-    hidden?: boolean;
-    readOnly?: boolean;
-    order?: number;
-    width?: string;
-  };
+  label?: string | undefined;
+  localized?: boolean | undefined;
+  defaultValue?: unknown | undefined;
+  validation?: FieldValidation | undefined;
+  admin?:
+    | {
+        description?: string | undefined;
+        placeholder?: string | undefined;
+        hidden?: boolean | undefined;
+        readOnly?: boolean | undefined;
+        order?: number | undefined;
+        width?: string | undefined;
+      }
+    | undefined;
 }
 
 export interface TextField extends FieldBase {
@@ -108,24 +110,24 @@ export interface MarkdownField extends FieldBase {
 
 export interface CodeField extends FieldBase {
   type: "code";
-  language?: string;
+  language?: string | undefined;
 }
 
 export interface ColorField extends FieldBase {
   type: "color";
-  format?: "hex" | "rgb" | "rgba" | "hsl";
+  format?: "hex" | "rgb" | "rgba" | "hsl" | undefined;
 }
 
 export interface MediaField extends FieldBase {
   type: "media";
-  multiple?: boolean;
-  allowedTypes?: Array<"image" | "video" | "audio" | "document">;
+  multiple?: boolean | undefined;
+  allowedTypes?: Array<"image" | "video" | "audio" | "document"> | undefined;
 }
 
 export interface UploadField extends FieldBase {
   type: "upload";
-  multiple?: boolean;
-  allowedTypes?: Array<"image" | "video" | "audio" | "document">;
+  multiple?: boolean | undefined;
+  allowedTypes?: Array<"image" | "video" | "audio" | "document"> | undefined;
 }
 
 export interface SelectField extends FieldBase {
@@ -150,13 +152,13 @@ export interface CheckboxField extends FieldBase {
 export interface RelationField extends FieldBase {
   type: "relation";
   to: string;
-  kind?: "oneToOne" | "oneToMany" | "manyToOne" | "manyToMany";
+  kind?: "oneToOne" | "oneToMany" | "manyToOne" | "manyToMany" | undefined;
 }
 
 export interface ComponentField extends FieldBase {
   type: "component";
   component: string;
-  repeatable?: boolean;
+  repeatable?: boolean | undefined;
 }
 
 export interface DynamicZoneField extends FieldBase {
@@ -191,8 +193,8 @@ export interface RepeaterField extends FieldBase {
 
 export interface SlugField extends FieldBase {
   type: "slug";
-  source?: string;
-  unique?: boolean;
+  source?: string | undefined;
+  unique?: boolean | undefined;
 }
 
 export type FieldDefinition =

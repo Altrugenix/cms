@@ -1,26 +1,27 @@
-import { useState, type FormEvent } from "react";
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
+import { ArrowLeft, CheckCircle } from "lucide-react";
+import { useState, type FormEvent } from "react";
+
+import { FieldInput } from "@/components/field-input";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useCollection, useEntry } from "@/lib/hooks";
-import { Button } from "@/components/ui/button";
-import { FieldInput } from "@/components/field-input";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: EditEntry,
   getParentRoute: () => rootRoute,
   path: "/collections/$slug/$id",
-  component: EditEntry,
 });
 
 function EditEntry() {
-  const { slug, id } = useParams({ from: Route.id });
+  const { id, slug } = useParams({ from: Route.id });
   const navigate = useNavigate();
   const { toast } = useToast();
   const { collection, isLoading: colLoading } = useCollection(slug);
-  const { data: entry, isLoading: entryLoading, error: entryError } = useEntry(slug, id, locale);
+  const { data: entry, error: entryError, isLoading: entryLoading } = useEntry(slug, id, locale);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -67,11 +68,11 @@ function EditEntry() {
         payload[f.name] = f.localized ? { [locale]: v } : v;
       }
       await apiFetch(`/api/${slug}/${id}`, {
-        method: "PATCH",
         body: JSON.stringify(payload),
+        method: "PATCH",
       });
       toast("Entry saved", "success");
-      navigate({ to: "/collections/$slug", params: { slug } });
+      navigate({ params: { slug }, to: "/collections/$slug" });
     } catch (err) {
       if (err instanceof ApiError && err.details) {
         const fieldErrors: Record<string, string> = {};

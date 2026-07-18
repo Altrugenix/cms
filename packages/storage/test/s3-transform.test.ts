@@ -1,16 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Readable } from "node:stream";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@aws-sdk/client-s3", () => {
   const mockSend = vi.fn();
   const S3Client = vi.fn(() => ({ send: mockSend }));
   return {
-    S3Client,
-    PutObjectCommand: vi.fn(),
-    GetObjectCommand: vi.fn(),
     DeleteObjectCommand: vi.fn(),
+    GetObjectCommand: vi.fn(),
     HeadObjectCommand: vi.fn(),
     mockSend,
+    PutObjectCommand: vi.fn(),
+    S3Client,
   };
 });
 

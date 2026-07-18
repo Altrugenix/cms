@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
+
 import { JwtService } from "../src/jwt.js";
 
 const config = {
-  secret: "test-secret-at-least-32-chars-long-for-security!!",
   accessTokenExpiresIn: "15m",
   refreshTokenExpiresIn: "7d",
+  secret: "test-secret-at-least-32-chars-long-for-security!!",
 };
 
 describe("JwtService edge cases", () => {
@@ -37,9 +38,9 @@ describe("JwtService edge cases", () => {
     const { SignJWT } = await import("jose");
     const secret = new TextEncoder().encode(config.secret);
     const token = await new SignJWT({
-      sub: "1",
       email: "test@test.com",
       role: "editor",
+      sub: "1",
       type: "refresh",
     })
       .setProtectedHeader({ alg: "HS256" })

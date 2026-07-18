@@ -10,8 +10,8 @@ vi.mock("@fastify/static", () => ({
 
 function mockFastify() {
   return {
+    log: { info: vi.fn(), warn: vi.fn() },
     register: vi.fn().mockResolvedValue(undefined),
-    log: { warn: vi.fn(), info: vi.fn() },
     setNotFoundHandler: vi.fn(),
   };
 }

@@ -1,5 +1,6 @@
-import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 import type { CollectionDefinition } from "@arche-cms/types";
+
+import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
 function fieldToColumnType(type: string): string {
   switch (type) {
@@ -103,16 +104,16 @@ function generateMigrationFile(collections: CollectionDefinition[]): string {
 }
 
 export const migrationGenerator: Generator = {
-  name: "migrations",
   description: "Generates database migration files from collection definitions",
   async generate(options: GenerationOptions): Promise<GeneratedFile[]> {
     if (!options.collections || options.collections.length === 0) return [];
 
     return [
       {
-        path: `migrations/${new Date().toISOString().split("T")[0]}_initial_schema.ts`,
         content: generateMigrationFile(options.collections),
+        path: `migrations/${new Date().toISOString().split("T")[0]}_initial_schema.ts`,
       },
     ];
   },
+  name: "migrations",
 };

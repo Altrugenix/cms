@@ -1,15 +1,16 @@
-import { useState, type FormEvent } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
+import { useState, type FormEvent } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiUrl } from "@/lib/api";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: ForgotPasswordPage,
   getParentRoute: () => rootRoute,
   path: "/forgot-password",
-  component: ForgotPasswordPage,
 });
 
 function ForgotPasswordPage() {
@@ -25,9 +26,9 @@ function ForgotPasswordPage() {
     setLoading(true);
     try {
       const res = await fetch(`${getApiUrl()}/api/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
       });
       const data = (await res.json()) as { message: string };
       setMessage(data.message);

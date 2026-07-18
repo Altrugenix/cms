@@ -1,23 +1,24 @@
-import { useState } from "react";
 import { createRoute, Link } from "@tanstack/react-router";
-import { Route as settingsRoute } from "@/routes/settings/index";
+import { Pencil, Trash2, Plus, Webhook } from "lucide-react";
+import { useState } from "react";
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
 import { type WebhookMeta } from "@/lib/api";
 import { useWebhooksList, useDeleteWebhook, useUpdateWebhook } from "@/lib/hooks";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Pencil, Trash2, Plus, Webhook } from "lucide-react";
+import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  component: WebhooksList,
   getParentRoute: () => settingsRoute,
   path: "webhooks",
-  component: WebhooksList,
 });
 
 function WebhooksList() {
   const { toast } = useToast();
-  const { data: webhooksData, isLoading: loading, error } = useWebhooksList();
+  const { data: webhooksData, error, isLoading: loading } = useWebhooksList();
   const updateWebhook = useUpdateWebhook();
   const deleteWebhook = useDeleteWebhook();
   const webhooks: WebhookMeta[] = webhooksData?.data ?? [];
@@ -27,8 +28,8 @@ function WebhooksList() {
   const handleToggle = async (webhook: WebhookMeta) => {
     try {
       await updateWebhook.mutateAsync({
-        id: webhook.id,
         data: { enabled: !webhook.enabled },
+        id: webhook.id,
       });
       toast(`Webhook ${!webhook.enabled ? "enabled" : "disabled"}`, "success");
     } catch (err) {

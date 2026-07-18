@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { generateTypeDefs, generateResolvers } from "../src/index.js";
 
 describe("package index exports", () => {

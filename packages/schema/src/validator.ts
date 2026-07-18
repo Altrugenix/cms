@@ -15,14 +15,14 @@ function validateField(field: FieldDefinition, path: string): ValidationIssue[] 
   const issues: ValidationIssue[] = [];
 
   if (!field.name || field.name.trim().length === 0) {
-    issues.push({ path: `${path}.name`, message: "Field name is required", severity: "error" });
+    issues.push({ message: "Field name is required", path: `${path}.name`, severity: "error" });
   }
 
   if (field.name && !/^[a-z][a-zA-Z0-9]*$/.test(field.name)) {
     issues.push({
-      path: `${path}.name`,
       message:
         "Field name must start with a lowercase letter and contain only alphanumeric characters",
+      path: `${path}.name`,
       severity: "error",
     });
   }
@@ -31,8 +31,8 @@ function validateField(field: FieldDefinition, path: string): ValidationIssue[] 
     const f = field as { options?: Array<{ label: string; value: string }> };
     if (!f.options || f.options.length === 0) {
       issues.push({
-        path: `${path}.options`,
         message: "Select/multiSelect/radio fields require options",
+        path: `${path}.options`,
         severity: "error",
       });
     }
@@ -42,8 +42,8 @@ function validateField(field: FieldDefinition, path: string): ValidationIssue[] 
     const f = field as { to?: string };
     if (!f.to) {
       issues.push({
-        path: `${path}.to`,
         message: "Relation field requires target collection",
+        path: `${path}.to`,
         severity: "error",
       });
     }
@@ -53,8 +53,8 @@ function validateField(field: FieldDefinition, path: string): ValidationIssue[] 
     const f = field as { component?: string };
     if (!f.component) {
       issues.push({
-        path: `${path}.component`,
         message: "Component field requires component slug",
+        path: `${path}.component`,
         severity: "error",
       });
     }
@@ -64,8 +64,8 @@ function validateField(field: FieldDefinition, path: string): ValidationIssue[] 
     const f = field as { components?: string[] };
     if (!f.components || f.components.length === 0) {
       issues.push({
-        path: `${path}.components`,
         message: "Dynamic zone requires at least one component",
+        path: `${path}.components`,
         severity: "error",
       });
     }
@@ -85,8 +85,8 @@ function validateFields(fields: FieldDefinition[], path: string): ValidationIssu
 
     if (names.has(field.name)) {
       issues.push({
-        path: `${fieldPath}.name`,
         message: `Duplicate field name: ${field.name}`,
+        path: `${fieldPath}.name`,
         severity: "error",
       });
     }
@@ -102,30 +102,30 @@ export function validateCollection(collection: CollectionDefinition): Validation
   const issues: ValidationIssue[] = [];
 
   if (!collection.slug || collection.slug.trim().length === 0) {
-    issues.push({ path: "slug", message: "Collection slug is required", severity: "error" });
+    issues.push({ message: "Collection slug is required", path: "slug", severity: "error" });
   }
 
   if (collection.slug && !/^[a-z][a-z0-9_-]*$/.test(collection.slug)) {
     issues.push({
-      path: "slug",
       message:
         "Collection slug must be lowercase with only letters, numbers, hyphens, and underscores",
+      path: "slug",
       severity: "error",
     });
   }
 
   if (!collection.labels || !collection.labels.singular || !collection.labels.plural) {
     issues.push({
-      path: "labels",
       message: "Collection requires singular and plural labels",
+      path: "labels",
       severity: "error",
     });
   }
 
   if (!collection.fields || collection.fields.length === 0) {
     issues.push({
-      path: "fields",
       message: "Collection requires at least one field",
+      path: "fields",
       severity: "warning",
     });
   } else {
@@ -133,7 +133,7 @@ export function validateCollection(collection: CollectionDefinition): Validation
   }
 
   return {
-    valid: issues.filter((i) => i.severity === "error").length === 0,
     issues,
+    valid: issues.filter((i) => i.severity === "error").length === 0,
   };
 }

@@ -1,21 +1,22 @@
-import { useEffect } from "react";
 import { Outlet, createRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
-import { cn } from "@/lib/utils";
 import { Key, Puzzle, Webhook, Shield, Users } from "lucide-react";
+import { useEffect } from "react";
+
+import { cn } from "@/lib/utils";
+import { Route as rootRoute } from "@/routes/__root";
 
 const settingsNavItems = [
-  { to: "/settings/api-tokens", label: "API Tokens", icon: Key },
-  { to: "/settings/plugins", label: "Plugins", icon: Puzzle },
-  { to: "/settings/webhooks", label: "Webhooks", icon: Webhook },
-  { to: "/settings/roles", label: "Roles", icon: Shield },
-  { to: "/settings/users", label: "Users", icon: Users },
+  { icon: Key, label: "API Tokens", to: "/settings/api-tokens" },
+  { icon: Puzzle, label: "Plugins", to: "/settings/plugins" },
+  { icon: Webhook, label: "Webhooks", to: "/settings/webhooks" },
+  { icon: Shield, label: "Roles", to: "/settings/roles" },
+  { icon: Users, label: "Users", to: "/settings/users" },
 ];
 
 export const Route = createRoute({
+  component: SettingsLayout,
   getParentRoute: () => rootRoute,
   path: "/settings",
-  component: SettingsLayout,
 });
 
 function SettingsLayout() {
@@ -24,7 +25,7 @@ function SettingsLayout() {
 
   useEffect(() => {
     if (location.pathname === "/settings") {
-      navigate({ to: "/settings/api-tokens", replace: true });
+      navigate({ replace: true, to: "/settings/api-tokens" });
     }
   }, [location.pathname, navigate]);
 

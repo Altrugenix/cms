@@ -1,5 +1,7 @@
-import { describe, it, expect } from "vitest";
 import type { CollectionDefinition, DatabaseAdapter, QueryOptions } from "@arche-cms/database";
+
+import { describe, it, expect } from "vitest";
+
 import {
   createListHandler,
   createGetHandler,
@@ -10,8 +12,8 @@ import {
 } from "../src/handlers.js";
 
 const posts: Record<string, unknown>[] = [
-  { id: 1, title: "Hello", body: "World", author: "user-1" },
-  { id: 2, title: "Second", body: "Post", author: "user-2" },
+  { author: "user-1", body: "World", id: 1, title: "Hello" },
+  { author: "user-2", body: "Post", id: 2, title: "Second" },
 ];
 
 const users: Record<string, unknown>[] = [
@@ -25,20 +27,32 @@ function createMockAdapter(): DatabaseAdapter {
   const userStore = users.map((u) => ({ ...u }));
 
   return {
-    findOne: async (collection: string, id: string, options?: QueryOptions) => {
-      if (collection === "__cms_users") {
-        return users.find((u) => u.id === id) ?? null;
-      }
-      const record = store.find((p) => String(p.id) === id);
-      if (record && options?.select) {
-        const selected: Record<string, unknown> = {};
-        for (const field of options.select) {
-          if (field in record) selected[field] = record[field];
-        }
-        return Object.keys(selected).length > 0 ? selected : record;
-      }
-      return record ?? null;
+    connect: async () => {},
+    create: async (_collection: string, data: Record<string, unknown>) => {
+      const record = { id: nextId++, ...data };
+      store.push(record);
+      return record;
     },
+    createTable: async () => {},
+    delete: async (_collection: string, id: string) => {
+      const idx = store.findIndex((p) => String(p.id) === id);
+      if (idx === -1) return false;
+      store.splice(idx, 1);
+      return true;
+    },
+    deleteMany: async (_collection: string, ids: string[]) => {
+      let count = 0;
+      for (const id of ids) {
+        const idx = store.findIndex((p) => String(p.id) === id);
+        if (idx !== -1) {
+          store.splice(idx, 1);
+          count++;
+        }
+      }
+      return count;
+    },
+    disconnect: async () => {},
+    dropTable: async () => {},
     findMany: async (collection: string, options?: QueryOptions) => {
       let data = collection === "__cms_users" ? [...userStore] : [...store];
       if (options?.where) {
@@ -75,53 +89,41 @@ function createMockAdapter(): DatabaseAdapter {
       }
       return { data, total };
     },
-    create: async (_collection: string, data: Record<string, unknown>) => {
-      const record = { id: nextId++, ...data };
-      store.push(record);
-      return record;
+    findOne: async (collection: string, id: string, options?: QueryOptions) => {
+      if (collection === "__cms_users") {
+        return users.find((u) => u.id === id) ?? null;
+      }
+      const record = store.find((p) => String(p.id) === id);
+      if (record && options?.select) {
+        const selected: Record<string, unknown> = {};
+        for (const field of options.select) {
+          if (field in record) selected[field] = record[field];
+        }
+        return Object.keys(selected).length > 0 ? selected : record;
+      }
+      return record ?? null;
     },
+    getExecutedMigrations: async () => [],
+    raw: async () => [],
+    runMigration: async () => {},
+    transaction: async <T>(fn: () => Promise<T>) => fn(),
     update: async (_collection: string, id: string, data: Record<string, unknown>) => {
       const idx = store.findIndex((p) => String(p.id) === id);
       if (idx === -1) return null;
       store[idx] = { ...store[idx], ...data };
       return store[idx] as Record<string, unknown>;
     },
-    delete: async (_collection: string, id: string) => {
-      const idx = store.findIndex((p) => String(p.id) === id);
-      if (idx === -1) return false;
-      store.splice(idx, 1);
-      return true;
-    },
-    deleteMany: async (_collection: string, ids: string[]) => {
-      let count = 0;
-      for (const id of ids) {
-        const idx = store.findIndex((p) => String(p.id) === id);
-        if (idx !== -1) {
-          store.splice(idx, 1);
-          count++;
-        }
-      }
-      return count;
-    },
-    connect: async () => {},
-    disconnect: async () => {},
-    transaction: async <T>(fn: () => Promise<T>) => fn(),
-    raw: async () => [],
-    createTable: async () => {},
-    dropTable: async () => {},
-    runMigration: async () => {},
-    getExecutedMigrations: async () => [],
   };
 }
 
 const collection: CollectionDefinition = {
-  slug: "posts",
-  labels: { singular: "Post", plural: "Posts" },
   fields: [
     { name: "title", type: "text", validation: { required: true } },
     { name: "body", type: "richText" },
-    { name: "author", type: "relation", to: "users" },
+    { name: "author", to: "users", type: "relation" },
   ],
+  labels: { plural: "Posts", singular: "Post" },
+  slug: "posts",
 };
 
 describe("CRUD handlers", () => {
@@ -129,10 +131,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: unknown[]; total: number };
@@ -144,10 +146,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { limit: "1", offset: "1" },
       body: null,
       headers: {},
+      params: {},
+      query: { limit: "1", offset: "1" },
     });
     const body = result.body as { data: unknown[]; total: number };
     expect(body.data).toHaveLength(1);
@@ -158,10 +160,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { sort: "title:desc" },
       body: null,
       headers: {},
+      params: {},
+      query: { sort: "title:desc" },
     });
     const body = result.body as { data: { title: string }[] };
     expect((body.data[0] as { title: string }).title).toBe("Second");
@@ -171,10 +173,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { select: "title" },
       body: null,
       headers: {},
+      params: {},
+      query: { select: "title" },
     });
     const body = result.body as { data: Record<string, unknown>[] };
     expect(body.data[0]).toEqual({ title: "Hello" });
@@ -184,10 +186,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { "where[title]": "Hello" },
       body: null,
       headers: {},
+      params: {},
+      query: { "where[title]": "Hello" },
     });
     const body = result.body as { data: unknown[]; total: number };
     expect(body.data).toHaveLength(1);
@@ -198,10 +200,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createListHandler(collection, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { populate: "author" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "author" },
     });
     const body = result.body as { data: Record<string, unknown>[] };
     expect((body.data[0] as Record<string, unknown>).author).toEqual({
@@ -214,10 +216,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createGetHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -228,10 +230,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createGetHandler(collection, adapter);
     const result = await handler({
-      params: { id: "999" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
@@ -240,10 +242,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createGetHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { select: "title" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { select: "title" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -254,10 +256,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createGetHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -266,10 +268,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createGetHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { populate: "author" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { populate: "author" },
     });
     const body = result.body as Record<string, unknown>;
     expect(body.author).toEqual({ id: "user-1", name: "Alice" });
@@ -278,22 +280,22 @@ describe("CRUD handlers", () => {
   it("getHandler populates array relations", async () => {
     const adapter = createMockAdapter();
     (adapter as Record<string, unknown>).__store = [
-      { id: 1, title: "Hello", categories: ["cat-1", "cat-2"] },
+      { categories: ["cat-1", "cat-2"], id: 1, title: "Hello" },
     ];
     const collectionWithArrayRelation: CollectionDefinition = {
-      slug: "custom-posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
         { name: "title", type: "text" },
-        { name: "categories", type: "relation", to: "tags" },
+        { name: "categories", to: "tags", type: "relation" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "custom-posts",
     };
     const handler = createGetHandler(collectionWithArrayRelation, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { populate: "categories" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { populate: "categories" },
     });
     expect(result.statusCode).toBe(200);
   });
@@ -302,10 +304,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createCreateHandler(collection, adapter);
     const result = await handler({
+      body: { body: "Content", title: "New Post" },
+      headers: {},
       params: {},
       query: {},
-      body: { title: "New Post", body: "Content" },
-      headers: {},
     });
     expect(result.statusCode).toBe(201);
     const body = result.body as Record<string, unknown>;
@@ -317,10 +319,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createCreateHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: null,
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -329,10 +331,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createCreateHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { body: "Content without title" },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
     const body = result.body as Record<string, unknown>;
@@ -344,10 +346,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createUpdateHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: { title: "Updated" },
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -358,10 +360,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createUpdateHandler(collection, adapter);
     const result = await handler({
-      params: { id: "999" },
-      query: {},
       body: { title: "Nope" },
       headers: {},
+      params: { id: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
@@ -370,10 +372,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createDeleteHandler(collection, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -384,10 +386,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createDeleteHandler(collection, adapter);
     const result = await handler({
-      params: { id: "999" },
-      query: {},
       body: null,
       headers: {},
+      params: { id: "999" },
+      query: {},
     });
     expect(result.statusCode).toBe(404);
   });
@@ -396,10 +398,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createBulkDeleteHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { ids: ["1", "2"] },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { deleted: number };
@@ -410,10 +412,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createBulkDeleteHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: {},
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -422,10 +424,10 @@ describe("CRUD handlers", () => {
     const adapter = createMockAdapter();
     const handler = createBulkDeleteHandler(collection, adapter);
     const result = await handler({
-      params: {},
-      query: {},
       body: { ids: [] },
       headers: {},
+      params: {},
+      query: {},
     });
     expect(result.statusCode).toBe(400);
   });
@@ -433,16 +435,23 @@ describe("CRUD handlers", () => {
 
 describe("array relation populate", () => {
   it("collectRelationIds handles array values", async () => {
-    const store: Record<string, unknown>[] = [{ id: 1, title: "Post A", tags: ["tag-1", "tag-2"] }];
+    const store: Record<string, unknown>[] = [{ id: 1, tags: ["tag-1", "tag-2"], title: "Post A" }];
     const tagsStore: Record<string, unknown>[] = [
       { id: "tag-1", name: "Tech" },
       { id: "tag-2", name: "Science" },
     ];
     const adapter: DatabaseAdapter = {
-      findOne: async (_c, id) => {
-        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
-        return store.find((s) => String(s.id) === id) ?? null;
+      connect: async () => {},
+      create: async (_, d) => {
+        const r = { id: store.length + 1, ...d };
+        store.push(r);
+        return r;
       },
+      createTable: async () => {},
+      delete: async () => false,
+      deleteMany: async () => 0,
+      disconnect: async () => {},
+      dropTable: async () => {},
       findMany: async (_c, opts) => {
         if (_c === "__cms_tags") {
           if (opts?.where?.id) {
@@ -463,42 +472,35 @@ describe("array relation populate", () => {
         }
         return { data, total: data.length };
       },
-      create: async (_, d) => {
-        const r = { id: store.length + 1, ...d };
-        store.push(r);
-        return r;
+      findOne: async (_c, id) => {
+        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
+        return store.find((s) => String(s.id) === id) ?? null;
       },
+      getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
       update: async (_, id, d) => {
         const i = store.findIndex((r) => String(r.id) === id);
         if (i === -1) return null;
         store[i] = { ...store[i], ...d };
         return store[i];
       },
-      delete: async () => false,
-      deleteMany: async () => 0,
-      connect: async () => {},
-      disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
-      dropTable: async () => {},
-      runMigration: async () => {},
-      getExecutedMigrations: async () => [],
     };
     const collectionWithArrayRel: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
         { name: "title", type: "text" },
-        { name: "tags", type: "relation", to: "tags" },
+        { name: "tags", to: "tags", type: "relation" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     };
     const handler = createGetHandler(collectionWithArrayRel, adapter);
     const result = await handler({
-      params: { id: "1" },
-      query: { populate: "tags" },
       body: null,
       headers: {},
+      params: { id: "1" },
+      query: { populate: "tags" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as Record<string, unknown>;
@@ -510,18 +512,25 @@ describe("array relation populate", () => {
 
   it("collectRelationIds handles mixed array and non-array values", async () => {
     const store: Record<string, unknown>[] = [
-      { id: 1, title: "Post A", tags: ["tag-1", "tag-2"] },
-      { id: 2, title: "Post B", tags: "tag-1" },
+      { id: 1, tags: ["tag-1", "tag-2"], title: "Post A" },
+      { id: 2, tags: "tag-1", title: "Post B" },
     ];
     const tagsStore: Record<string, unknown>[] = [
       { id: "tag-1", name: "Tech" },
       { id: "tag-2", name: "Science" },
     ];
     const adapter: DatabaseAdapter = {
-      findOne: async (_c, id) => {
-        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
-        return store.find((s) => String(s.id) === id) ?? null;
+      connect: async () => {},
+      create: async (_, d) => {
+        const r = { id: store.length + 1, ...d };
+        store.push(r);
+        return r;
       },
+      createTable: async () => {},
+      delete: async () => false,
+      deleteMany: async () => 0,
+      disconnect: async () => {},
+      dropTable: async () => {},
       findMany: async (_c, opts) => {
         if (_c === "__cms_tags") {
           if (opts?.where?.id) {
@@ -542,42 +551,35 @@ describe("array relation populate", () => {
         }
         return { data, total: data.length };
       },
-      create: async (_, d) => {
-        const r = { id: store.length + 1, ...d };
-        store.push(r);
-        return r;
+      findOne: async (_c, id) => {
+        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
+        return store.find((s) => String(s.id) === id) ?? null;
       },
+      getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
       update: async (_, id, d) => {
         const i = store.findIndex((r) => String(r.id) === id);
         if (i === -1) return null;
         store[i] = { ...store[i], ...d };
         return store[i];
       },
-      delete: async () => false,
-      deleteMany: async () => 0,
-      connect: async () => {},
-      disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
-      dropTable: async () => {},
-      runMigration: async () => {},
-      getExecutedMigrations: async () => [],
     };
     const collectionWithArrayRel: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
         { name: "title", type: "text" },
-        { name: "tags", type: "relation", to: "tags" },
+        { name: "tags", to: "tags", type: "relation" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     };
     const handler = createListHandler(collectionWithArrayRel, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { populate: "tags" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "tags" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[] };
@@ -591,14 +593,21 @@ describe("array relation populate", () => {
   it("collectRelationIds handles null value", async () => {
     const store: Record<string, unknown>[] = [
       null as unknown as Record<string, unknown>,
-      { id: 2, title: "Post B", tags: "tag-1" },
+      { id: 2, tags: "tag-1", title: "Post B" },
     ];
     const tagsStore: Record<string, unknown>[] = [{ id: "tag-1", name: "Tech" }];
     const adapter: DatabaseAdapter = {
-      findOne: async (_c, id) => {
-        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
-        return store.find((s) => s && String(s.id) === id) ?? null;
+      connect: async () => {},
+      create: async (_, d) => {
+        const r = { id: store.length + 1, ...d };
+        store.push(r);
+        return r;
       },
+      createTable: async () => {},
+      delete: async () => false,
+      deleteMany: async () => 0,
+      disconnect: async () => {},
+      dropTable: async () => {},
       findMany: async (_c, opts) => {
         if (_c === "__cms_tags") {
           if (opts?.where?.id) {
@@ -619,42 +628,35 @@ describe("array relation populate", () => {
         }
         return { data, total: data.length };
       },
-      create: async (_, d) => {
-        const r = { id: store.length + 1, ...d };
-        store.push(r);
-        return r;
+      findOne: async (_c, id) => {
+        if (_c === "__cms_tags") return tagsStore.find((t) => t.id === id) ?? null;
+        return store.find((s) => s && String(s.id) === id) ?? null;
       },
+      getExecutedMigrations: async () => [],
+      raw: async () => [],
+      runMigration: async () => {},
+      transaction: async <T>(fn: () => Promise<T>) => fn(),
       update: async (_, id, d) => {
         const i = store.findIndex((r) => r && String(r.id) === id);
         if (i === -1) return null;
         store[i] = { ...store[i], ...d };
         return store[i];
       },
-      delete: async () => false,
-      deleteMany: async () => 0,
-      connect: async () => {},
-      disconnect: async () => {},
-      transaction: async <T>(fn: () => Promise<T>) => fn(),
-      raw: async () => [],
-      createTable: async () => {},
-      dropTable: async () => {},
-      runMigration: async () => {},
-      getExecutedMigrations: async () => [],
     };
     const collectionWithArrayRel: CollectionDefinition = {
-      slug: "posts",
-      labels: { singular: "Post", plural: "Posts" },
       fields: [
         { name: "title", type: "text" },
-        { name: "tags", type: "relation", to: "tags" },
+        { name: "tags", to: "tags", type: "relation" },
       ],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
     };
     const handler = createListHandler(collectionWithArrayRel, adapter, 100, 10);
     const result = await handler({
-      params: {},
-      query: { populate: "tags" },
       body: null,
       headers: {},
+      params: {},
+      query: { populate: "tags" },
     });
     expect(result.statusCode).toBe(200);
     const body = result.body as { data: Record<string, unknown>[] };

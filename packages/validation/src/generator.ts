@@ -1,5 +1,6 @@
-import { z } from "zod";
 import type { FieldDefinition, CollectionDefinition, FieldValidation } from "@arche-cms/types";
+
+import { z } from "zod";
 
 function applyValidation<T extends z.ZodType>(
   schema: T,
@@ -53,7 +54,7 @@ export function fieldToZodSchema(field: FieldDefinition, localize = false): z.Zo
       if (field.format === "rgb") {
         schema = z.string().regex(/^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/);
       } else if (field.format === "rgba") {
-        schema = z.string().regex(/^rgba\(\d{1,3},\s*\d{1,3},\s*\d{1,3},\s*(0(\.\d+)?|1(\.0)?)\)$/);
+        schema = z.string().regex(/^rgba\(\d{1,3},\s*\d{1,3},\s*\d{1,3},\s*(0(\.\d+)?|1(\.0)?)\)$/); // eslint-disable-line security/detect-unsafe-regex
       } else if (field.format === "hsl") {
         schema = z.string().regex(/^hsl\(\d{1,3},\s*\d{1,3}%,\s*\d{1,3}%\)$/);
       } else {
@@ -62,7 +63,7 @@ export function fieldToZodSchema(field: FieldDefinition, localize = false): z.Zo
       break;
 
     case "slug":
-      schema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+      schema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/); // eslint-disable-line security/detect-unsafe-regex
       break;
 
     case "email":

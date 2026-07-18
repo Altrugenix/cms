@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
 import { Outlet, createRootRoute, useNavigate, useLocation } from "@tanstack/react-router";
-import { Sidebar } from "@/components/sidebar";
-import { Header } from "@/components/header";
-import { ToastProvider } from "@/components/toast-provider";
-import { ErrorBoundary } from "@/components/error-boundary";
+import { useState, useEffect } from "react";
+
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { Header } from "@/components/header";
+import { Sidebar } from "@/components/sidebar";
+import { ToastProvider } from "@/components/toast-provider";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createRootRoute({

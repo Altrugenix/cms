@@ -1,32 +1,34 @@
-import { describe, it, expect } from "vitest";
 import type { CollectionDefinition } from "@arche-cms/types";
-import { GenerationPipeline } from "../src/pipeline.js";
-import { apiRoutesGenerator } from "../src/api-routes.js";
-import { validationGenerator } from "../src/validation.js";
-import { migrationGenerator } from "../src/migrations.js";
-import { graphqlGenerator } from "../src/graphql-schema.js";
-import { openApiGenerator } from "../src/openapi.js";
-import { sdkGenerator } from "../src/sdk.js";
+
+import { describe, it, expect } from "vitest";
+
 import { adminFormGenerator } from "../src/admin-forms.js";
+import { apiRoutesGenerator } from "../src/api-routes.js";
+import { graphqlGenerator } from "../src/graphql-schema.js";
+import { migrationGenerator } from "../src/migrations.js";
+import { openApiGenerator } from "../src/openapi.js";
+import { GenerationPipeline } from "../src/pipeline.js";
+import { sdkGenerator } from "../src/sdk.js";
+import { validationGenerator } from "../src/validation.js";
 
 const sampleCollections: CollectionDefinition[] = [
   {
-    slug: "posts",
-    labels: { singular: "Post", plural: "Posts" },
     fields: [
-      { name: "title", type: "text", label: "Title", validation: { required: true } },
+      { label: "Title", name: "title", type: "text", validation: { required: true } },
       { name: "body", type: "richText" },
-      { name: "author", type: "relation", to: "users" },
-      { name: "status", type: "select", options: ["draft", "published"], label: "Status" },
+      { name: "author", to: "users", type: "relation" },
+      { label: "Status", name: "status", options: ["draft", "published"], type: "select" },
     ],
+    labels: { plural: "Posts", singular: "Post" },
+    slug: "posts",
   },
   {
-    slug: "users",
-    labels: { singular: "User", plural: "Users" },
     fields: [
       { name: "email", type: "email", validation: { required: true } },
       { name: "name", type: "text" },
     ],
+    labels: { plural: "Users", singular: "User" },
+    slug: "users",
   },
 ];
 

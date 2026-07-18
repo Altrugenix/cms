@@ -1,7 +1,8 @@
-import { describe, it, expect, afterEach } from "vitest";
 import { rm, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { resolve } from "node:path";
+import { describe, it, expect, afterEach } from "vitest";
+
 import { collectionCreate } from "../src/commands/collection.js";
 import { pluginCreate } from "../src/commands/plugin.js";
 import { collectionTemplate, pluginTemplate } from "../src/templates/templates.js";
@@ -9,12 +10,12 @@ import { collectionTemplate, pluginTemplate } from "../src/templates/templates.j
 const testDir = resolve(tmpdir(), `cms-scaffold-test-${Date.now()}`);
 
 afterEach(async () => {
-  await rm(testDir, { recursive: true, force: true }).catch(() => {});
+  await rm(testDir, { force: true, recursive: true }).catch(() => {});
 });
 
 describe("collectionCreate", () => {
   it("creates a collection file from a slug", async () => {
-    await collectionCreate({ slug: "blog-posts", dir: resolve(testDir, "collections") });
+    await collectionCreate({ dir: resolve(testDir, "collections"), slug: "blog-posts" });
 
     const content = await readFile(resolve(testDir, "collections", "blog-posts.ts"), "utf-8");
     expect(content).toContain('slug: "blog-posts"');
@@ -43,7 +44,7 @@ describe("collectionCreate", () => {
 
 describe("pluginCreate", () => {
   it("creates a plugin directory structure", async () => {
-    await pluginCreate({ slug: "my-plugin", dir: resolve(testDir, "plugins") });
+    await pluginCreate({ dir: resolve(testDir, "plugins"), slug: "my-plugin" });
 
     const pkg = JSON.parse(
       await readFile(resolve(testDir, "plugins", "my-plugin", "package.json"), "utf-8"),

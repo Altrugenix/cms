@@ -11,10 +11,10 @@ type ErrorBoundaryState = {
 };
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  override state: ErrorBoundaryState = { hasError: false, error: null };
+  override state: ErrorBoundaryState = { error: null, hasError: false };
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    return { error, hasError: true };
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo) {
@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </p>
           <button
             type="button"
-            onClick={() => this.setState({ hasError: false, error: null })}
+            onClick={() => this.setState({ error: null, hasError: false })}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Try again

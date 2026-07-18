@@ -1,9 +1,9 @@
 export type LifecycleState = "init" | "ready" | "shutdown";
 
 export interface LifecycleOptions {
-  onInit?: () => Promise<void>;
-  onReady?: () => Promise<void>;
-  onShutdown?: () => Promise<void>;
+  onInit?: (() => Promise<void>) | undefined;
+  onReady?: (() => Promise<void>) | undefined;
+  onShutdown?: (() => Promise<void>) | undefined;
 }
 
 export class Lifecycle {

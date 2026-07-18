@@ -1,18 +1,19 @@
-import { useEffect, useState, type FormEvent } from "react";
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { Route as settingsRoute } from "@/routes/settings/index";
+import { ArrowLeft } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
-import { fetchUsers, updateUser, fetchRoles, type UserMeta, type RoleMeta } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { fetchUsers, updateUser, fetchRoles, type UserMeta, type RoleMeta } from "@/lib/api";
+import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  component: EditUser,
   getParentRoute: () => settingsRoute,
   path: "users/$id",
-  component: EditUser,
 });
 
 function EditUser() {

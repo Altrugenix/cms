@@ -1,13 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
 import { createRoute, Link, useParams } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
-import { Skeleton } from "@/components/skeleton";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/toast-provider";
-import { fetchSchema, type FieldDefinition } from "@/lib/api";
-import { useSaveSchema } from "@/lib/hooks";
 import {
   ArrowLeft,
   Save,
@@ -46,53 +37,63 @@ import {
   Link as LinkIcon,
   X,
 } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
+
+import { Skeleton } from "@/components/skeleton";
+import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { fetchSchema, type FieldDefinition } from "@/lib/api";
+import { useSaveSchema } from "@/lib/hooks";
+import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  component: SchemaEditor,
   getParentRoute: () => rootRoute,
   path: "/schemas/$type/$slug",
-  component: SchemaEditor,
 });
 
 const FIELD_TYPE_CONFIG: Record<string, { label: string; icon: typeof Type; group: string }> = {
-  text: { label: "Text", icon: Type, group: "basic" },
-  textarea: { label: "Textarea", icon: TextQuote, group: "basic" },
-  number: { label: "Number", icon: Hash, group: "basic" },
-  boolean: { label: "Boolean", icon: ToggleLeft, group: "basic" },
-  email: { label: "Email", icon: Mail, group: "text" },
-  password: { label: "Password", icon: Lock, group: "text" },
-  url: { label: "URL", icon: Link2, group: "text" },
-  date: { label: "Date", icon: Calendar, group: "date" },
-  datetime: { label: "Date Time", icon: Clock, group: "date" },
-  json: { label: "JSON", icon: Braces, group: "advanced" },
-  richText: { label: "Rich Text", icon: FileSpreadsheet, group: "text" },
-  markdown: { label: "Markdown", icon: FileSpreadsheet, group: "text" },
-  code: { label: "Code", icon: Code, group: "advanced" },
-  color: { label: "Color", icon: Palette, group: "advanced" },
-  media: { label: "Media", icon: Image, group: "media" },
-  upload: { label: "Upload", icon: Upload, group: "media" },
-  select: { label: "Select", icon: ListChecks, group: "choice" },
-  multiSelect: { label: "Multi Select", icon: List, group: "choice" },
-  radio: { label: "Radio", icon: Radio, group: "choice" },
-  checkbox: { label: "Checkbox", icon: CheckSquare, group: "choice" },
-  relation: { label: "Relation", icon: GitBranch, group: "advanced" },
-  component: { label: "Component", icon: Layers, group: "structure" },
-  dynamicZone: { label: "Dynamic Zone", icon: LayoutDashboard, group: "structure" },
-  array: { label: "Array", icon: Box, group: "structure" },
-  object: { label: "Object", icon: Columns, group: "structure" },
-  tabs: { label: "Tabs", icon: FolderOpen, group: "structure" },
-  group: { label: "Group", icon: FolderOpen, group: "structure" },
-  repeater: { label: "Repeater", icon: Repeat, group: "structure" },
-  slug: { label: "Slug", icon: LinkIcon, group: "text" },
+  array: { group: "structure", icon: Box, label: "Array" },
+  boolean: { group: "basic", icon: ToggleLeft, label: "Boolean" },
+  checkbox: { group: "choice", icon: CheckSquare, label: "Checkbox" },
+  code: { group: "advanced", icon: Code, label: "Code" },
+  color: { group: "advanced", icon: Palette, label: "Color" },
+  component: { group: "structure", icon: Layers, label: "Component" },
+  date: { group: "date", icon: Calendar, label: "Date" },
+  datetime: { group: "date", icon: Clock, label: "Date Time" },
+  dynamicZone: { group: "structure", icon: LayoutDashboard, label: "Dynamic Zone" },
+  email: { group: "text", icon: Mail, label: "Email" },
+  group: { group: "structure", icon: FolderOpen, label: "Group" },
+  json: { group: "advanced", icon: Braces, label: "JSON" },
+  markdown: { group: "text", icon: FileSpreadsheet, label: "Markdown" },
+  media: { group: "media", icon: Image, label: "Media" },
+  multiSelect: { group: "choice", icon: List, label: "Multi Select" },
+  number: { group: "basic", icon: Hash, label: "Number" },
+  object: { group: "structure", icon: Columns, label: "Object" },
+  password: { group: "text", icon: Lock, label: "Password" },
+  radio: { group: "choice", icon: Radio, label: "Radio" },
+  relation: { group: "advanced", icon: GitBranch, label: "Relation" },
+  repeater: { group: "structure", icon: Repeat, label: "Repeater" },
+  richText: { group: "text", icon: FileSpreadsheet, label: "Rich Text" },
+  select: { group: "choice", icon: ListChecks, label: "Select" },
+  slug: { group: "text", icon: LinkIcon, label: "Slug" },
+  tabs: { group: "structure", icon: FolderOpen, label: "Tabs" },
+  text: { group: "basic", icon: Type, label: "Text" },
+  textarea: { group: "basic", icon: TextQuote, label: "Textarea" },
+  upload: { group: "media", icon: Upload, label: "Upload" },
+  url: { group: "text", icon: Link2, label: "URL" },
 };
 
 const FIELD_TYPE_GROUPS = [
-  { value: "basic", label: "Basic" },
-  { value: "text", label: "Text" },
-  { value: "date", label: "Date" },
-  { value: "choice", label: "Choice" },
-  { value: "media", label: "Media" },
-  { value: "advanced", label: "Advanced" },
-  { value: "structure", label: "Structure" },
+  { label: "Basic", value: "basic" },
+  { label: "Text", value: "text" },
+  { label: "Date", value: "date" },
+  { label: "Choice", value: "choice" },
+  { label: "Media", value: "media" },
+  { label: "Advanced", value: "advanced" },
+  { label: "Structure", value: "structure" },
 ];
 
 function defaultField(type: string): FieldDefinition {
@@ -176,9 +177,9 @@ function FieldEditorList({
       <div className="space-y-1">
         {fields.map((field, idx) => {
           const cfg = FIELD_TYPE_CONFIG[field.type] ?? {
-            label: "Text",
-            icon: FileText,
             group: "basic",
+            icon: FileText,
+            label: "Text",
           };
           const Icon = cfg.icon;
           return (
@@ -596,7 +597,7 @@ function FieldEditorList({
                     ...((
                       selectedField as { tabs: Array<{ label: string; fields: FieldDefinition[] }> }
                     ).tabs ?? []),
-                    { label: "New Tab", fields: [] },
+                    { fields: [], label: "New Tab" },
                   ];
                   updateField(selectedIdx as number, { tabs });
                 }}
@@ -612,7 +613,7 @@ function FieldEditorList({
 }
 
 function SchemaEditor() {
-  const { type, slug } = useParams({ from: Route.id });
+  const { slug, type } = useParams({ from: Route.id });
   const { toast } = useToast();
 
   const [fields, setFields] = useState<FieldDefinition[]>([]);
@@ -710,35 +711,35 @@ function SchemaEditor() {
     const helperNames = new Set<string>();
     const getHelper = (f: FieldDefinition): string => {
       const m: Record<string, string> = {
-        text: "text",
-        textarea: "textarea",
-        number: "number",
+        array: "array",
         boolean: "boolean",
-        date: "date",
-        datetime: "datetime",
-        email: "email",
-        password: "password",
-        url: "url",
-        json: "json",
-        richText: "richText",
-        markdown: "markdown",
+        checkbox: "checkbox",
         code: "code",
         color: "color",
-        media: "media",
-        upload: "upload",
-        select: "select",
-        multiSelect: "multiSelect",
-        radio: "radio",
-        checkbox: "checkbox",
-        relation: "relation",
         component: "component",
+        date: "date",
+        datetime: "datetime",
         dynamicZone: "dynamicZone",
-        slug: "slug",
-        array: "array",
-        object: "object",
+        email: "email",
         group: "group",
-        tabs: "tabs",
+        json: "json",
+        markdown: "markdown",
+        media: "media",
+        multiSelect: "multiSelect",
+        number: "number",
+        object: "object",
+        password: "password",
+        radio: "radio",
+        relation: "relation",
         repeater: "repeater",
+        richText: "richText",
+        select: "select",
+        slug: "slug",
+        tabs: "tabs",
+        text: "text",
+        textarea: "textarea",
+        upload: "upload",
+        url: "url",
       };
       const h = m[f.type];
       if (h) helperNames.add(h);
@@ -865,7 +866,7 @@ function SchemaEditor() {
 
     const metaStr =
       type === "collection"
-        ? `\n  labels: ${JSON.stringify((meta.labels as { singular?: string; plural?: string }) ?? { singular: label, plural: `${label}s` })},`
+        ? `\n  labels: ${JSON.stringify((meta.labels as { singular?: string; plural?: string }) ?? { plural: `${label}s`, singular: label })},`
         : `\n  label: ${JSON.stringify(label)},`;
 
     return `${header}\nexport default ${defineFn}({\n  slug: ${JSON.stringify(slug)},${metaStr}\n  fields: [\n${fieldsCode}\n  ],\n});\n`;
@@ -874,7 +875,7 @@ function SchemaEditor() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveSchemaMutation.mutateAsync({ type, slug, data: { fields, meta, label } });
+      await saveSchemaMutation.mutateAsync({ data: { fields, label, meta }, slug, type });
       toast("Schema saved", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to save";
@@ -992,9 +993,9 @@ function SchemaEditor() {
           <div className="space-y-1.5">
             {fields.map((field, idx) => {
               const cfg = FIELD_TYPE_CONFIG[field.type] ?? {
-                label: "Text",
-                icon: FileText,
                 group: "basic",
+                icon: FileText,
+                label: "Text",
               };
               const Icon = cfg.icon;
               const isSelected = selectedIdx === idx;
@@ -1097,8 +1098,8 @@ function SchemaEditor() {
                       const def = defaultField(newType);
                       updateField(selectedIdx as number, {
                         ...def,
-                        name: selectedField.name,
                         label: selectedField.label,
+                        name: selectedField.name,
                       });
                     }}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -1560,7 +1561,7 @@ function SchemaEditor() {
                                 tabs: Array<{ label: string; fields: FieldDefinition[] }>;
                               }
                             ).tabs ?? []),
-                            { label: "New Tab", fields: [] },
+                            { fields: [], label: "New Tab" },
                           ];
                           updateField(selectedIdx as number, { tabs });
                         }}

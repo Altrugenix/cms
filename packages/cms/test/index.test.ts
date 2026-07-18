@@ -6,8 +6,8 @@ vi.mock("../src/commands/dev.js", () => ({
 }));
 
 vi.mock("../src/commands/start.js", () => ({
-  start: vi.fn().mockResolvedValue(undefined),
   printStartHelp: vi.fn(),
+  start: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("../src/commands/build.js", () => ({
@@ -26,8 +26,8 @@ vi.mock("../src/commands/generate.js", () => ({
 }));
 
 vi.mock("../src/commands/typegen.js", () => ({
-  typegen: vi.fn().mockResolvedValue(undefined),
   printTypegenHelp: vi.fn(),
+  typegen: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("../src/commands/lint.js", () => ({
@@ -189,7 +189,7 @@ describe("index / CLI entrypoint", () => {
       const { main } = await import("../src/index.js");
       const { collectionCreate } = await import("../src/commands/collection.js");
       main();
-      expect(collectionCreate).toHaveBeenCalledWith({ slug: "posts", dir: undefined });
+      expect(collectionCreate).toHaveBeenCalledWith({ dir: undefined, slug: "posts" });
     });
 
     it("calls pluginCreate() for plugin create", async () => {
@@ -197,7 +197,7 @@ describe("index / CLI entrypoint", () => {
       const { main } = await import("../src/index.js");
       const { pluginCreate } = await import("../src/commands/plugin.js");
       main();
-      expect(pluginCreate).toHaveBeenCalledWith({ slug: "seo", dir: undefined });
+      expect(pluginCreate).toHaveBeenCalledWith({ dir: undefined, slug: "seo" });
     });
   });
 
@@ -290,11 +290,11 @@ describe("index / CLI entrypoint", () => {
       const { dev } = await import("../src/commands/dev.js");
       main();
       expect(dev).toHaveBeenCalledWith({
-        port: 4000,
-        host: "127.0.0.1",
-        dir: undefined,
-        dbUrl: undefined,
         dbAdapter: undefined,
+        dbUrl: undefined,
+        dir: undefined,
+        host: "127.0.0.1",
+        port: 4000,
         vite: false,
       });
     });
@@ -315,11 +315,11 @@ describe("index / CLI entrypoint", () => {
       const { dev } = await import("../src/commands/dev.js");
       main();
       expect(dev).toHaveBeenCalledWith({
-        port: undefined,
-        host: undefined,
-        dir: "./schemas",
-        dbUrl: "file:./test.db",
         dbAdapter: "sqlite",
+        dbUrl: "file:./test.db",
+        dir: "./schemas",
+        host: undefined,
+        port: undefined,
         vite: false,
       });
     });
@@ -330,11 +330,11 @@ describe("index / CLI entrypoint", () => {
       const { start } = await import("../src/commands/start.js");
       main();
       expect(start).toHaveBeenCalledWith({
-        port: 8080,
-        host: undefined,
-        dir: undefined,
-        dbUrl: undefined,
         dbAdapter: undefined,
+        dbUrl: undefined,
+        dir: undefined,
+        host: undefined,
+        port: 8080,
         vite: false,
       });
     });
@@ -360,7 +360,7 @@ describe("index / CLI entrypoint", () => {
       const { main } = await import("../src/index.js");
       const { migrate } = await import("../src/commands/migrate.js");
       main();
-      expect(migrate).toHaveBeenCalledWith({ dir: "./schemas", db: "file:./app.db" });
+      expect(migrate).toHaveBeenCalledWith({ db: "file:./app.db", dir: "./schemas" });
     });
 
     it("forwards --dir and --out to generate", async () => {
@@ -408,7 +408,7 @@ describe("index / CLI entrypoint", () => {
       const { main } = await import("../src/index.js");
       const { collectionCreate } = await import("../src/commands/collection.js");
       main();
-      expect(collectionCreate).toHaveBeenCalledWith({ slug: "posts", dir: "./schemas" });
+      expect(collectionCreate).toHaveBeenCalledWith({ dir: "./schemas", slug: "posts" });
     });
 
     it("collection create without --dir passes undefined", async () => {
@@ -416,7 +416,7 @@ describe("index / CLI entrypoint", () => {
       const { main } = await import("../src/index.js");
       const { collectionCreate } = await import("../src/commands/collection.js");
       main();
-      expect(collectionCreate).toHaveBeenCalledWith({ slug: "posts", dir: undefined });
+      expect(collectionCreate).toHaveBeenCalledWith({ dir: undefined, slug: "posts" });
     });
 
     it("forwards --dir to plugin create", async () => {
@@ -424,7 +424,7 @@ describe("index / CLI entrypoint", () => {
       const { main } = await import("../src/index.js");
       const { pluginCreate } = await import("../src/commands/plugin.js");
       main();
-      expect(pluginCreate).toHaveBeenCalledWith({ slug: "seo", dir: "./plugins" });
+      expect(pluginCreate).toHaveBeenCalledWith({ dir: "./plugins", slug: "seo" });
     });
   });
 

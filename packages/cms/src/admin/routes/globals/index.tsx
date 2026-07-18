@@ -1,17 +1,18 @@
 import { createRoute, Link } from "@tanstack/react-router";
-import { Route as rootRoute } from "@/routes/__root";
-import { Skeleton } from "@/components/skeleton";
-import { useGlobals } from "@/lib/hooks";
 import { Settings, ArrowRight } from "lucide-react";
 
+import { Skeleton } from "@/components/skeleton";
+import { useGlobals } from "@/lib/hooks";
+import { Route as rootRoute } from "@/routes/__root";
+
 export const Route = createRoute({
+  component: GlobalsList,
   getParentRoute: () => rootRoute,
   path: "/globals",
-  component: GlobalsList,
 });
 
 function GlobalsList() {
-  const { data: globals = [], isLoading: loading, error } = useGlobals();
+  const { data: globals = [], error, isLoading: loading } = useGlobals();
 
   if (loading) {
     return (

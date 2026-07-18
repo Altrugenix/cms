@@ -5,8 +5,8 @@ const mockEnd = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("pg", () => {
   const MockPool = vi.fn().mockImplementation(() => ({
-    query: mockQuery,
     end: mockEnd,
+    query: mockQuery,
   }));
   return { default: { Pool: MockPool } };
 });
@@ -37,12 +37,12 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   });
 
   it("constructs with poolSize and idleTimeoutMs", () => {
-    const a = createAdapter({ poolSize: 5, idleTimeoutMs: 10000 });
+    const a = createAdapter({ idleTimeoutMs: 10000, poolSize: 5 });
     expect(a).toBeDefined();
   });
 
   it("connect creates a pool and ensures migrations table", async () => {
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+    mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
     await adapter.connect();
     expect(mockQuery).toHaveBeenCalled();
     const createTableCall = mockQuery.mock.calls.find(
@@ -53,7 +53,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   });
 
   it("disconnect ends pool and sets to null", async () => {
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+    mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
     await adapter.connect();
     mockQuery.mockReset();
     mockEnd.mockResolvedValue(undefined);
@@ -107,7 +107,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
 
   it("runMigration throws when not connected", async () => {
     await expect(
-      adapter.runMigration({ id: "1", name: "test", up: "UP", down: "DOWN" }),
+      adapter.runMigration({ down: "DOWN", id: "1", name: "test", up: "UP" }),
     ).rejects.toThrow("Database not connected");
   });
 
@@ -121,23 +121,23 @@ describe("PostgresAdapter (unit, no real connection)", () => {
 
   async function connectAndReset() {
     mockQuery.mockReset();
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+    mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
     await adapter.connect();
     mockQuery.mockReset();
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+    mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
   }
 
   describe("findOne", () => {
     it("returns null when no rows", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] });
       const result = await adapter.findOne("posts", "1");
       expect(result).toBeNull();
     });
 
     it("returns first row when found", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [{ id: "1", title: "Hello" }], rowCount: 1 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: "1", title: "Hello" }] });
       const result = await adapter.findOne("posts", "1");
       expect(result).toEqual({ id: "1", title: "Hello" });
     });
@@ -147,8 +147,8 @@ describe("PostgresAdapter (unit, no real connection)", () => {
     it("returns data and total with no where", async () => {
       await connectAndReset();
       mockQuery
-        .mockResolvedValueOnce({ rows: [{ count: "5" }], rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [{ id: "1" }], rowCount: 1 });
+        .mockResolvedValueOnce({ rowCount: 1, rows: [{ count: "5" }] })
+        .mockResolvedValueOnce({ rowCount: 1, rows: [{ id: "1" }] });
       const result = await adapter.findMany("posts", { limit: 10, offset: 0 });
       expect(result.total).toBe(5);
       expect(result.data).toHaveLength(1);
@@ -157,8 +157,8 @@ describe("PostgresAdapter (unit, no real connection)", () => {
     it("returns total 0 when count result has no count property", async () => {
       await connectAndReset();
       mockQuery
-        .mockResolvedValueOnce({ rows: [{}], rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+        .mockResolvedValueOnce({ rowCount: 1, rows: [{}] })
+        .mockResolvedValueOnce({ rowCount: 0, rows: [] });
       const result = await adapter.findMany("posts");
       expect(result.total).toBe(0);
     });
@@ -166,8 +166,8 @@ describe("PostgresAdapter (unit, no real connection)", () => {
     it("builds IN clause for array where values", async () => {
       await connectAndReset();
       mockQuery
-        .mockResolvedValueOnce({ rows: [{ count: "2" }], rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+        .mockResolvedValueOnce({ rowCount: 1, rows: [{ count: "2" }] })
+        .mockResolvedValueOnce({ rowCount: 0, rows: [] });
       const result = await adapter.findMany("posts", { where: { id: ["1", "2"] } });
       expect(result.total).toBe(2);
     });
@@ -175,8 +175,8 @@ describe("PostgresAdapter (unit, no real connection)", () => {
     it("builds equality clause for scalar where values", async () => {
       await connectAndReset();
       mockQuery
-        .mockResolvedValueOnce({ rows: [{ count: "1" }], rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+        .mockResolvedValueOnce({ rowCount: 1, rows: [{ count: "1" }] })
+        .mockResolvedValueOnce({ rowCount: 0, rows: [] });
       await adapter.findMany("posts", { where: { title: "test" } });
       const countCall = mockQuery.mock.calls[0];
       expect(countCall[0]).toContain("WHERE");
@@ -186,12 +186,12 @@ describe("PostgresAdapter (unit, no real connection)", () => {
     it("builds sort, limit, and offset clauses", async () => {
       await connectAndReset();
       mockQuery
-        .mockResolvedValueOnce({ rows: [{ count: "0" }], rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+        .mockResolvedValueOnce({ rowCount: 1, rows: [{ count: "0" }] })
+        .mockResolvedValueOnce({ rowCount: 0, rows: [] });
       await adapter.findMany("posts", {
-        sort: { title: "desc", id: "asc" },
         limit: 5,
         offset: 10,
+        sort: { id: "asc", title: "desc" },
       });
       const dataCall = mockQuery.mock.calls[1];
       expect(dataCall[0]).toContain("ORDER BY");
@@ -203,7 +203,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("create", () => {
     it("inserts and returns the row", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, title: "New" }], rowCount: 1 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 1, title: "New" }] });
       const result = await adapter.create("posts", { title: "New" });
       expect(result).toEqual({ id: 1, title: "New" });
     });
@@ -212,14 +212,14 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("update", () => {
     it("updates and returns the row", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [{ id: "1", title: "Upd" }], rowCount: 1 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: "1", title: "Upd" }] });
       const result = await adapter.update("posts", "1", { title: "Upd" });
       expect(result).toEqual({ id: "1", title: "Upd" });
     });
 
     it("returns null when not found", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] });
       const result = await adapter.update("posts", "999", { title: "X" });
       expect(result).toBeNull();
     });
@@ -228,21 +228,21 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("delete", () => {
     it("returns true when row deleted", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 1, rows: [] });
       const result = await adapter.delete("posts", "1");
       expect(result).toBe(true);
     });
 
     it("returns false when no row deleted", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] });
       const result = await adapter.delete("posts", "999");
       expect(result).toBe(false);
     });
 
     it("returns false when rowCount is null", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: null });
+      mockQuery.mockResolvedValueOnce({ rowCount: null, rows: [] });
       const result = await adapter.delete("posts", "1");
       expect(result).toBe(false);
     });
@@ -257,14 +257,14 @@ describe("PostgresAdapter (unit, no real connection)", () => {
 
     it("deletes multiple rows", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 3 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 3, rows: [] });
       const result = await adapter.deleteMany("posts", ["1", "2", "3"]);
       expect(result).toBe(3);
     });
 
     it("returns 0 when rowCount is null", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: null });
+      mockQuery.mockResolvedValueOnce({ rowCount: null, rows: [] });
       const result = await adapter.deleteMany("posts", ["1", "2"]);
       expect(result).toBe(0);
     });
@@ -273,7 +273,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("transaction", () => {
     it("commits on success", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
       const result = await adapter.transaction(async () => "done");
       expect(result).toBe("done");
       const sqls = mockQuery.mock.calls.map((c) => c[0]);
@@ -283,7 +283,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
 
     it("rolls back on error", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
       await expect(
         adapter.transaction(async () => {
           throw new Error("fail");
@@ -297,7 +297,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("raw", () => {
     it("returns rows", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [{ x: 1 }], rowCount: 1 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 1, rows: [{ x: 1 }] });
       const result = await adapter.raw("SELECT 1 as x");
       expect(result).toEqual([{ x: 1 }]);
     });
@@ -306,8 +306,8 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("createTable", () => {
     it("creates a table with columns", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
-      await adapter.createTable("posts", { title: "TEXT", body: "TEXT" });
+      mockQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] });
+      await adapter.createTable("posts", { body: "TEXT", title: "TEXT" });
       const call = mockQuery.mock.calls[0];
       expect(call[0]).toContain("CREATE TABLE IF NOT EXISTS");
       expect(call[0]).toContain('"posts"');
@@ -317,7 +317,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("dropTable", () => {
     it("drops a table", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] });
       await adapter.dropTable("posts");
       const call = mockQuery.mock.calls[0];
       expect(call[0]).toContain("DROP TABLE IF EXISTS");
@@ -327,12 +327,12 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("runMigration", () => {
     it("runs up SQL and records migration", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
       await adapter.runMigration({
+        down: "DROP TABLE t",
         id: "m1",
         name: "test_migration",
         up: "CREATE TABLE t()",
-        down: "DROP TABLE t",
       });
       const sqls = mockQuery.mock.calls.map((c) => c[0]);
       expect(sqls).toContain("CREATE TABLE t()");
@@ -343,7 +343,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
   describe("getExecutedMigrations", () => {
     it("returns migration ids", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [{ id: "m1" }, { id: "m2" }], rowCount: 2 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 2, rows: [{ id: "m1" }, { id: "m2" }] });
       const result = await adapter.getExecutedMigrations();
       expect(result).toEqual(["m1", "m2"]);
     });
@@ -353,12 +353,12 @@ describe("PostgresAdapter (unit, no real connection)", () => {
     it("returns tables map", async () => {
       await connectAndReset();
       mockQuery.mockResolvedValueOnce({
-        rows: [
-          { table_name: "__cms_posts", column_name: "id" },
-          { table_name: "__cms_posts", column_name: "title" },
-          { table_name: "__cms_users", column_name: "id" },
-        ],
         rowCount: 3,
+        rows: [
+          { column_name: "id", table_name: "__cms_posts" },
+          { column_name: "title", table_name: "__cms_posts" },
+          { column_name: "id", table_name: "__cms_users" },
+        ],
       });
       const result = await adapter.getExistingSchema();
       expect(result.tables.size).toBe(2);
@@ -368,7 +368,7 @@ describe("PostgresAdapter (unit, no real connection)", () => {
 
     it("returns empty tables when no rows", async () => {
       await connectAndReset();
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      mockQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] });
       const result = await adapter.getExistingSchema();
       expect(result.tables.size).toBe(0);
     });

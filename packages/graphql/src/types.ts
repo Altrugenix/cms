@@ -1,8 +1,8 @@
 import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
 
 export interface GraphQLGeneratorConfig {
-  maxPageSize?: number;
-  defaultPageSize?: number;
+  maxPageSize?: number | undefined;
+  defaultPageSize?: number | undefined;
 }
 
 export interface GraphQLSchema {
@@ -18,21 +18,21 @@ export function pascalCase(slug: string): string {
 }
 
 const SCALAR_MAP: Record<string, string> = {
-  text: "String",
-  textarea: "String",
-  number: "Float",
   boolean: "Boolean",
+  code: "String",
+  color: "String",
   date: "String",
   datetime: "String",
   email: "String",
-  password: "String",
-  url: "String",
   json: "JSON",
-  richText: "String",
   markdown: "String",
-  code: "String",
-  color: "String",
+  number: "Float",
+  password: "String",
+  richText: "String",
   slug: "String",
+  text: "String",
+  textarea: "String",
+  url: "String",
 };
 
 export function fieldToGraphQLType(

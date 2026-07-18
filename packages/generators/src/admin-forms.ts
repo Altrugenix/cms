@@ -1,5 +1,6 @@
-import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
+
+import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
 function fieldToInputType(field: FieldDefinition): string {
   switch (field.type) {
@@ -91,16 +92,16 @@ function generateAdminForm(collections: CollectionDefinition[]): string {
 }
 
 export const adminFormGenerator: Generator = {
-  name: "admin-forms",
   description: "Generates admin form configurations from collection definitions",
   async generate(options: GenerationOptions): Promise<GeneratedFile[]> {
     if (!options.collections || options.collections.length === 0) return [];
 
     return [
       {
-        path: "admin-forms/index.ts",
         content: generateAdminForm(options.collections),
+        path: "admin-forms/index.ts",
       },
     ];
   },
+  name: "admin-forms",
 };

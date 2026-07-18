@@ -13,15 +13,15 @@ type ConfirmDialogProps = {
 };
 
 export function ConfirmDialog({
+  confirmLabel = "Delete",
+  loading = false,
+  loadingLabel = "Deleting...",
+  message,
+  onCancel,
+  onConfirm,
   open,
   title,
-  message,
-  confirmLabel = "Delete",
-  loadingLabel = "Deleting...",
-  loading = false,
   variant = "destructive",
-  onConfirm,
-  onCancel,
 }: ConfirmDialogProps) {
   if (!open) return null;
 

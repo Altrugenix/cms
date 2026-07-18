@@ -2,11 +2,12 @@
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+
 import { collectionTemplate, collectionCreateHelp } from "../templates/templates.js";
 
 export interface CollectionCreateOptions {
   slug: string;
-  dir?: string;
+  dir?: string | undefined;
 }
 
 export async function collectionCreate(options: CollectionCreateOptions): Promise<void> {

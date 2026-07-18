@@ -1,7 +1,8 @@
-import { useAuth } from "@/lib/auth";
+import { LogOut, Menu } from "lucide-react";
+
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 type HeaderProps = {
   onOpenPalette?: () => void;
@@ -9,7 +10,7 @@ type HeaderProps = {
 };
 
 export function Header({ onOpenPalette, onToggleSidebar }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { logout, user } = useAuth();
 
   return (
     <header className="flex h-14 items-center justify-between border-b px-3 md:px-6">

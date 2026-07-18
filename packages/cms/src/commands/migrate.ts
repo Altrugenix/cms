@@ -1,11 +1,12 @@
 /* eslint-disable no-console */
 
-import { SchemaLoader } from "@arche-cms/schema";
 import type { CollectionDefinition } from "@arche-cms/types";
 
+import { SchemaLoader } from "@arche-cms/schema";
+
 export interface MigrateOptions {
-  dir?: string;
-  db?: string;
+  dir?: string | undefined;
+  db?: string | undefined;
 }
 
 export function printMigrateHelp(): void {

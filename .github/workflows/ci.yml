@@ -32,9 +32,55 @@ jobs:
           node-version: 24
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm eslint
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
         env:
           PG_TEST_URL: postgres://cms:cms@localhost:5432/cms_test
       - run: pnpm build
+      - name: Check admin bundle size
+        run: |
+          ADMIN_JS=$(find packages/cms/admin/dist -name "*.js" -exec cat {} \; | wc -c)
+          ADMIN_KB=$((ADMIN_JS / 1024))
+          echo "Admin JS bundle: ${ADMIN_KB}KB"
+          if [ "$ADMIN_KB" -gt 600 ]; then
+            echo "::error::Admin JS bundle exceeds 600KB threshold (${ADMIN_KB}KB)"
+            exit 1
+          fi
+      - name: Secret scanning (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+      - name: Dependency audit
+        run: pnpm audit --audit-level=moderate
+        continue-on-error: true
+      - name: Dependency diff
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## Dependency changes" >> $GITHUB_STEP_SUMMARY
+          echo '```diff' >> $GITHUB_STEP_SUMMARY
+          git diff origin/main...HEAD -- "pnpm-lock.yaml" | head -100 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          if git diff origin/main...HEAD --name-only | grep -q "package.json"; then
+            echo "### package.json changes" >> $GITHUB_STEP_SUMMARY
+            for f in $(git diff origin/main...HEAD --name-only | grep "package.json"); do
+              echo "**$f**:" >> $GITHUB_STEP_SUMMARY
+              git diff origin/main...HEAD -- "$f" | grep -E '^\+.*"(dependencies|devDependencies|peerDependencies)"' >> $GITHUB_STEP_SUMMARY || true
+            done
+          fi
+      - name: Fallow dead-code (baseline)
+        run: pnpm fallow dead-code --baseline .fallow/baselines/dead-code.json --quiet
+        continue-on-error: true
+      - name: Fallow health (baseline)
+        run: pnpm fallow health --baseline .fallow/baselines/health.json --quiet
+        continue-on-error: true
+      - name: Fallow dupes (baseline)
+        run: pnpm fallow dupes --baseline .fallow/baselines/dupes.json --quiet
+        continue-on-error: true
+      - name: Test coverage
+        run: pnpm test -- --coverage
+        env:
+          PG_TEST_URL: postgres://cms:cms@localhost:5432/cms_test
