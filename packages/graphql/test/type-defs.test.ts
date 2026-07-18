@@ -1,4 +1,4 @@
-import type { CollectionDefinition } from "@arche-cms/types";
+import type { CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
 
 import { describe, it, expect } from "vitest";
 
@@ -117,5 +117,77 @@ describe("generateTypeDefs", () => {
     const sdl = generateTypeDefs([collection]);
     expect(sdl).toContain("type BlogPosts");
     expect(sdl).toContain("listBlogPosts");
+  });
+
+  it("generates connection types for list queries", () => {
+    const sdl = generateTypeDefs([postCollection]);
+    expect(sdl).toContain("type PostsConnection");
+    expect(sdl).toContain("data: [Posts!]!");
+    expect(sdl).toContain("total: Int!");
+    expect(sdl).toContain("limit: Int!");
+    expect(sdl).toContain("offset: Int!");
+  });
+
+  it("list query returns connection type", () => {
+    const sdl = generateTypeDefs([postCollection]);
+    expect(sdl).toContain(
+      "listPosts(filter: PostsFilter, sort: PostsSort, limit: Int, offset: Int): PostsConnection!",
+    );
+  });
+
+  it("generates global types when globals provided", () => {
+    const siteSettings: GlobalDefinition = {
+      fields: [
+        { name: "title", type: "text" },
+        { name: "description", type: "textarea" },
+      ],
+      label: "Site Settings",
+      slug: "siteSettings",
+    };
+    const sdl = generateTypeDefs([postCollection], [siteSettings]);
+    expect(sdl).toContain("type SiteSettings");
+    expect(sdl).toContain("title: String");
+    expect(sdl).toContain("description: String");
+  });
+
+  it("generates global query fields", () => {
+    const siteSettings: GlobalDefinition = {
+      fields: [{ name: "title", type: "text" }],
+      label: "Site Settings",
+      slug: "siteSettings",
+    };
+    const sdl = generateTypeDefs([postCollection], [siteSettings]);
+    expect(sdl).toContain("siteSettings: SiteSettings");
+  });
+
+  it("generates global mutation fields", () => {
+    const siteSettings: GlobalDefinition = {
+      fields: [{ name: "title", type: "text" }],
+      label: "Site Settings",
+      slug: "siteSettings",
+    };
+    const sdl = generateTypeDefs([postCollection], [siteSettings]);
+    expect(sdl).toContain("updateSiteSettings(data: SiteSettingsInput!): SiteSettings!");
+  });
+
+  it("generates global input types", () => {
+    const siteSettings: GlobalDefinition = {
+      fields: [
+        { name: "title", type: "text" },
+        { name: "count", type: "number" },
+      ],
+      label: "Site Settings",
+      slug: "siteSettings",
+    };
+    const sdl = generateTypeDefs([postCollection], [siteSettings]);
+    expect(sdl).toContain("input SiteSettingsInput");
+    expect(sdl).toContain("title: String");
+    expect(sdl).toContain("count: Float");
+  });
+
+  it("does not generate global types when globals is undefined", () => {
+    const sdl = generateTypeDefs([postCollection]);
+    expect(sdl).not.toContain("type SiteSettings");
+    expect(sdl).not.toContain("updateSiteSettings");
   });
 });

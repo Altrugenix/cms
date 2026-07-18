@@ -385,7 +385,7 @@ describe("CMS API Server", () => {
 
     it("executes listPosts query", async () => {
       const res = await app.inject({
-        body: { query: "{ listPosts { id title } }" },
+        body: { query: "{ listPosts { data { id title } total limit offset } }" },
         headers: { authorization: `Bearer ${authToken}` },
         method: "POST",
         url: "/graphql",
@@ -393,8 +393,9 @@ describe("CMS API Server", () => {
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
       expect(body.data).toBeDefined();
-      expect(body.data.listPosts.length).toBeGreaterThanOrEqual(1);
-      expect(body.data.listPosts[0].id).toBeDefined();
+      expect(body.data.listPosts.data.length).toBeGreaterThanOrEqual(1);
+      expect(body.data.listPosts.data[0].id).toBeDefined();
+      expect(body.data.listPosts.total).toBeDefined();
     });
 
     it("executes posts query by id", async () => {

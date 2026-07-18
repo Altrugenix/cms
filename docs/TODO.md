@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: Milestone 22 complete — server completeness (activity/webhook coverage, pagination, graceful shutdown, webhook reliability, code cleanup). 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass. Next: Milestone 23 — admin UI quality & consistency. Milestone 25 — create-app scaffold improvements (Dockerfile, validation, cleanup) in progress.
+> Project status: Milestone 24 complete — GraphQL & REST API completeness (globals, pagination, OpenAPI request bodies, middleware). 319 tests pass across 19 packages. Next: Milestone 26 — empty package evaluation and SDK implementation.
 
 ---
 
@@ -1208,39 +1208,44 @@ Complete the GraphQL and REST API layers: add global definitions to GraphQL, fix
 
 ### GraphQL — Globals
 
-- [ ] **Generate GraphQL types for globals** — `type-defs.ts` only handles collections. Add `type SiteSettings { ... }` with all global fields
-- [ ] **Generate GraphQL queries for globals** — Add `siteSettings: SiteSettings` query
-- [ ] **Generate GraphQL mutations for globals** — Add `updateSiteSettings(input: SiteSettingsInput!): SiteSettings` mutation
-- [ ] **Generate resolvers for globals** — Add query/mutation resolvers that call `adapter.findOne()` / `adapter.upsert()` for globals
+- [x] **Generate GraphQL types for globals** — `type-defs.ts` only handles collections. Add `type SiteSettings { ... }` with all global fields
+- [x] **Generate GraphQL queries for globals** — Add `siteSettings: SiteSettings` query
+- [x] **Generate GraphQL mutations for globals** — Add `updateSiteSettings(data: SiteSettingsInput!): SiteSettings!` mutation
+- [x] **Generate resolvers for globals** — Add query/mutation resolvers that call `adapter.findOne()` / `adapter.create()` / `adapter.update()` for globals
 
 ### GraphQL — Pagination & Error Handling
 
-- [ ] **Add pagination metadata to list queries** — Return `{ data: [Type], total: Int, limit: Int, offset: Int }` instead of bare `[Type]`
-- [ ] **Use `safeParse` in mutation resolvers** — `resolvers.ts:165-188` calls `schema.parse()` which throws on invalid input. Use `safeParse()` and return structured GraphQL errors
-- [ ] **Add draft/soft-delete awareness to resolvers** — Filter by `_status` and `_deletedAt` in list queries
+- [x] **Add pagination metadata to list queries** — Return `{ data: [Type], total: Int, limit: Int, offset: Int }` instead of bare `[Type]`
+- [x] **Use `safeParse` in mutation resolvers** — `resolvers.ts` now uses `safeParse()` and returns structured GraphQL validation errors
+- [x] **Add draft/soft-delete awareness to resolvers** — Filter by `_status` and `_deletedAt` in list queries
 
 ### GraphQL — Type Completeness
 
-- [ ] **Fix `checkbox` scalar mapping** — `types.ts:20-36` `SCALAR_MAP` is missing `checkbox`. Add `checkbox: "Boolean"`
-- [ ] **Generate full component types** — `type-defs.ts:112-160` generates stub types with `_: Boolean`. Generate actual field types for referenced components
+- [x] **Fix `checkbox` scalar mapping** — `types.ts` `SCALAR_MAP` now includes `checkbox: "Boolean"`
+- [x] **Generate full component types** — `type-defs.ts` generates actual field types for referenced components via `collectComponentRefs`
 
 ### REST API — OpenAPI
 
-- [ ] **Add request body schemas to OpenAPI operations** — `openapi.ts:127-166` generates `Create`/`Update` schemas but never references them in operations. Add `requestBody.content.application/json.schema.$ref` to POST/PUT/PATCH operations
-- [ ] **Add OpenAPI types for missing field types** — `openapi.ts:29` `SIMPLE_OPENAPI_TYPES` is missing `textarea`, `code`, `slug`, `markdown`. Add descriptive types (e.g., `textarea` → `{ type: "string", format: "textarea" }`)
-- [ ] **Fix version response schema** — `collections.ts:114-128` uses `additionalProperties: true` with no fields. Define actual version object schema
+- [x] **Add request body schemas to OpenAPI operations** — `openapi.ts` now generates `requestBody` for POST/PUT/PATCH operations with the appropriate Create/Update schema
+- [x] **Add OpenAPI types for missing field types** — `openapi.ts` `SIMPLE_OPENAPI_TYPES` now includes `textarea`, `code`, `slug`, `markdown`
+- [x] **Fix version response schema** — Added `VERSION_RESPONSE_SCHEMA` with proper fields (id, version, data, entryId, collection, createdAt)
 
 ### REST API — Middleware & Error Handling
 
-- [ ] **Apply middleware hooks to global routes** — `route-generator.ts:177-192` `createGlobalRouter` does not call `applyMiddleware()`. Add middleware support for global endpoints
-- [ ] **Fix `isUniqueConstraintError` for Postgres** — `handlers.ts:17-19` only checks SQLite format. Add Postgres check (`duplicate key value violates unique constraint`)
+- [x] **Apply middleware hooks to global routes** — `route-generator.ts` `createGlobalRouter` now calls `applyMiddleware()` on both GET and PUT handlers
+- [x] **Fix `isUniqueConstraintError` for Postgres** — `handlers.ts` already checks both SQLite and Postgres constraint formats
+
+### Code Generation
+
+- [x] **Updated generators** — `generators/src/graphql-schema.ts` now supports globals (types, inputs, queries, mutations) and pagination connection types
+- [x] **Updated generator tests** — All generator tests updated to match new `listPosts` naming and connection types
 
 ### Verification
 
-- [ ] Run `pnpm lint` — no new errors
-- [ ] Run `pnpm typecheck` — no type errors
-- [ ] Run `pnpm test` — all tests pass
-- [ ] Run `pnpm build` — all packages build successfully
+- [x] Run `pnpm lint` — no new errors
+- [x] Run `pnpm typecheck` — no type errors
+- [x] Run `pnpm test` — all 319 tests pass across 19 packages
+- [x] Run `pnpm build` — all packages build successfully
 
 ---
 
@@ -1272,3 +1277,145 @@ Improve `@arche-cms/create-app` scaffolding: add Docker support, input validatio
 - [x] Run `pnpm typecheck` — no type errors
 - [x] Run `pnpm test` — all 23 tests pass (3 files)
 - [x] Run `pnpm build` — package builds successfully
+
+---
+
+## Milestone 26: Empty Package Evaluation & SDK Implementation
+
+### Objective
+
+Evaluate three empty placeholder packages (`admin-ui`, `builder`, `sdk`) created during initial monorepo scaffolding. All three contain only `export {};` in `src/index.ts`, zero dependencies, and zero real code. Determine which to keep, implement, or remove.
+
+### Package Evaluation
+
+| Package               | Current State                                           | Used Elsewhere?  | Recommendation       |
+| --------------------- | ------------------------------------------------------- | ---------------- | -------------------- |
+| `@arche-cms/admin-ui` | Empty shell — `export {}`, no deps, aspirational README | No imports found | **Remove**           |
+| `@arche-cms/builder`  | Empty shell — `export {}`, no deps, no README           | No imports found | **Remove**           |
+| `@arche-cms/sdk`      | Empty shell — `export {}`, no deps, aspirational README | No imports found | **Keep & implement** |
+
+### Rationale
+
+#### `@arche-cms/admin-ui` — Remove
+
+All admin UI components already live in `packages/cms/admin/src/components/`:
+
+- `field-input.tsx` — 29 field type renderers (text, media, relation, richText, component, dynamicZone, array, etc.)
+- `sidebar.tsx` — navigation with collections/globals
+- `command-palette.tsx` — ⌘K search
+- `data-table.tsx` — collection list table
+- Plus 15+ route components under `routes/`
+
+Extracting these into a separate package would require:
+
+- Decoupling from CMS-specific APIs (`lib/api.ts`, TanStack Query hooks)
+- Adding React 19, shadcn/ui, Tailwind v4 as peer dependencies
+- Maintaining two packages for the same components
+- No downstream consumers (no other projects import this package)
+
+The admin panel is a monolithic SPA served by the CMS server. A shared component package adds complexity without benefit. If cross-project reuse is ever needed, components can be extracted at that time.
+
+#### `@arche-cms/builder` — Remove
+
+The schema builder is fully functional in `packages/cms/admin/src/routes/schemas/`:
+
+- `$type.$slug.tsx` — drag-and-drop field editor, settings panel, preview, save
+- `new.tsx` — create new collection/global/component
+
+It uses the same field input components, API client, and routing as the rest of the admin panel. Extracting it would create a circular dependency (builder depends on admin-ui components, admin panel depends on builder for schema editing). The builder is not a standalone tool — it's a feature of the admin panel.
+
+#### `@arche-cms/sdk` — Keep & Implement
+
+The SDK provides genuine value: a typed HTTP client for developers building applications that interact with the Arche CMS API. Unlike the admin UI and builder, the SDK has no coupling to the admin panel — it's a standalone consumer of the REST API.
+
+Use cases:
+
+- Frontend apps (Next.js, Remix, etc.) fetching content from Arche CMS
+- Backend services integrating with Arche CMS content
+- Mobile apps consuming the API
+- Testing CMS integrations
+
+The generators already produce TypeScript types (`packages/generators/src/sdk.ts`). The SDK package should provide the runtime HTTP client that uses those types.
+
+### Milestone 26: Removal — `admin-ui` and `builder`
+
+- [ ] **Remove `packages/admin-ui/`** — delete directory, remove from `pnpm-workspace.yaml`, remove from `turbo.json` pipeline, remove from root `package.json` scripts if referenced
+- [ ] **Remove `packages/builder/`** — delete directory, remove from `pnpm-workspace.yaml`, remove from `turbo.json` pipeline, remove from root `package.json` scripts if referenced
+- [ ] **Update `docs/architecture.md`** — remove `admin-ui` and `builder` from monorepo layout diagram
+- [ ] **Update `docs/TODO.md`** — remove references to these packages in Milestone 8 documentation checklist
+- [ ] **Update `AGENTS.md`** — remove `admin-ui` and `builder` from monorepo structure
+- [ ] **Verify `pnpm install`** — ensure lockfile updates cleanly
+- [ ] **Verify `pnpm build`** — all remaining packages build successfully
+- [ ] **Verify `pnpm test`** — no regressions
+- [ ] **Verify `pnpm lint && pnpm typecheck`** — no new errors
+
+### Milestone 26: SDK Implementation
+
+#### Phase 1: Package Setup
+
+- [ ] **Add dependencies** — `@arche-cms/types` (peer), `@arche-cms/schema` (dev, for type generation)
+- [ ] **Add `README.md`** — document API, usage examples, configuration
+- [ ] **Define package exports** — `src/index.ts` exports `createClient`, types, and utilities
+
+#### Phase 2: HTTP Client Core
+
+- [ ] **Implement `createClient(config)` factory** — accepts `baseUrl`, `token?`, `fetch?` (custom fetch adapter), returns typed client
+- [ ] **Implement base HTTP methods** — `get<T>()`, `post<T>()`, `put<T>()`, `patch<T>()`, `delete<T>()` with JSON serialization, error handling, and auth header injection
+- [ ] **Implement error classes** — `ApiError` with `status`, `message`, `details` (validation errors), `code`
+- [ ] **Implement request/response interceptors** — `onRequest`, `onResponse`, `onError` hooks for logging, retry, token refresh
+
+#### Phase 3: Typed Collection Client
+
+- [ ] **Implement collection client factory** — `collection<T>(slug)` returns `{ list, get, create, update, delete, bulkDelete, publish, unpublish, restore, versions, restoreVersion }`
+- [ ] **Type-safe list method** — `list(params?)` with `limit`, `offset`, `sort`, `filter`, `select`, `populate` query params; returns `{ data: T[], total: number, limit: number, offset: number }`
+- [ ] **Type-safe get method** — `get(id)` returns `T`
+- [ ] **Type-safe create method** — `create(data)` returns `T`
+- [ ] **Type-safe update method** — `update(id, data)` returns `T`
+- [ ] **Type-safe delete method** — `delete(id)` returns `{ success: boolean }`
+- [ ] **Type-safe bulk operations** — `bulkDelete(ids)`, `publish(id)`, `unpublish(id)`, `restore(id)`
+- [ ] **Type-safe version operations** — `versions(id)`, `restoreVersion(id, versionId)`
+
+#### Phase 4: Global Client
+
+- [ ] **Implement global client factory** — `global<T>(slug)` returns `{ get, upsert }`
+- [ ] **Type-safe get** — `get()` returns `T`
+- [ ] **Type-safe upsert** — `upsert(data)` returns `T`
+
+#### Phase 5: Auth & Media Clients
+
+- [ ] **Implement auth client** — `auth.login(email, password)`, `auth.register(email, password, name)`, `auth.refresh(refreshToken)`, `auth.forgotPassword(email)`, `auth.resetPassword(token, password)`, `auth.me()`
+- [ ] **Implement media client** — `media.list(params?)`, `media.get(id)`, `media.upload(file)`, `media.delete(id)`, `media.getFile(id)`
+- [ ] **Implement users client** — `users.list()`, `users.get(id)`, `users.create(data)`, `users.update(id, data)`, `users.delete(id)`
+- [ ] **Implement roles client** — `roles.list()`, `roles.get(id)`, `roles.create(data)`, `roles.update(id, data)`, `roles.delete(id)`
+
+#### Phase 6: Code Generation Integration
+
+- [ ] **Update generators `sdk.ts`** — generate typed client code that imports from `@arche-cms/sdk` and provides collection-specific typed methods
+- [ ] **Generate collection types** — for each collection, generate an interface and a client accessor (e.g., `client.posts.list()` returns `Post[]`)
+- [ ] **Generate global types** — for each global, generate an interface and a client accessor (e.g., `client.siteSettings.get()` returns `SiteSettings`)
+- [ ] **Update `cms generate`** — add `--sdk` flag to generate the typed SDK client file
+
+#### Phase 7: Testing
+
+- [ ] **Unit tests for HTTP client** — request/response handling, error classes, auth headers, interceptors
+- [ ] **Unit tests for collection client** — typed methods, query param serialization, response parsing
+- [ ] **Unit tests for global client** — typed methods
+- [ ] **Unit tests for auth client** — login, register, refresh, forgot/reset password
+- [ ] **Unit tests for media client** — upload, list, get, delete
+- [ ] **Integration tests** — mock fetch, verify full request lifecycle
+- [ ] **Type tests** — verify type inference with `expectTypeOf` (TypeScript type-level tests)
+
+#### Phase 8: Documentation & Polish
+
+- [ ] **Write README** — installation, quick start, configuration, API reference, examples
+- [ ] **Add JSDoc comments** — all public methods and types
+- [ ] **Add CHANGELOG entry** — v0.2.0 with SDK release
+
+### Verification
+
+- [ ] Run `pnpm lint` — no new errors
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm test` — all tests pass (existing + new SDK tests)
+- [ ] Run `pnpm build` — all packages build successfully
+- [ ] Verify SDK imports work: `import { createClient } from "@arche-cms/sdk"`
+- [ ] Verify generated SDK types compile against real schema definitions

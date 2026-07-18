@@ -8,6 +8,7 @@ const SIMPLE_OPENAPI_TYPES: Record<string, Record<string, unknown> | undefined> 
   array: { items: { properties: {}, type: "object" }, type: "array" },
   boolean: { type: "boolean" },
   checkbox: { type: "boolean" },
+  code: { format: "code", type: "string" },
   color: { format: "color", type: "string" },
   component: { properties: {}, type: "object" },
   date: { format: "date", type: "string" },
@@ -16,6 +17,7 @@ const SIMPLE_OPENAPI_TYPES: Record<string, Record<string, unknown> | undefined> 
   email: { format: "email", type: "string" },
   group: { properties: {}, type: "object" },
   json: { type: "object" },
+  markdown: { format: "markdown", type: "string" },
   media: { description: "Media file ID reference", type: "string" },
   multiSelect: { items: { type: "string" }, type: "array" },
   number: { type: "number" },
@@ -24,8 +26,22 @@ const SIMPLE_OPENAPI_TYPES: Record<string, Record<string, unknown> | undefined> 
   relation: { type: "string" },
   repeater: { items: { properties: {}, type: "object" }, type: "array" },
   richText: { format: "html", type: "string" },
+  slug: { format: "slug", type: "string" },
+  textarea: { format: "textarea", type: "string" },
   upload: { description: "Media file ID reference", type: "string" },
   url: { format: "uri", type: "string" },
+};
+
+const VERSION_RESPONSE_SCHEMA = {
+  properties: {
+    collection: { type: "string" },
+    createdAt: { format: "date-time", type: "string" },
+    data: { type: "string" },
+    entryId: { type: "string" },
+    id: { type: "integer" },
+    version: { type: "integer" },
+  },
+  type: "object",
 };
 
 function fieldToOpenApiType(field: FieldDefinition): Record<string, unknown> {
@@ -67,6 +83,7 @@ function generateFlatProperties(fields: FieldDefinition[]): Record<string, unkno
   return props;
 }
 
+// fallow-ignore-next-line complexity
 function generateCollectionSchema(collection: CollectionDefinition): Record<string, unknown> {
   const properties: Record<string, unknown> = {
     id: { description: "Primary key", type: "integer" },
@@ -94,12 +111,43 @@ function generateCollectionSchema(collection: CollectionDefinition): Record<stri
   };
 }
 
+function generateRequestBodySchema(
+  collection: CollectionDefinition,
+  mode: "create" | "update",
+): Record<string, unknown> {
+  const properties: Record<string, unknown> = {};
+  for (const field of collection.fields) {
+    if (field.type === "password" && mode === "update") {
+      properties[field.name] = { ...fieldToOpenApiType(field), nullable: true };
+      continue;
+    }
+    if (field.type === "password") continue;
+    const schema = fieldToOpenApiType(field);
+    if (mode === "update") {
+      schema.nullable = true;
+    }
+    properties[field.name] = schema;
+  }
+  return {
+    content: {
+      "application/json": {
+        schema: { properties, type: "object" },
+      },
+    },
+    description:
+      mode === "create"
+        ? `Create a new ${collection.labels.singular}`
+        : `Update a ${collection.labels.singular}`,
+  };
+}
+
 export interface OpenApiOptions {
   title?: string | undefined;
   version?: string | undefined;
   description?: string | undefined;
 }
 
+// fallow-ignore-next-line complexity
 export function generateOpenApiSpec(
   collections: CollectionDefinition[],
   routes: RouteDefinition[],
@@ -121,9 +169,12 @@ export function generateOpenApiSpec(
     schemas[`${name}Update`] = { properties: updateProps, type: "object" };
   }
 
+  schemas.VersionResponse = VERSION_RESPONSE_SCHEMA;
+
   const paths: Record<string, unknown> = {};
 
   for (const route of routes) {
+    const collection = collections.find((c) => pascalCase(c.slug) === getCollectionName(route));
     const operation: Record<string, unknown> = {
       operationId: route.operationId,
       responses: {
@@ -136,12 +187,22 @@ export function generateOpenApiSpec(
       tags: route.tags,
     };
 
-    if (route.method === "POST") {
+    if (route.method === "POST" && collection) {
+      operation.requestBody = generateRequestBodySchema(collection, "create");
       operation.responses = {
         "201": { description: "Created" },
         "400": { description: "Bad request" },
+        "409": { description: "Conflict" },
         "500": { description: "Internal server error" },
       };
+    }
+
+    if (route.method === "PATCH" && collection) {
+      operation.requestBody = generateRequestBodySchema(collection, "update");
+    }
+
+    if (route.method === "PUT" && collection) {
+      operation.requestBody = generateRequestBodySchema(collection, "update");
     }
 
     if (route.method === "GET" && route.path.endsWith("/:id")) {
@@ -150,7 +211,17 @@ export function generateOpenApiSpec(
       ];
     }
 
-    if (route.method === "GET" && !route.path.endsWith("/:id")) {
+    if (route.method === "GET" && route.path.endsWith("/versions")) {
+      operation.parameters = [
+        { in: "path", name: "id", required: true, schema: { type: "string" } },
+      ];
+    }
+
+    if (
+      route.method === "GET" &&
+      !route.path.endsWith("/:id") &&
+      !route.path.endsWith("/versions")
+    ) {
       operation.parameters = [
         { in: "query", name: "limit", schema: { type: "integer" } },
         { in: "query", name: "offset", schema: { type: "integer" } },
@@ -177,4 +248,11 @@ export function generateOpenApiSpec(
     openapi: "3.1.0",
     paths,
   };
+}
+
+function getCollectionName(route: RouteDefinition): string | undefined {
+  const match = route.operationId.match(
+    /^(?:list|get|create|update|upsert|delete|bulkDelete|publish|unpublish|restore)(.+)$/,
+  );
+  return match?.[1];
 }

@@ -99,7 +99,7 @@ describe("graphqlGenerator", () => {
     expect(schemaFile?.content).toContain("type Posts {");
     expect(schemaFile?.content).toContain("type Users {");
     expect(schemaFile?.content).toContain(
-      "allPosts(limit: Int, offset: Int, sort: String): [Posts]",
+      "listPosts(filter: PostsFilter, sort: PostsSort, limit: Int, offset: Int): PostsConnection!",
     );
     expect(schemaFile?.content).toContain("createPosts(input: PostsCreateInput!): Posts");
 

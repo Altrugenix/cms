@@ -1,5 +1,10 @@
 import type { DatabaseAdapter, QueryOptions } from "@arche-cms/database";
-import type { CollectionDefinition, FieldDefinition, RelationField } from "@arche-cms/types";
+import type {
+  CollectionDefinition,
+  FieldDefinition,
+  GlobalDefinition,
+  RelationField,
+} from "@arche-cms/types";
 
 import { createMutationPayloadSchema, updateMutationPayloadSchema } from "@arche-cms/validation";
 
@@ -61,6 +66,14 @@ function normalizeLocaleData(
   return data;
 }
 
+function hasDrafts(collection: CollectionDefinition): boolean {
+  return collection.versions?.drafts === true;
+}
+
+function hasSoftDelete(collection: CollectionDefinition): boolean {
+  return collection.versions?.softDelete === true;
+}
+
 function generateTypeResolvers(
   collection: CollectionDefinition,
   collections: CollectionDefinition[],
@@ -98,6 +111,7 @@ function generateTypeResolvers(
 export function generateResolvers(
   collections: CollectionDefinition[],
   adapter: DatabaseAdapter,
+  globals?: GlobalDefinition[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Record<string, Record<string, any>> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,18 +123,14 @@ export function generateResolvers(
     const name = pascalCase(collection.slug);
     const table = collectionTableName(collection.slug);
 
+    // fallow-ignore-next-line complexity
     queryFields[`list${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
       const options: QueryOptions = {};
+      const limit = typeof args.limit === "number" ? Math.min(args.limit, 100) : 10;
+      const offset = typeof args.offset === "number" ? args.offset : 0;
 
-      if (typeof args.limit === "number") {
-        options.limit = Math.min(args.limit, 100);
-      } else {
-        options.limit = 10;
-      }
-
-      if (typeof args.offset === "number") {
-        options.offset = args.offset;
-      }
+      options.limit = limit;
+      options.offset = offset;
 
       if (args.sort) {
         const sortStr = args.sort as string;
@@ -136,16 +146,25 @@ export function generateResolvers(
         options.where = args.filter as Record<string, unknown>;
       }
 
+      if (hasDrafts(collection) && !options.where?._status) {
+        options.where = { ...options.where, _status: "published" };
+      }
+
+      if (hasSoftDelete(collection)) {
+        options.where = { ...options.where, _deletedAt: null };
+      }
+
       const locale = typeof args.locale === "string" ? args.locale : undefined;
       const lFields = localizedFields(collection);
       const result = await adapter.findMany(table, options);
-      return result.data.map((row) => {
+      const data = result.data.map((row) => {
         const r = { ...row, id: String(row.id) };
         if (lFields.length > 0) {
           Object.assign(r, applyLocaleToRecord(r, locale, defaultLocale(collection), lFields));
         }
         return r;
       });
+      return { data, limit, offset, total: result.total };
     };
 
     queryFields[collection.slug] = async (_parent: unknown, args: Record<string, unknown>) => {
@@ -164,20 +183,28 @@ export function generateResolvers(
 
     mutationFields[`create${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
       const schema = createMutationPayloadSchema(collection);
-      const data = normalizeLocaleData(
-        schema.parse(args.data) as Record<string, unknown>,
-        collection,
-      );
+      const result = schema.safeParse(args.data);
+      if (!result.success) {
+        const message = result.error.issues
+          .map((i) => `${i.path.join(".")}: ${i.message}`)
+          .join("; ");
+        throw new Error(`Validation failed: ${message}`);
+      }
+      const data = normalizeLocaleData(result.data as Record<string, unknown>, collection);
       const row = await adapter.create(table, data);
       return { ...row, id: String(row.id) };
     };
 
     mutationFields[`update${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
       const schema = updateMutationPayloadSchema(collection);
-      const data = normalizeLocaleData(
-        schema.parse(args.data) as Record<string, unknown>,
-        collection,
-      );
+      const result = schema.safeParse(args.data);
+      if (!result.success) {
+        const message = result.error.issues
+          .map((i) => `${i.path.join(".")}: ${i.message}`)
+          .join("; ");
+        throw new Error(`Validation failed: ${message}`);
+      }
+      const data = normalizeLocaleData(result.data as Record<string, unknown>, collection);
       const row = await adapter.update(table, args.id as string, data);
       if (!row) throw new Error(`Not found: ${collection.slug} with id ${args.id}`);
       return { ...row, id: String(row.id) };
@@ -186,6 +213,30 @@ export function generateResolvers(
     mutationFields[`delete${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
       return adapter.delete(table, args.id as string);
     };
+  }
+
+  if (globals) {
+    for (const global of globals) {
+      const name = pascalCase(global.slug);
+      const table = collectionTableName(global.slug);
+
+      queryFields[global.slug] = async () => {
+        const record = await adapter.findOne(table, "1");
+        return record ?? {};
+      };
+
+      mutationFields[`update${name}`] = async (_parent: unknown, args: Record<string, unknown>) => {
+        const data = args.data as Record<string, unknown>;
+        const existing = await adapter.findOne(table, "1");
+        let record: Record<string, unknown>;
+        if (existing) {
+          record = (await adapter.update(table, "1", data)) ?? {};
+        } else {
+          record = await adapter.create(table, { id: 1, ...data });
+        }
+        return record;
+      };
+    }
   }
 
   const resolvers: Record<string, Record<string, unknown>> = {

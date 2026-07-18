@@ -1,4 +1,4 @@
-import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
+import type { CollectionDefinition, FieldDefinition, GlobalDefinition } from "@arche-cms/types";
 
 import { pascalCase, fieldToGraphQLType } from "./types.js";
 
@@ -20,6 +20,37 @@ function generateObjectType(
   return `type ${pascalCase(collection.slug)} {
   id: ID!
 ${fields}${timestamps}
+}`;
+}
+
+function generateGlobalType(global: GlobalDefinition, collections: CollectionDefinition[]): string {
+  const fields = (global.fields ?? []).map((f) => fieldToSDL(f, collections)).join("\n");
+  return `type ${pascalCase(global.slug)} {
+${fields || "  _: Boolean"}
+}`;
+}
+
+function generateGlobalInput(
+  global: GlobalDefinition,
+  collections: CollectionDefinition[],
+): string {
+  const fields = (global.fields ?? [])
+    .map((f) => {
+      const gqlType = fieldToGraphQLType(f, collections);
+      return `  ${f.name}: ${gqlType}`;
+    })
+    .join("\n");
+  return `input ${pascalCase(global.slug)}Input {
+${fields || "  _: String"}
+}`;
+}
+
+function generateConnectionType(name: string): string {
+  return `type ${name}Connection {
+  data: [${name}!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
 }`;
 }
 
@@ -109,7 +140,10 @@ function collectComponentRefs(collections: CollectionDefinition[]): string[] {
   return Array.from(slugs);
 }
 
-export function generateTypeDefs(collections: CollectionDefinition[]): string {
+export function generateTypeDefs(
+  collections: CollectionDefinition[],
+  globals?: GlobalDefinition[],
+): string {
   const parts: string[] = [];
 
   parts.push(`scalar JSON`);
@@ -130,14 +164,28 @@ export function generateTypeDefs(collections: CollectionDefinition[]): string {
     parts.push(generateUpdateInput(collection, collections));
   }
 
+  for (const collection of collections) {
+    parts.push(generateConnectionType(pascalCase(collection.slug)));
+  }
+
+  if (globals) {
+    for (const global of globals) {
+      parts.push(generateGlobalType(global, collections));
+      parts.push(generateGlobalInput(global, collections));
+    }
+  }
+
   const queryFields = collections
     .map((c) => {
       const name = pascalCase(c.slug);
       const localeArg = c.localization ? ", locale: String" : "";
-      return `  list${name}(filter: ${name}Filter, sort: ${name}Sort, limit: Int, offset: Int${localeArg}): [${name}!]!
+      return `  list${name}(filter: ${name}Filter, sort: ${name}Sort, limit: Int, offset: Int${localeArg}): ${name}Connection!
   ${c.slug}(id: ID!${localeArg}): ${name}`;
     })
     .join("\n");
+
+  const globalQueryFields =
+    globals?.map((g) => `  ${g.slug}: ${pascalCase(g.slug)}`).join("\n") ?? "";
 
   const mutationFields = collections
     .map((c) => {
@@ -148,12 +196,20 @@ export function generateTypeDefs(collections: CollectionDefinition[]): string {
     })
     .join("\n");
 
+  const globalMutationFields =
+    globals
+      ?.map(
+        (g) =>
+          `  update${pascalCase(g.slug)}(data: ${pascalCase(g.slug)}Input!): ${pascalCase(g.slug)}!`,
+      )
+      .join("\n") ?? "";
+
   parts.push(`type Query {
-${queryFields}
+${queryFields}${globalQueryFields ? "\n" + globalQueryFields : ""}
 }`);
 
   parts.push(`type Mutation {
-${mutationFields}
+${mutationFields}${globalMutationFields ? "\n" + globalMutationFields : ""}
 }`);
 
   return parts.join("\n\n");

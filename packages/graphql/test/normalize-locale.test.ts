@@ -5,10 +5,10 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@arche-cms/validation", () => ({
   createMutationPayloadSchema: () => ({
-    parse: (data: unknown) => data,
+    safeParse: (data: unknown) => ({ data, success: true }),
   }),
   updateMutationPayloadSchema: () => ({
-    parse: (data: unknown) => data,
+    safeParse: (data: unknown) => ({ data, success: true }),
   }),
 }));
 

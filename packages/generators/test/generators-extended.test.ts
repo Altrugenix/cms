@@ -476,7 +476,7 @@ describe("graphqlGenerator - field type coverage", () => {
     const content = resolversFile?.content ?? "";
     expect(content).toContain("createResolvers");
     expect(content).toContain("posts: async");
-    expect(content).toContain("allPosts: async");
+    expect(content).toContain("listPosts: async");
     expect(content).toContain("createPosts: async");
     expect(content).toContain("updatePosts: async");
     expect(content).toContain("deletePosts: async");

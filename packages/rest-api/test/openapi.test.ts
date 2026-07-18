@@ -156,6 +156,127 @@ describe("generateOpenApiSpec", () => {
     expect(responses["400"]).toBeDefined();
   });
 
+  it("includes requestBody for POST operations", () => {
+    const routes = [
+      {
+        handler: async () => ({ body: {}, statusCode: 201 }),
+        method: "POST" as const,
+        operationId: "createPosts",
+        path: "/api/posts",
+        summary: "Create a post",
+        tags: ["Posts"],
+      },
+    ];
+    const spec = generateOpenApiSpec([postCollection], routes);
+    const paths = spec.paths as Record<string, Record<string, unknown>>;
+    const postOp = paths["/api/posts"].post as Record<string, unknown>;
+    expect(postOp.requestBody).toBeDefined();
+    const requestBody = postOp.requestBody as Record<string, unknown>;
+    expect(requestBody.content).toBeDefined();
+    const json = (requestBody.content as Record<string, Record<string, unknown>>)[
+      "application/json"
+    ];
+    expect(json.schema).toBeDefined();
+  });
+
+  it("includes requestBody for PATCH operations", () => {
+    const routes = [
+      {
+        handler: async () => ({ body: {}, statusCode: 200 }),
+        method: "PATCH" as const,
+        operationId: "updatePosts",
+        path: "/api/posts/:id",
+        summary: "Update a post",
+        tags: ["Posts"],
+      },
+    ];
+    const spec = generateOpenApiSpec([postCollection], routes);
+    const paths = spec.paths as Record<string, Record<string, unknown>>;
+    const patchOp = paths["/api/posts/:id"].patch as Record<string, unknown>;
+    expect(patchOp.requestBody).toBeDefined();
+  });
+
+  it("includes requestBody for PUT operations", () => {
+    const routes = [
+      {
+        handler: async () => ({ body: {}, statusCode: 200 }),
+        method: "PUT" as const,
+        operationId: "upsertPosts",
+        path: "/api/posts",
+        summary: "Upsert a post",
+        tags: ["Posts"],
+      },
+    ];
+    const spec = generateOpenApiSpec([postCollection], routes);
+    const paths = spec.paths as Record<string, Record<string, unknown>>;
+    const putOp = paths["/api/posts"].put as Record<string, unknown>;
+    expect(putOp.requestBody).toBeDefined();
+  });
+
+  it("includes textarea, code, slug, markdown field types", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        { name: "bio", type: "textarea" },
+        { name: "snippet", type: "code" },
+        { name: "slug", type: "slug" },
+        { name: "content", type: "markdown" },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const { routes } = createCollectionRouter(col, mockAdapter);
+    const spec = generateOpenApiSpec([col], routes);
+    const schemas = (spec.components as Record<string, unknown>).schemas as Record<string, unknown>;
+    const properties = (schemas.PagesResponse as Record<string, unknown>).properties as Record<
+      string,
+      unknown
+    >;
+    expect((properties.bio as Record<string, unknown>).type).toBe("string");
+    expect((properties.bio as Record<string, unknown>).format).toBe("textarea");
+    expect((properties.snippet as Record<string, unknown>).type).toBe("string");
+    expect((properties.snippet as Record<string, unknown>).format).toBe("code");
+    expect((properties.slug as Record<string, unknown>).type).toBe("string");
+    expect((properties.slug as Record<string, unknown>).format).toBe("slug");
+    expect((properties.content as Record<string, unknown>).type).toBe("string");
+    expect((properties.content as Record<string, unknown>).format).toBe("markdown");
+  });
+
+  it("includes VersionResponse schema", () => {
+    const col: CollectionDefinition = {
+      fields: [{ name: "title", type: "text" }],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
+      versions: { drafts: true },
+    };
+    const { routes } = createCollectionRouter(col, mockAdapter);
+    const spec = generateOpenApiSpec([col], routes);
+    const schemas = (spec.components as Record<string, unknown>).schemas as Record<string, unknown>;
+    expect(schemas.VersionResponse).toBeDefined();
+    const versionSchema = schemas.VersionResponse as Record<string, unknown>;
+    expect((versionSchema.properties as Record<string, unknown>).id).toBeDefined();
+    expect((versionSchema.properties as Record<string, unknown>).version).toBeDefined();
+    expect((versionSchema.properties as Record<string, unknown>).data).toBeDefined();
+  });
+
+  it("list versions route has id parameter", () => {
+    const routes = [
+      {
+        handler: async () => ({ body: [], statusCode: 200 }),
+        method: "GET" as const,
+        operationId: "listPostsVersions",
+        path: "/api/posts/:id/versions",
+        summary: "List versions",
+        tags: ["Posts"],
+      },
+    ];
+    const spec = generateOpenApiSpec([postCollection], routes);
+    const paths = spec.paths as Record<string, Record<string, unknown>>;
+    const getOp = paths["/api/posts/:id/versions"].get as Record<string, unknown>;
+    const parameters = getOp.parameters as Array<Record<string, unknown>>;
+    expect(parameters).toHaveLength(1);
+    expect(parameters[0].name).toBe("id");
+  });
+
   it("handles date field type", () => {
     const col: CollectionDefinition = {
       fields: [{ name: "eventDate", type: "date" }],

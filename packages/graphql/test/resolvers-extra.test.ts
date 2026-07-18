@@ -74,9 +74,10 @@ describe("resolvers - localization", () => {
     const result = (await resolvers.Query.listPosts({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].title).toBe("Hello FR");
-    expect(result[0].body).toBe("Static body");
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toBe("Hello FR");
+    expect(data[0].body).toBe("Static body");
   });
 
   it("listPosts with locale falls back to default locale", async () => {
@@ -101,8 +102,9 @@ describe("resolvers - localization", () => {
     const result = (await resolvers.Query.listPosts({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].title).toBe("Hello EN");
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toBe("Hello EN");
   });
 
   it("listPosts with locale falls back to first key", async () => {
@@ -127,8 +129,9 @@ describe("resolvers - localization", () => {
     const result = (await resolvers.Query.listPosts({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].title).toBe("Hallo DE");
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toBe("Hallo DE");
   });
 
   it("listPosts without locale returns data as-is", async () => {
@@ -150,8 +153,9 @@ describe("resolvers - localization", () => {
       Query: Record<string, (...args: unknown[]) => unknown>;
     };
 
-    const result = (await resolvers.Query.listPosts({}, {})) as Record<string, unknown>[];
-    expect(result[0].title).toBe("Plain title");
+    const result = (await resolvers.Query.listPosts({}, {})) as Record<string, unknown>;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toBe("Plain title");
   });
 
   it("single get with locale applies localization", async () => {
@@ -412,8 +416,9 @@ describe("resolvers - filterLocale with primitive values", () => {
     const result = (await resolvers.Query.listPosts({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].title).toBe("Plain string title");
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toBe("Plain string title");
   });
 
   it("returns primitive localized field as-is on single get with locale", async () => {
@@ -459,8 +464,9 @@ describe("resolvers - filterLocale with primitive values", () => {
     const result = (await resolvers.Query.listPosts({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].title).toEqual(["a", "b"]);
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toEqual(["a", "b"]);
   });
 });
 
@@ -487,8 +493,9 @@ describe("resolvers - filterLocale with nested arrays", () => {
     const result = (await resolvers.Query.listPosts({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].title).toBe("Plain string title");
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toBe("Plain string title");
   });
 
   it("returns primitive localized field as-is on single get with locale", async () => {
@@ -535,7 +542,8 @@ describe("resolvers - filterLocale with nested arrays", () => {
     const result = (await resolvers.Query.listFlags({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].active).toBe(true);
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].active).toBe(true);
   });
 });

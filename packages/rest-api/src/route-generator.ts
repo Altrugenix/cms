@@ -172,9 +172,11 @@ export function createGlobalRouter(
   const tag = globalDef.label;
   const slug = globalDef.slug;
 
+  const hooks = config?.hooks;
+
   const routes: RouteDefinition[] = [
     {
-      handler: createGlobalGetHandler(globalDef, adapter),
+      handler: applyMiddleware(createGlobalGetHandler(globalDef, adapter), hooks),
       method: "GET",
       operationId: `getGlobal${pascalCase(slug)}`,
       path: `${basePath}/globals/${slug}`,
@@ -182,7 +184,7 @@ export function createGlobalRouter(
       tags: ["Globals"],
     },
     {
-      handler: createGlobalUpsertHandler(globalDef, adapter),
+      handler: applyMiddleware(createGlobalUpsertHandler(globalDef, adapter), hooks),
       method: "PUT",
       operationId: `upsertGlobal${pascalCase(slug)}`,
       path: `${basePath}/globals/${slug}`,

@@ -339,4 +339,21 @@ describe("createGlobalRouters", () => {
     const routers = createGlobalRouters([siteSettings], mockAdapter, { basePath: "/custom" });
     expect(routers[0].routes[0].path).toBe("/custom/globals/site-settings");
   });
+
+  it("applies middleware hooks to global routes via config", async () => {
+    const hooks: MiddlewareHooks = {
+      before: [async () => ({ body: { error: "Forbidden" }, statusCode: 403 })],
+    };
+    const { routes } = createGlobalRouter(siteSettings, mockAdapter, { hooks });
+    for (const route of routes) {
+      const result = await route.handler({
+        body: null,
+        headers: {},
+        params: {},
+        query: {},
+      });
+      expect(result.statusCode).toBe(403);
+      expect(result.body).toEqual({ error: "Forbidden" });
+    }
+  });
 });

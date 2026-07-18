@@ -19,6 +19,7 @@ export function pascalCase(slug: string): string {
 
 const SCALAR_MAP: Record<string, string> = {
   boolean: "Boolean",
+  checkbox: "Boolean",
   code: "String",
   color: "String",
   date: "String",
@@ -43,6 +44,7 @@ export function fieldToGraphQLType(
   return field.localized ? "JSON" : base;
 }
 
+// fallow-ignore-next-line complexity
 function baseGraphQLType(field: FieldDefinition, collections: CollectionDefinition[]): string {
   const mapped = SCALAR_MAP[field.type];
   if (mapped) return mapped;

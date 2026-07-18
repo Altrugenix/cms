@@ -72,8 +72,9 @@ describe("resolvers — filterLocale with null/undefined data (line 23)", () => 
     const result = (await resolvers.Query.listPosts({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].title).toBeNull();
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toBeNull();
   });
 
   it("returns undefined data as-is when filterLocale receives undefined", async () => {
@@ -97,8 +98,9 @@ describe("resolvers — filterLocale with null/undefined data (line 23)", () => 
     const result = (await resolvers.Query.listPosts({}, { locale: "fr" })) as Record<
       string,
       unknown
-    >[];
-    expect(result[0].title).toBeUndefined();
+    >;
+    const data = result.data as Record<string, unknown>[];
+    expect(data[0].title).toBeUndefined();
   });
 });
 

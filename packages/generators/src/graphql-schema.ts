@@ -1,4 +1,4 @@
-import type { CollectionDefinition, FieldDefinition } from "@arche-cms/types";
+import type { CollectionDefinition, FieldDefinition, GlobalDefinition } from "@arche-cms/types";
 
 import type { Generator, GeneratedFile, GenerationOptions } from "./generator.js";
 
@@ -44,7 +44,11 @@ function fieldToGraphQLType(field: FieldDefinition): string {
   return "String";
 }
 
-function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFile[] {
+// fallow-ignore-next-line complexity
+function generateGraphQLFiles(
+  collections: CollectionDefinition[],
+  globals?: GlobalDefinition[],
+): GeneratedFile[] {
   const files: GeneratedFile[] = [];
 
   const typeDefs: string[] = [
@@ -66,6 +70,14 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
     typeDefs.push(`}`);
     typeDefs.push(``);
 
+    typeDefs.push(`type ${name}Connection {`);
+    typeDefs.push(`  data: [${name}!]!`);
+    typeDefs.push(`  total: Int!`);
+    typeDefs.push(`  limit: Int!`);
+    typeDefs.push(`  offset: Int!`);
+    typeDefs.push(`}`);
+    typeDefs.push(``);
+
     typeDefs.push(`input ${name}CreateInput {`);
     for (const f of col.fields) {
       if (f.type === "relation") continue;
@@ -81,13 +93,57 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
     }
     typeDefs.push(`}`);
     typeDefs.push(``);
+
+    typeDefs.push(`input ${name}Filter {`);
+    for (const f of col.fields) {
+      if (f.type === "tabs") continue;
+      const t = f.type === "number" || f.type === "checkbox" ? "Float" : "String";
+      typeDefs.push(`  ${f.name}: ${t}`);
+    }
+    typeDefs.push(`}`);
+    typeDefs.push(``);
+
+    typeDefs.push(`enum ${name}Sort {`);
+    for (const f of col.fields) {
+      typeDefs.push(`  ${f.name}_asc`);
+      typeDefs.push(`  ${f.name}_desc`);
+    }
+    typeDefs.push(`}`);
+    typeDefs.push(``);
+  }
+
+  if (globals) {
+    for (const g of globals) {
+      const name = toPascal(g.slug);
+      typeDefs.push(`type ${name} {`);
+      for (const f of g.fields) {
+        const t = fieldToGraphQLType(f);
+        typeDefs.push(`  ${f.name}: ${t}`);
+      }
+      typeDefs.push(`}`);
+      typeDefs.push(``);
+
+      typeDefs.push(`input ${name}Input {`);
+      for (const f of g.fields) {
+        typeDefs.push(`  ${f.name}: ${fieldToGraphQLType(f)}`);
+      }
+      typeDefs.push(`}`);
+      typeDefs.push(``);
+    }
   }
 
   typeDefs.push(`type Query {`);
   for (const col of collections) {
     const name = toPascal(col.slug);
     typeDefs.push(`  ${col.slug}(id: ID!): ${name}`);
-    typeDefs.push(`  all${name}(limit: Int, offset: Int, sort: String): [${name}]`);
+    typeDefs.push(
+      `  list${name}(filter: ${name}Filter, sort: ${name}Sort, limit: Int, offset: Int): ${name}Connection!`,
+    );
+  }
+  if (globals) {
+    for (const g of globals) {
+      typeDefs.push(`  ${g.slug}: ${toPascal(g.slug)}`);
+    }
   }
   typeDefs.push(`}`);
   typeDefs.push(``);
@@ -98,6 +154,13 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
     typeDefs.push(`  create${name}(input: ${name}CreateInput!): ${name}`);
     typeDefs.push(`  update${name}(id: ID!, input: ${name}UpdateInput!): ${name}`);
     typeDefs.push(`  delete${name}(id: ID!): Boolean`);
+  }
+  if (globals) {
+    for (const g of globals) {
+      typeDefs.push(
+        `  update${toPascal(g.slug)}(input: ${toPascal(g.slug)}Input!): ${toPascal(g.slug)}`,
+      );
+    }
   }
   typeDefs.push(`}`);
 
@@ -116,12 +179,34 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
       `      ${col.slug}: async (_: unknown, args: { id: string }) => adapter.findOne("${col.slug}", args.id),`,
     );
     resolversCode.push(
-      `      all${name}: async (_: unknown, args: { limit?: number; offset?: number }) => adapter.findMany("${col.slug}", { limit: args.limit, offset: args.offset }),`,
+      `      list${name}: async (_: unknown, args: { filter?: Record<string, unknown>; sort?: string; limit?: number; offset?: number }) => {`,
     );
+    resolversCode.push(
+      `        const options: { where?: Record<string, unknown>; limit?: number; offset?: number; sort?: Record<string, string> } = {};`,
+    );
+    resolversCode.push(`        if (args.filter) options.where = args.filter;`);
+    resolversCode.push(`        if (args.limit) options.limit = Math.min(args.limit, 100);`);
+    resolversCode.push(`        if (args.offset) options.offset = args.offset;`);
+    resolversCode.push(`        if (args.sort) {`);
+    resolversCode.push(`          const parts = args.sort.split("_");`);
+    resolversCode.push(`          const dir = parts.pop() ?? "asc";`);
+    resolversCode.push(`          const field = parts.join("_");`);
+    resolversCode.push(`          options.sort = { [field]: dir };`);
+    resolversCode.push(`        }`);
+    resolversCode.push(`        const result = await adapter.findMany("${col.slug}", options);`);
+    resolversCode.push(
+      `        return { data: result.data, total: result.total, limit: options.limit ?? 10, offset: options.offset ?? 0 };`,
+    );
+    resolversCode.push(`      },`);
   }
 
-  resolversCode.push(`    },`);
-  resolversCode.push(`    Mutation: {`);
+  if (globals) {
+    resolversCode.push(`    },`);
+    resolversCode.push(`    Mutation: {`);
+  } else {
+    resolversCode.push(`    },`);
+    resolversCode.push(`    Mutation: {`);
+  }
 
   for (const col of collections) {
     const name = toPascal(col.slug);
@@ -136,7 +221,31 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
     );
   }
 
+  if (globals) {
+    for (const g of globals) {
+      const name = toPascal(g.slug);
+      resolversCode.push(
+        `      update${name}: async (_: unknown, args: { input: Record<string, unknown> }) => {`,
+      );
+      resolversCode.push(`        const existing = await adapter.findOne("${g.slug}", "1");`);
+      resolversCode.push(
+        `        if (existing) return adapter.update("${g.slug}", "1", args.input);`,
+      );
+      resolversCode.push(`        return adapter.create("${g.slug}", { id: 1, ...args.input });`);
+      resolversCode.push(`      },`);
+    }
+  }
+
   resolversCode.push(`    },`);
+
+  if (globals) {
+    resolversCode.push(`    Query: {`);
+    for (const g of globals) {
+      resolversCode.push(`      ${g.slug}: async () => adapter.findOne("${g.slug}", "1") ?? {},`);
+    }
+    resolversCode.push(`    },`);
+  }
+
   resolversCode.push(`  };`);
   resolversCode.push(`}`);
   resolversCode.push(``);
@@ -152,7 +261,7 @@ export const graphqlGenerator: Generator = {
   async generate(options: GenerationOptions): Promise<GeneratedFile[]> {
     if (!options.collections || options.collections.length === 0) return [];
 
-    return generateGraphQLFiles(options.collections);
+    return generateGraphQLFiles(options.collections, options.globals);
   },
   name: "graphql",
 };
