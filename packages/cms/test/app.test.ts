@@ -79,6 +79,7 @@ const collection: CollectionDefinition = {
 const testConfig: ServerConfig = {
   auth: {
     accessTokenExpiresIn: "15m",
+    adminPassword: "admin123",
     refreshTokenExpiresIn: "7d",
     secret: "test-secret-at-least-32-chars-long-for-security!!",
   },
@@ -449,6 +450,7 @@ describe("CMS API Server", () => {
 
   describe("collection and global metadata endpoints", () => {
     let metaApp: FastifyInstance;
+    let metaAuthToken: string;
 
     beforeAll(async () => {
       metaApp = await createApp({
@@ -478,6 +480,12 @@ describe("CMS API Server", () => {
           },
         ],
       });
+      const loginRes = await metaApp.inject({
+        body: { email: "admin@arche-cms.com", password: "admin123" },
+        method: "POST",
+        url: "/api/auth/login",
+      });
+      metaAuthToken = JSON.parse(loginRes.body).accessToken;
     });
 
     afterAll(async () => {
@@ -486,6 +494,7 @@ describe("CMS API Server", () => {
 
     it("returns collection metadata with field options", async () => {
       const res = await metaApp.inject({
+        headers: { authorization: `Bearer ${metaAuthToken}` },
         method: "GET",
         url: "/api/collections",
       });
@@ -499,6 +508,7 @@ describe("CMS API Server", () => {
 
     it("returns global metadata with relation and select fields", async () => {
       const res = await metaApp.inject({
+        headers: { authorization: `Bearer ${metaAuthToken}` },
         method: "GET",
         url: "/api/globals",
       });

@@ -56,6 +56,14 @@ function normalizeOptions(opts: unknown[]): string[] {
   });
 }
 
+const SLUG_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+function isValidSlug(slug: string): boolean {
+  return (
+    SLUG_PATTERN.test(slug) && !slug.includes("..") && !slug.includes("/") && !slug.includes("\\")
+  );
+}
+
 function buildFieldMeta(f: FieldDefinition): Record<string, unknown> {
   const base: Record<string, unknown> = {
     admin: f.admin,
@@ -533,7 +541,7 @@ export function registerSchemaRoutes(
   fastify.post(
     "/api/schemas/:type",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("create", "schemas")],
       schema: {
         body: {
           properties: {
@@ -576,6 +584,11 @@ export function registerSchemaRoutes(
 
         if (!body.slug) {
           return reply.status(400).send({ error: "slug is required" });
+        }
+        if (!isValidSlug(body.slug)) {
+          return reply
+            .status(400)
+            .send({ error: "slug must be alphanumeric with hyphens and underscores only" });
         }
         if (!["collection", "global", "component"].includes(type)) {
           return reply.status(400).send({ error: "type must be collection, global, or component" });
@@ -631,7 +644,7 @@ export function registerSchemaRoutes(
   fastify.put(
     "/api/schemas/:type/:slug",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("update", "schemas")],
       schema: {
         body: {
           properties: {
@@ -655,6 +668,11 @@ export function registerSchemaRoutes(
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { slug, type } = request.params as { type: string; slug: string };
+        if (!isValidSlug(slug)) {
+          return reply
+            .status(400)
+            .send({ error: "slug must be alphanumeric with hyphens and underscores only" });
+        }
         const body = request.body as {
           fields?: FieldDefinition[];
           meta?: Record<string, unknown>;
@@ -706,7 +724,7 @@ export function registerSchemaRoutes(
   fastify.delete(
     "/api/schemas/:type/:slug",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("delete", "schemas")],
       schema: {
         description:
           "Delete a schema definition file from disk (requires manage:schemas permission)",
@@ -723,6 +741,11 @@ export function registerSchemaRoutes(
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { slug, type } = request.params as { type: string; slug: string };
+        if (!isValidSlug(slug)) {
+          return reply
+            .status(400)
+            .send({ error: "slug must be alphanumeric with hyphens and underscores only" });
+        }
         const dirMap: Record<string, string> = {
           collection: "collections",
           component: "components",

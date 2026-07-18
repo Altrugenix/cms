@@ -22,7 +22,7 @@ export function registerUserRoutes(
   fastify.get(
     "/api/users",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("read", "users")],
       schema: {
         description: "Returns all registered users",
         response: userListResponseSchema,
@@ -69,7 +69,7 @@ export function registerUserRoutes(
   fastify.get(
     "/api/users/:id",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("read", "users")],
       schema: {
         description: "Returns a single user by ID",
         params: idParamSchema,
@@ -115,6 +115,11 @@ export function registerUserRoutes(
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
       const body = request.body as { email?: string; role?: string; password?: string };
+
+      if (request.user?.sub === id && body.role !== undefined) {
+        return reply.status(400).send({ error: "Cannot change your own role" });
+      }
+
       const user = await authService.updateUser(id, body);
       if (!user) return reply.status(404).send({ error: "User not found" });
       return reply.send(user);

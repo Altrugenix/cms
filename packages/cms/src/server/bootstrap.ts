@@ -7,6 +7,7 @@ import { createLogger } from "@arche-cms/core";
 import { MigrationGenerator, MigrationRunner } from "@arche-cms/database";
 import { SchemaLoader } from "@arche-cms/schema";
 import { LocalStorageAdapter } from "@arche-cms/storage";
+import { randomBytes } from "node:crypto";
 import { existsSync, writeFileSync } from "node:fs";
 
 import type { ServerConfig } from "./config.js";
@@ -61,10 +62,11 @@ export function autoCreateSqlite(config: ServerConfig, logger: Logger): void {
 
 export function ensureDevAuthSecret(logger: Logger): void {
   if (!process.env.AUTH_SECRET) {
+    const secret = randomBytes(32).toString("hex");
     logger.warn(
-      "AUTH_SECRET not set \u2014 using ephemeral dev secret. Generate one with: openssl rand -hex 32",
+      "AUTH_SECRET not set \u2014 generated ephemeral dev secret. Generate a persistent one with: openssl rand -hex 32",
     );
-    process.env.AUTH_SECRET = "dev-secret-do-not-use-in-production";
+    process.env.AUTH_SECRET = secret;
   }
 }
 

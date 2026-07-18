@@ -319,6 +319,7 @@ export const apiTokenObjectSchema = {
     lastFour: { type: "string" },
     lastUsedAt: { type: ["string", "null"] },
     name: { type: "string" },
+    role: { type: "string" },
   },
   type: "object",
 } as const;
@@ -331,6 +332,11 @@ export const createApiTokenBodySchema = {
     },
     name: {
       examples: ["ci-token"],
+      type: "string",
+    },
+    role: {
+      description: "Role assigned to this token (defaults to 'admin')",
+      examples: ["admin"],
       type: "string",
     },
   },

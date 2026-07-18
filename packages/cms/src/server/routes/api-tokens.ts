@@ -30,6 +30,7 @@ export async function ensureApiTokensTable(adapter: DatabaseAdapter): Promise<vo
     last_four: "TEXT NOT NULL",
     last_used_at: "TEXT",
     name: "TEXT NOT NULL",
+    role: "TEXT NOT NULL DEFAULT 'admin'",
     token_hash: "TEXT NOT NULL UNIQUE",
   });
 }
@@ -39,9 +40,10 @@ export async function verifyApiToken(
   token: string,
 ): Promise<{ user: { sub: string; email: string; role: string } } | null> {
   const tokenHash = hashToken(token);
-  const rows = (await adapter.raw(`SELECT rowid, name FROM ${TOKENS_TABLE} WHERE token_hash = ?`, [
-    tokenHash,
-  ])) as { rowid: string; name: string }[];
+  const rows = (await adapter.raw(
+    `SELECT rowid, name, role FROM ${TOKENS_TABLE} WHERE token_hash = ?`,
+    [tokenHash],
+  )) as { rowid: string; name: string; role: string }[];
   if (!rows || rows.length === 0) return null;
 
   const entry = rows[0];
@@ -55,7 +57,7 @@ export async function verifyApiToken(
   return {
     user: {
       email: entry.name,
-      role: "admin",
+      role: entry.role || "admin",
       sub: String(entry.rowid),
     },
   };
@@ -74,7 +76,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
   fastify.get(
     "/api/settings/api-tokens",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("read", "settings")],
       schema: {
         description: "Returns all API tokens (without the raw token values)",
         response: apiTokenListResponseSchema,
@@ -85,12 +87,13 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     async (_request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const rows = (await adapter.raw(
-        `SELECT rowid, name, last_four, description, created_at, created_by, last_used_at FROM ${TOKENS_TABLE} ORDER BY created_at DESC`,
+        `SELECT rowid, name, last_four, description, role, created_at, created_by, last_used_at FROM ${TOKENS_TABLE} ORDER BY created_at DESC`,
       )) as {
         rowid: number;
         name: string;
         last_four: string;
         description: string;
+        role: string;
         created_at: string;
         created_by: string;
         last_used_at: string | null;
@@ -104,6 +107,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
         lastFour: r.last_four,
         lastUsedAt: r.last_used_at,
         name: r.name,
+        role: r.role,
       }));
 
       return reply.send({ data, total: data.length });
@@ -113,7 +117,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
   fastify.post(
     "/api/settings/api-tokens",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("create", "settings")],
       schema: {
         body: createApiTokenBodySchema,
         description: "Create a new API token. The raw token is returned only once in the response.",
@@ -134,12 +138,13 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
-      const body = request.body as { name?: string; description?: string };
+      const body = request.body as { name?: string; description?: string; role?: string };
 
       if (!body.name || !body.name.trim()) {
         return reply.status(400).send({ error: "Token name is required" });
       }
 
+      const role = body.role?.trim() || "admin";
       const rawToken = generateRawToken();
       const tokenHash = hashToken(rawToken);
       const lastFour = rawToken.slice(-4);
@@ -147,18 +152,27 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
       const createdBy = request.user?.email ?? "unknown";
 
       await adapter.raw(
-        `INSERT INTO ${TOKENS_TABLE} (name, token_hash, last_four, description, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
-        [body.name.trim(), tokenHash, lastFour, body.description?.trim() ?? "", now, createdBy],
+        `INSERT INTO ${TOKENS_TABLE} (name, token_hash, last_four, description, role, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          body.name.trim(),
+          tokenHash,
+          lastFour,
+          body.description?.trim() ?? "",
+          role,
+          now,
+          createdBy,
+        ],
       );
 
       const rows = (await adapter.raw(
-        `SELECT rowid, name, last_four, description, created_at, created_by FROM ${TOKENS_TABLE} WHERE token_hash = ?`,
+        `SELECT rowid, name, last_four, description, role, created_at, created_by FROM ${TOKENS_TABLE} WHERE token_hash = ?`,
         [tokenHash],
       )) as {
         rowid: number;
         name: string;
         last_four: string;
         description: string;
+        role: string;
         created_at: string;
         created_by: string;
       }[];
@@ -177,6 +191,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
           id: String(entry.rowid),
           lastFour: entry.last_four,
           name: entry.name,
+          role: entry.role,
         },
       });
     },

@@ -8,10 +8,10 @@ export function registerActivityRoutes(fastify: FastifyInstance, adapter: Databa
   fastify.get(
     "/api/activity",
     {
+      preHandler: [fastify.authenticate, fastify.requirePermission("read", "activity")],
       schema: {
         description: "Returns the 10 most recent activity log entries",
         response: activityListResponseSchema,
-        security: [],
         summary: "List recent activity",
         tags: ["System"],
       },

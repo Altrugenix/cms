@@ -21,6 +21,7 @@ export interface AuthConfig {
   secret: string;
   accessTokenExpiresIn: string;
   refreshTokenExpiresIn: string;
+  adminPassword?: string;
 }
 
 export interface AuthUser {

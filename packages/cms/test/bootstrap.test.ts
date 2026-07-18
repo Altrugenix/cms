@@ -103,7 +103,7 @@ describe("ensureDevAuthSecret", () => {
     const { ensureDevAuthSecret } = await import("../src/server/bootstrap.js");
     const logger: MockLogger = { info: vi.fn(), warn: vi.fn() };
     ensureDevAuthSecret(logger);
-    expect(process.env.AUTH_SECRET).toBe("dev-secret-do-not-use-in-production");
+    expect(process.env.AUTH_SECRET).toMatch(/^[0-9a-f]{64}$/);
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("AUTH_SECRET not set"));
   });
 

@@ -88,6 +88,7 @@ function createMockAdapter(): DatabaseAdapter {
 const testConfig: ServerConfig = {
   auth: {
     accessTokenExpiresIn: "15m",
+    adminPassword: "admin123",
     refreshTokenExpiresIn: "7d",
     secret: "test-secret-at-least-32-chars-long-for-security!!",
   },

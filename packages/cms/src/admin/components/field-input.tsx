@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { Upload, Plus, Trash2, GripVertical } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 
@@ -499,7 +500,7 @@ function RichTextInput({
           suppressContentEditableWarning
           onInput={onInput}
           onPaste={onPaste}
-          dangerouslySetInnerHTML={{ __html: strVal }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(strVal) }}
           className="min-h-[200px] w-full bg-background px-3 py-2 text-sm focus-visible:outline-none [&_h2]:text-lg [&_h2]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-primary [&_a]:underline"
         />
       </div>
@@ -533,7 +534,6 @@ function ToolbarBtn({
 
 /* ─── Markdown (split: edit + preview) ─── */
 
-import DOMPurify from "dompurify";
 import { marked } from "marked";
 
 function MarkdownInput({

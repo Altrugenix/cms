@@ -50,7 +50,7 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
   fastify.get(
     "/api/settings/webhooks",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("read", "settings")],
       schema: {
         description: "Returns all configured webhooks",
         response: webhookListResponseSchema,
@@ -81,7 +81,7 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
   fastify.get(
     "/api/settings/webhooks/:id",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("read", "settings")],
       schema: {
         description: "Returns a single webhook configuration by ID",
         params: idParamSchema,
