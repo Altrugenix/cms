@@ -27,6 +27,7 @@ export interface ServerConfig {
     secret: string;
     accessTokenExpiresIn: string;
     refreshTokenExpiresIn: string;
+    adminPassword?: string;
   };
   storage: {
     baseDir: string;

@@ -68,6 +68,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
   const { adapter, collections, config, globals } = options;
 
   const fastify = Fastify({
+    bodyLimit: 10 * 1024 * 1024, // 10 MB
     logger: {
       level: config.logger.level,
     },
@@ -83,10 +84,16 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
 
   // Security headers
   fastify.addHook("onSend", async (_request, reply, payload) => {
+    reply.header("Content-Security-Policy", "default-src 'self'");
+    reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
     reply.header("X-Content-Type-Options", "nosniff");
     reply.header("X-Frame-Options", "DENY");
     reply.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-    reply.header("X-DNS-Prefetch-Control", "off");
+    reply.header("X-XSS-Protection", "1; mode=block");
+    reply.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    reply.header("Cross-Origin-Opener-Policy", "same-origin");
+    reply.header("Cross-Origin-Resource-Policy", "same-origin");
+    reply.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     return payload;
   });
 
@@ -170,6 +177,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
   fastify.get(
     "/api/collections",
     {
+      preHandler: [fastify.authenticate],
       schema: {
         description: "Returns metadata about all registered collections",
         response: {
@@ -178,7 +186,6 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
             type: "array",
           },
         },
-        security: [],
         summary: "List collections",
         tags: ["Collections"],
       },
@@ -189,6 +196,7 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
   fastify.get(
     "/api/globals",
     {
+      preHandler: [fastify.authenticate],
       schema: {
         description: "Returns metadata about all registered globals",
         response: {
@@ -197,7 +205,6 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
             type: "array",
           },
         },
-        security: [],
         summary: "List globals",
         tags: ["Globals"],
       },

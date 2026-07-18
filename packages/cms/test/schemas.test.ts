@@ -69,6 +69,7 @@ function createMockFastify() {
         url,
       });
     }),
+    requirePermission: vi.fn(() => vi.fn()),
   };
 
   return { fastify, routes };

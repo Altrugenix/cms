@@ -18,6 +18,26 @@ import {
 const MEDIA_TABLE = "__cms_media";
 const FOLDERS_TABLE = "__cms_media_folders";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  "image/avif",
+  "video/mp4",
+  "video/webm",
+  "audio/mpeg",
+  "audio/ogg",
+  "application/pdf",
+  "application/zip",
+  "text/plain",
+  "text/csv",
+  "application/json",
+]);
+
 function safeInteger(value: string | number): number | null {
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? Math.floor(n) : null;
@@ -138,7 +158,7 @@ export function registerMediaRoutes(
   fastify.post(
     "/api/media",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("create", "media")],
       schema: {
         body: {
           properties: {
@@ -174,9 +194,19 @@ export function registerMediaRoutes(
         return reply.status(400).send({ error: "fileName, mimeType, and data are required" });
       }
 
+      if (!ALLOWED_MIME_TYPES.has(body.mimeType)) {
+        return reply.status(400).send({ error: `MIME type "${body.mimeType}" is not allowed` });
+      }
+
       const buffer = Buffer.from(body.data, "base64");
       if (buffer.length === 0) {
         return reply.status(400).send({ error: "Invalid base64 data" });
+      }
+
+      if (buffer.length > MAX_FILE_SIZE) {
+        return reply
+          .status(400)
+          .send({ error: `File exceeds maximum size of ${MAX_FILE_SIZE / (1024 * 1024)} MB` });
       }
 
       const ext = body.fileName.includes(".") ? body.fileName.split(".").pop() : "";
@@ -251,7 +281,7 @@ export function registerMediaRoutes(
   fastify.delete(
     "/api/media/:id",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("delete", "media")],
       schema: {
         description: "Delete a media file and its database record",
         params: idParamSchema,
@@ -391,7 +421,7 @@ export function registerMediaRoutes(
   fastify.post(
     "/api/media/folders",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("manage", "media")],
       schema: {
         body: createMediaFolderBodySchema,
         description: "Create a new media folder",
@@ -427,7 +457,7 @@ export function registerMediaRoutes(
   fastify.patch(
     "/api/media/folders/:id",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("manage", "media")],
       schema: {
         body: {
           properties: {
@@ -482,7 +512,7 @@ export function registerMediaRoutes(
   fastify.delete(
     "/api/media/folders/:id",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, fastify.requirePermission("manage", "media")],
       schema: {
         description: "Delete a media folder (moves child media and folders to root)",
         params: idParamSchema,

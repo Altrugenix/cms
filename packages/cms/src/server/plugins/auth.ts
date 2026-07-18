@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from "@arche-cms/database";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 import { AuthService, JwtService } from "@arche-cms/auth";
+import { randomBytes } from "node:crypto";
 
 import { verifyApiToken, ensureApiTokensTable } from "../routes/api-tokens.js";
 import {
@@ -37,7 +38,12 @@ export async function registerAuth(
   const jwtService = new JwtService(options.config);
 
   await authService.init();
-  await authService.seedDefaultAdmin("admin123");
+
+  const adminPassword = options.config.adminPassword ?? randomBytes(16).toString("base64url");
+  await authService.seedDefaultAdmin(adminPassword);
+  if (!options.config.adminPassword) {
+    fastify.log.info(`Default admin password: ${adminPassword}`);
+  }
 
   // Ensure the api_tokens table exists so API key auth can work
   await ensureApiTokensTable(options.adapter);

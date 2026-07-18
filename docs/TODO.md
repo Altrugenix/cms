@@ -1022,34 +1022,34 @@ Fix all critical and high-severity security vulnerabilities identified in the co
 
 ### XSS & Input Sanitization
 
-- [ ] **Sanitize RichTextInput output** — `field-input.tsx:502` uses `dangerouslySetInnerHTML` with unsanitized user content. Add DOMPurify sanitization (same pattern as MarkdownInput at line 554)
-- [ ] **Add slug path traversal validation** — `schemas.ts:598` uses `resolve()` but does not validate slug against `../` sequences. Add regex check before file write operations
-- [ ] **Validate media upload MIME types** — `media.ts:163-201` accepts any file type without validation. Add allowlist check against declared mimeType and file extension
+- [x] **Sanitize RichTextInput output** — `field-input.tsx:502` uses `dangerouslySetInnerHTML` with unsanitized user content. Add DOMPurify sanitization (same pattern as MarkdownInput at line 554)
+- [x] **Add slug path traversal validation** — `schemas.ts:598` uses `resolve()` but does not validate slug against `../` sequences. Add regex check before file write operations
+- [x] **Validate media upload MIME types** — `media.ts:163-201` accepts any file type without validation. Add allowlist check against declared mimeType and file extension
 
 ### Authentication & Authorization
 
-- [ ] **Remove hardcoded admin password** — `auth.ts:40` seeds `"admin123"` on every start. Generate a random password on first run and print it to console, or require explicit configuration
-- [ ] **Remove hardcoded dev secret fallback** — `bootstrap.ts:67` sets `AUTH_SECRET` to a well-known value when unset. Refuse to start in production mode without explicit secret
-- [ ] **Add permission checks to unprotected routes** — Add `requirePermission()` preHandler to: `POST/PUT/DELETE /api/schemas/*`, `POST/DELETE /api/media/*`, `POST/DELETE /api/media/folders/*`, `GET /api/users`, `GET /api/users/:id`, `POST /api/settings/api-tokens`, `GET/POST/PUT/DELETE /api/settings/webhooks/*`
-- [ ] **Add auth to activity route** — `activity.ts:14` uses `security: []` (public). Add `fastify.authenticate` preHandler
-- [ ] **Scope API token permissions** — `api-tokens.ts:55-61` hardcodes `role: "admin"`. Add optional `role` field to token creation and use it in verification
-- [ ] **Prevent self-role escalation** — `users.ts:95` allows users to update their own role. Add check: non-admin users cannot modify their own `role` field
+- [x] **Remove hardcoded admin password** — `auth.ts:40` seeds `"admin123"` on every start. Generate a random password on first run and print it to console, or require explicit configuration
+- [x] **Remove hardcoded dev secret fallback** — `bootstrap.ts:67` sets `AUTH_SECRET` to a well-known value when unset. Refuse to start in production mode without explicit secret
+- [x] **Add permission checks to unprotected routes** — Add `requirePermission()` preHandler to: `POST/PUT/DELETE /api/schemas/*`, `POST/DELETE /api/media/*`, `POST/DELETE /api/media/folders/*`, `GET /api/users`, `GET /api/users/:id`, `POST /api/settings/api-tokens`, `GET/POST/PUT/DELETE /api/settings/webhooks/*`
+- [x] **Add auth to activity route** — `activity.ts:14` uses `security: []` (public). Add `fastify.authenticate` preHandler
+- [x] **Scope API token permissions** — `api-tokens.ts:55-61` hardcodes `role: "admin"`. Add optional `role` field to token creation and use it in verification
+- [x] **Prevent self-role escalation** — `users.ts:95` allows users to update their own role. Add check: non-admin users cannot modify their own `role` field
 
 ### Upload Security
 
-- [ ] **Add file size validation** — `media.ts:163` accepts unlimited base64 data. Validate decoded size against configurable max (default 10MB)
-- [ ] **Add explicit body limit configuration** — `app.ts:70` uses Fastify's default 1MB. Set explicit `bodyLimit` in Fastify options (e.g., 50MB for media uploads)
+- [x] **Add file size validation** — `media.ts:163` accepts unlimited base64 data. Validate decoded size against configurable max (default 10MB)
+- [x] **Add explicit body limit configuration** — `app.ts:70` uses Fastify's default 1MB. Set explicit `bodyLimit` in Fastify options (e.g., 50MB for media uploads)
 
 ### Security Headers
 
-- [ ] **Add missing security headers** — `app.ts:84-91` manually sets 4 headers. Add `Content-Security-Policy`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`
+- [x] **Add missing security headers** — `app.ts:84-91` manually sets 4 headers. Add `Content-Security-Policy`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`
 
 ### Verification
 
-- [ ] Run `pnpm lint` — no new errors
-- [ ] Run `pnpm typecheck` — no type errors
-- [ ] Run `pnpm test` — all tests pass
-- [ ] Run `pnpm build` — all packages build successfully
+- [x] Run `pnpm lint` — no new errors
+- [x] Run `pnpm typecheck` — no type errors
+- [x] Run `pnpm test` — all tests pass
+- [x] Run `pnpm build` — all packages build successfully
 
 ---
 
