@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: Milestone 18 complete — code quality guards in place. ESLint configured with perfectionist (import/object sorting), no-secrets, security, vitest plugins, plus max-lines (300), max-params (4), max-depth (3) rules. 0 errors, 71 warnings. Commitlint enforces conventional commits. Pre-push hook runs typecheck + lint + tests. CI adds format:check, ESLint, build verification, bundle size check, gitleaks secret scanning, pnpm audit, fallow audit. Fallow maxCrap lowered to 30. CODEOWNERS added. Stricter TypeScript ESLint rules enabled (no-floating-promises, no-misused-promises, no-unsafe-*, only-throw-error). Explicit `| undefined` on all optional properties. All 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass.
+> Project status: Milestone 18 complete — code quality guards in place. ESLint configured with perfectionist (import/object sorting), no-secrets, security, vitest plugins, plus max-lines (300), max-params (4), max-depth (3) rules. 0 errors, 71 warnings. Commitlint enforces conventional commits. Pre-push hook runs typecheck + lint + tests. CI adds format:check, ESLint, build verification, bundle size check, gitleaks secret scanning, pnpm audit, fallow audit with baselines (dead-code, health, dupes), dependency diff check, and coverage thresholds (60/50/60/60). Fallow maxCrap lowered to 30. CODEOWNERS added. Stricter TypeScript ESLint rules enabled (no-floating-promises, no-misused-promises, no-unsafe-*, only-throw-error). Explicit `| undefined` on all optional properties. All 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass.
 
 ---
 
@@ -894,7 +894,7 @@ Add comprehensive code quality automation and enforcements to prevent regression
 
 - [x] Add workflow step: build check (ensure all packages build successfully)
 - [x] Add workflow step: bundle size check with warning threshold (admin JS < 600KB)
-- [ ] Add workflow step: dependency diff check (deferred)
+- [x] Add workflow step: dependency diff check
 - [x] Add workflow step: `fallow audit` full project scan
 - [x] Update CI to run on PRs to main (already configured)
 
@@ -905,7 +905,7 @@ Add comprehensive code quality automation and enforcements to prevent regression
 - [x] Set max unit size to 150 lines (with per-file overrides)
 - [x] Set max CRAP threshold to 30 (lowered from 400)
 - [x] Set duplicate threshold to `mild` with `<5%` tolerance
-- [ ] Add baseline files for dead-code, health, and duplicates (deferred)
+- [x] Add baseline files for dead-code, health, and duplicates
 
 ### Security
 
@@ -916,7 +916,7 @@ Add comprehensive code quality automation and enforcements to prevent regression
 
 ### Testing Quality
 
-- [ ] Enforce minimum test coverage thresholds per package (deferred)
+- [x] Enforce minimum test coverage thresholds per package
 - [x] Add `vitest/no-focused-tests` ESLint rule (error)
 - [x] Add `vitest/no-disabled-tests` ESLint rule (warn)
 - [x] Add `vitest/valid-expect` ESLint rule

@@ -14,6 +14,12 @@ export default defineConfig({
       ],
       include: ["src/**/*.ts"],
       provider: "v8",
+      thresholds: {
+        branches: 50,
+        functions: 60,
+        lines: 60,
+        statements: 60,
+      },
     },
     pool: "forks",
     poolOptions: {
