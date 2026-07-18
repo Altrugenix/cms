@@ -3,6 +3,15 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 import { createHash, randomBytes } from "node:crypto";
 
+import {
+  apiTokenListResponseSchema,
+  apiTokenObjectSchema,
+  createApiTokenBodySchema,
+  errorSchema,
+  idParamSchema,
+  messageResponseSchema,
+} from "../schemas/shared.js";
+
 const TOKENS_TABLE = "__cms_api_tokens";
 
 function hashToken(token: string): string {
@@ -68,6 +77,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns all API tokens (without the raw token values)",
+        response: apiTokenListResponseSchema,
         summary: "List API tokens",
         tags: ["Settings"],
       },
@@ -105,7 +115,19 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     {
       preHandler: [fastify.authenticate],
       schema: {
+        body: createApiTokenBodySchema,
         description: "Create a new API token. The raw token is returned only once in the response.",
+        response: {
+          "201": {
+            properties: {
+              rawToken: { description: "The raw token value (shown only once)", type: "string" },
+              token: apiTokenObjectSchema,
+            },
+            required: ["rawToken", "token"],
+            type: "object",
+          },
+          "400": errorSchema,
+        },
         summary: "Create API token",
         tags: ["Settings"],
       },
@@ -166,6 +188,11 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
       preHandler: [fastify.authenticate, fastify.requirePermission("manage", "settings")],
       schema: {
         description: "Revoke (delete) an API token by ID (requires manage:settings permission)",
+        params: idParamSchema,
+        response: {
+          "2xx": messageResponseSchema,
+          "404": errorSchema,
+        },
         summary: "Revoke API token",
         tags: ["Settings"],
       },

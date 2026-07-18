@@ -172,6 +172,12 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
     {
       schema: {
         description: "Returns metadata about all registered collections",
+        response: {
+          "2xx": {
+            items: { additionalProperties: true, type: "object" },
+            type: "array",
+          },
+        },
         security: [],
         summary: "List collections",
         tags: ["Collections"],
@@ -185,6 +191,12 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
     {
       schema: {
         description: "Returns metadata about all registered globals",
+        response: {
+          "2xx": {
+            items: { additionalProperties: true, type: "object" },
+            type: "array",
+          },
+        },
         security: [],
         summary: "List globals",
         tags: ["Globals"],
@@ -199,6 +211,16 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns all registered plugins and their status",
+        response: {
+          "2xx": {
+            properties: {
+              data: { items: { type: "object" }, type: "array" },
+              total: { type: "number" },
+            },
+            required: ["data", "total"],
+            type: "object",
+          },
+        },
         summary: "List plugins",
         tags: ["System"],
       },

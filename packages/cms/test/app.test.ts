@@ -516,7 +516,7 @@ describe("CMS API Server", () => {
   describe("permissions and error handling", () => {
     it("returns 401 for roles endpoint without auth", async () => {
       const res = await app.inject({
-        body: { name: "test" },
+        body: { description: "A test role", name: "test", permissions: [] },
         method: "POST",
         url: "/api/roles",
       });

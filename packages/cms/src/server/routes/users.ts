@@ -4,6 +4,14 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 import { AuthService } from "@arche-cms/auth";
 
+import {
+  createUserBodySchema,
+  errorSchema,
+  idParamSchema,
+  userListResponseSchema,
+  userObjectSchema,
+} from "../schemas/shared.js";
+
 export function registerUserRoutes(
   fastify: FastifyInstance,
   adapter: DatabaseAdapter,
@@ -17,6 +25,7 @@ export function registerUserRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns all registered users",
+        response: userListResponseSchema,
         summary: "List users",
         tags: ["Users"],
       },
@@ -32,7 +41,12 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("create", "users")],
       schema: {
+        body: createUserBodySchema,
         description: "Create a new user account (requires create:users permission)",
+        response: {
+          "201": userObjectSchema,
+          "400": errorSchema,
+        },
         summary: "Create user",
         tags: ["Users"],
       },
@@ -58,6 +72,11 @@ export function registerUserRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns a single user by ID",
+        params: idParamSchema,
+        response: {
+          "2xx": userObjectSchema,
+          "404": errorSchema,
+        },
         summary: "Get user",
         tags: ["Users"],
       },
@@ -75,7 +94,20 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("update", "users")],
       schema: {
+        body: {
+          properties: {
+            email: { format: "email", type: "string" },
+            password: { minLength: 8, type: "string" },
+            role: { type: "string" },
+          },
+          type: "object",
+        },
         description: "Update a user's email, role, or password (requires update:users permission)",
+        params: idParamSchema,
+        response: {
+          "2xx": userObjectSchema,
+          "404": errorSchema,
+        },
         summary: "Update user",
         tags: ["Users"],
       },
@@ -95,6 +127,15 @@ export function registerUserRoutes(
       preHandler: [fastify.authenticate, fastify.requirePermission("delete", "users")],
       schema: {
         description: "Delete a user account (requires delete:users permission)",
+        params: idParamSchema,
+        response: {
+          "2xx": {
+            properties: { message: { type: "string" } },
+            required: ["message"],
+            type: "object",
+          },
+          "404": errorSchema,
+        },
         summary: "Delete user",
         tags: ["Users"],
       },

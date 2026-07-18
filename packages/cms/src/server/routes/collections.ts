@@ -8,6 +8,12 @@ import { createGlobalGetHandler, createGlobalUpsertHandler } from "@arche-cms/re
 
 import { recordActivity } from "../lib/activity.js";
 import { dispatchWebhooks } from "../lib/webhooks.js";
+import {
+  errorSchema,
+  idParamSchema,
+  messageResponseSchema,
+  slugParamSchema,
+} from "../schemas/shared.js";
 
 class BadSlugError extends Error {
   statusCode: number;
@@ -80,6 +86,160 @@ function actionToEvent(action: string): string | null {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Fastify JSON Schema for collection routes (dynamic — uses additionalProperties)
+// ---------------------------------------------------------------------------
+
+const genericDocumentSchema = {
+  additionalProperties: true,
+  type: "object",
+} as const;
+
+const genericListResponseSchema = {
+  "2xx": {
+    properties: {
+      data: { items: genericDocumentSchema, type: "array" },
+      total: { type: "number" },
+    },
+    required: ["data", "total"],
+    type: "object",
+  },
+} as const;
+
+const genericItemResponseSchema = {
+  "2xx": genericDocumentSchema,
+  "404": errorSchema,
+} as const;
+
+const versionObjectSchema = {
+  additionalProperties: true,
+  type: "object",
+} as const;
+
+const versionListResponseSchema = {
+  "2xx": {
+    properties: {
+      data: { items: versionObjectSchema, type: "array" },
+      total: { type: "number" },
+    },
+    required: ["data", "total"],
+    type: "object",
+  },
+} as const;
+
+function buildCollectionRouteSchema(
+  method: string,
+  path: string,
+  slug: string,
+): Record<string, unknown> {
+  const hasId = path.includes("/:id");
+  const hasVersionId = path.includes("/:versionId");
+  const isBulkDelete = path.endsWith("/bulk-delete");
+  const isPublish = path.includes("/publish") && !path.includes("/unpublish");
+  const isUnpublish = path.includes("/unpublish");
+  const isRestore = path.includes("/restore") && !path.includes("/versions");
+  const isListVersions = path.endsWith("/versions");
+
+  // Params
+  if (hasVersionId) {
+    return {
+      params: {
+        properties: {
+          id: { description: `${slug} entry ID`, type: "string" },
+          versionId: { description: "Version ID", type: "string" },
+        },
+        required: ["id", "versionId"],
+        type: "object",
+      },
+      response: genericItemResponseSchema,
+    };
+  }
+  if (hasId) {
+    if (isPublish || isUnpublish || isRestore) {
+      return {
+        params: idParamSchema,
+        response: genericItemResponseSchema,
+      };
+    }
+    if (isListVersions) {
+      return {
+        params: idParamSchema,
+        response: versionListResponseSchema,
+      };
+    }
+    return {
+      params: idParamSchema,
+      response: genericItemResponseSchema,
+    };
+  }
+
+  // List
+  if (method === "GET") {
+    return {
+      querystring: {
+        properties: {
+          limit: { description: "Max items per page", type: "number" },
+          offset: { description: "Number of items to skip", type: "number" },
+          select: { description: "Comma-separated field names to include", type: "string" },
+          sort: { description: "Sort field and direction (e.g. 'createdAt:desc')", type: "string" },
+        },
+        type: "object",
+      },
+      response: genericListResponseSchema,
+    };
+  }
+
+  // Create
+  if (method === "POST" && !isBulkDelete) {
+    return {
+      body: { additionalProperties: true, type: "object" },
+      response: {
+        "201": genericDocumentSchema,
+        "400": errorSchema,
+      },
+    };
+  }
+
+  // Bulk delete
+  if (isBulkDelete) {
+    return {
+      body: {
+        properties: {
+          ids: { items: { type: "string" }, type: "array" },
+        },
+        required: ["ids"],
+        type: "object",
+      },
+      response: {
+        "2xx": messageResponseSchema,
+        "400": errorSchema,
+      },
+    };
+  }
+
+  // Update (PATCH)
+  if (method === "PATCH") {
+    return {
+      body: { additionalProperties: true, type: "object" },
+      params: idParamSchema,
+      response: genericItemResponseSchema,
+    };
+  }
+
+  // Delete
+  if (method === "DELETE") {
+    return {
+      params: idParamSchema,
+      response: {
+        "2xx": messageResponseSchema,
+        "404": errorSchema,
+      },
+    };
+  }
+
+  return {};
+}
+
 function wrapWithActivity(
   handler: (ctx: RouteHandlerContext) => Promise<{ statusCode: number; body: unknown }>,
   method: string,
@@ -122,11 +282,13 @@ export function registerCollectionRoutes(
     const handler = wrapWithActivity(routeDef.handler, routeDef.method, routeDef.path, adapter);
     const slug = slugFromPath(routeDef.path);
     const methodLabel = routeDef.method.toUpperCase();
+    const routeSchema = buildCollectionRouteSchema(routeDef.method, routeDef.path, slug);
     void fastify.route({
       handler: asHandler(handler),
       method: routeDef.method,
       preHandler: [fastify.authenticate],
       schema: {
+        ...routeSchema,
         description:
           routeDef.method === "GET"
             ? routeDef.path.endsWith("/:id")
@@ -169,9 +331,10 @@ export function registerGlobalRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns the value of a global by slug",
-        params: {
-          properties: { slug: { description: "Global slug", type: "string" } },
-          type: "object",
+        params: slugParamSchema,
+        response: {
+          "2xx": genericDocumentSchema,
+          "404": errorSchema,
         },
         summary: "Get global",
         tags: ["Globals"],
@@ -197,10 +360,12 @@ export function registerGlobalRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
+        body: { additionalProperties: true, type: "object" },
         description: "Create or update a global by slug",
-        params: {
-          properties: { slug: { description: "Global slug", type: "string" } },
-          type: "object",
+        params: slugParamSchema,
+        response: {
+          "2xx": genericDocumentSchema,
+          "404": errorSchema,
         },
         summary: "Upsert global",
         tags: ["Globals"],

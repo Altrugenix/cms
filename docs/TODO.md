@@ -624,7 +624,7 @@ Make `/docs` (Swagger UI) fully interactive and useful. Currently `components: {
 > **Decision:** Fastify's schema compiler enforces `body`, `querystring`, `response`, and `params` schemas on actual requests — they are not just documentation. Adding them would alter response serialization and break existing tests. Left as `summary`/`description`/`tags`/`security` only for now.
 
 - [x] Document decision to skip `body`, `querystring`, `response`, `params` schemas — Fastify enforces them at runtime, breaking existing behavior
-- [ ] Add detailed request/response schemas in the future when all routes are confirmed compatible with Fastify schema compilation
+- [x] Add detailed request/response schemas in the future when all routes are confirmed compatible with Fastify schema compilation
 
 ### Server URL & Info
 
@@ -637,7 +637,7 @@ Make `/docs` (Swagger UI) fully interactive and useful. Currently `components: {
 
 > **Same rationale as Request/Response Schemas** — Fastify's schema compiler would enforce these examples as actual serialization schemas. Deferred until routes are refactored to be schema-compiler compatible.
 
-- [ ] Add example responses and request bodies in a follow-up when schema compilation is addressed
+- [x] Add example responses and request bodies in a follow-up when schema compilation is addressed
 
 ### Testing
 
@@ -788,8 +788,8 @@ Add Fastify-compatible JSON Schema for request bodies, query params, params, and
 
 ### Deferred from Milestone 14
 
-- [ ] Add detailed request/response schemas when all routes are confirmed compatible with Fastify schema compilation
-- [ ] Add example responses and request bodies when schema compilation is addressed
+- [x] Add detailed request/response schemas when all routes are confirmed compatible with Fastify schema compilation
+- [x] Add example responses and request bodies when schema compilation is addressed
 
 ### Scope
 
@@ -797,62 +797,62 @@ Collection CRUD routes, global routes, auth routes, media routes, user/role rout
 
 ### Route Schemas
 
-- [ ] `collection:list` — response body schema (paginated), query params (limit, offset, sort, filter, select, populate)
-- [ ] `collection:get` — response body schema, params (id)
-- [ ] `collection:create` — request body schema, response schema (201)
-- [ ] `collection:update` — request body schema (partial), params (id), response schema
-- [ ] `collection:delete` — params (id), response schema
-- [ ] `collection:bulkDelete` — request body schema (ids array), response schema
-- [ ] `collection:publish` — params (id), response schema
-- [ ] `collection:unpublish` — params (id), response schema
-- [ ] `collection:restore` — params (id), response schema
-- [ ] `collection:listVersions` — params (id), response schema
-- [ ] `collection:restoreVersion` — params (id, versionId), response schema
-- [ ] `global:get` — response body schema
-- [ ] `global:upsert` — request body schema, response schema
-- [ ] `auth:login` — request body (email, password), response (token, user)
-- [ ] `auth:register` — request body (email, password, name), response (token, user)
-- [ ] `auth:refresh` — request body (refreshToken), response (token)
-- [ ] `auth:forgotPassword` — request body (email), response
-- [ ] `auth:resetPassword` — request body (token, password), response
-- [ ] `media:upload` — response schema
-- [ ] `media:list` — query params, response schema
-- [ ] `media:get` — params (id), response schema
-- [ ] `media:delete` — params (id), response schema
-- [ ] `users:list` — response schema
-- [ ] `users:get` — params (id), response schema
-- [ ] `users:create` — request body, response schema
-- [ ] `users:update` — params (id), request body, response schema
-- [ ] `users:delete` — params (id), response schema
-- [ ] `roles:list` — response schema
-- [ ] `roles:get` — params (id), response schema
-- [ ] `roles:create` — request body, response schema
-- [ ] `roles:update` — params (id), request body, response schema
-- [ ] `roles:delete` — params (id), response schema
-- [ ] `api-tokens:list` — response schema
-- [ ] `api-tokens:create` — request body, response schema (includes raw token)
-- [ ] `api-tokens:delete` — params (id), response schema
-- [ ] `webhooks:list` — response schema
-- [ ] `webhooks:get` — params (id), response schema
-- [ ] `webhooks:create` — request body, response schema
-- [ ] `webhooks:update` — params (id), request body, response schema
-- [ ] `webhooks:delete` — params (id), response schema
+- [x] `collection:list` — response body schema (paginated), query params (limit, offset, sort, filter, select, populate)
+- [x] `collection:get` — response body schema, params (id)
+- [x] `collection:create` — request body schema, response schema (201)
+- [x] `collection:update` — request body schema (partial), params (id), response schema
+- [x] `collection:delete` — params (id), response schema
+- [x] `collection:bulkDelete` — request body schema (ids array), response schema
+- [x] `collection:publish` — params (id), response schema
+- [x] `collection:unpublish` — params (id), response schema
+- [x] `collection:restore` — params (id), response schema
+- [x] `collection:listVersions` — params (id), response schema
+- [x] `collection:restoreVersion` — params (id, versionId), response schema
+- [x] `global:get` — response body schema
+- [x] `global:upsert` — request body schema, response schema
+- [x] `auth:login` — request body (email, password), response (token, user)
+- [x] `auth:register` — request body (email, password, name), response (token, user)
+- [x] `auth:refresh` — request body (refreshToken), response (token)
+- [x] `auth:forgotPassword` — request body (email), response
+- [x] `auth:resetPassword` — request body (token, password), response
+- [x] `media:upload` — response schema
+- [x] `media:list` — query params, response schema
+- [x] `media:get` — params (id), response schema
+- [x] `media:delete` — params (id), response schema
+- [x] `users:list` — response schema
+- [x] `users:get` — params (id), response schema
+- [x] `users:create` — request body, response schema
+- [x] `users:update` — params (id), request body, response schema
+- [x] `users:delete` — params (id), response schema
+- [x] `roles:list` — response schema
+- [x] `roles:get` — params (id), response schema
+- [x] `roles:create` — request body, response schema
+- [x] `roles:update` — params (id), request body, response schema
+- [x] `roles:delete` — params (id), response schema
+- [x] `api-tokens:list` — response schema
+- [x] `api-tokens:create` — request body, response schema (includes raw token)
+- [x] `api-tokens:delete` — params (id), response schema
+- [x] `webhooks:list` — response schema
+- [x] `webhooks:get` — params (id), response schema
+- [x] `webhooks:create` — request body, response schema
+- [x] `webhooks:update` — params (id), request body, response schema
+- [x] `webhooks:delete` — params (id), response schema
 
 ### Error Response Schemas
 
-- [ ] `400` — Bad request (validation error) schema
-- [ ] `401` — Unauthorized schema
-- [ ] `403` — Forbidden schema
-- [ ] `404` — Not found schema
-- [ ] `409` — Conflict schema
-- [ ] `500` — Internal server error schema
+- [x] `400` — Bad request (validation error) schema
+- [x] `401` — Unauthorized schema
+- [x] `403` — Forbidden schema
+- [x] `404` — Not found schema
+- [x] `409` — Conflict schema
+- [x] `500` — Internal server error schema
 
 ### Verification
 
-- [ ] Run `pnpm lint` — no new errors
-- [ ] Run `pnpm typecheck` — no type errors
-- [ ] Run `pnpm test` — all 243 tests pass without serialization regressions
-- [ ] Admin panel builds successfully
+- [x] Run `pnpm lint` — no new errors
+- [x] Run `pnpm typecheck` — no type errors
+- [x] Run `pnpm test` — all 243 tests pass without serialization regressions
+- [x] Admin panel builds successfully
 
 ---
 

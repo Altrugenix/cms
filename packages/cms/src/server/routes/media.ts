@@ -4,6 +4,17 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 import { randomUUID } from "node:crypto";
 
+import {
+  createMediaFolderBodySchema,
+  errorSchema,
+  folderListResponseSchema,
+  idParamSchema,
+  mediaFolderObjectSchema,
+  mediaListResponseSchema,
+  mediaObjectSchema,
+  messageResponseSchema,
+} from "../schemas/shared.js";
+
 const MEDIA_TABLE = "__cms_media";
 const FOLDERS_TABLE = "__cms_media_folders";
 
@@ -69,6 +80,7 @@ export function registerMediaRoutes(
           },
           type: "object",
         },
+        response: mediaListResponseSchema,
         summary: "List media",
         tags: ["Media"],
       },
@@ -105,9 +117,10 @@ export function registerMediaRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns a single media record by ID",
-        params: {
-          properties: { id: { description: "Media ID", type: "string" } },
-          type: "object",
+        params: idParamSchema,
+        response: {
+          "2xx": mediaObjectSchema,
+          "404": errorSchema,
         },
         summary: "Get media",
         tags: ["Media"],
@@ -139,6 +152,10 @@ export function registerMediaRoutes(
           type: "object",
         },
         description: "Upload a new media file (base64-encoded data)",
+        response: {
+          "201": mediaObjectSchema,
+          "400": errorSchema,
+        },
         summary: "Upload media",
         tags: ["Media"],
       },
@@ -198,9 +215,10 @@ export function registerMediaRoutes(
           type: "object",
         },
         description: "Update a media file's metadata (name, alt, folder)",
-        params: {
-          properties: { id: { description: "Media ID", type: "string" } },
-          type: "object",
+        params: idParamSchema,
+        response: {
+          "2xx": mediaObjectSchema,
+          "404": errorSchema,
         },
         summary: "Update media",
         tags: ["Media"],
@@ -236,9 +254,10 @@ export function registerMediaRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Delete a media file and its database record",
-        params: {
-          properties: { id: { description: "Media ID", type: "string" } },
-          type: "object",
+        params: idParamSchema,
+        response: {
+          "2xx": messageResponseSchema,
+          "404": errorSchema,
         },
         summary: "Delete media",
         tags: ["Media"],
@@ -264,9 +283,9 @@ export function registerMediaRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns the raw file stream for a media record",
-        params: {
-          properties: { id: { description: "Media ID", type: "string" } },
-          type: "object",
+        params: idParamSchema,
+        response: {
+          "404": errorSchema,
         },
         summary: "Download media file",
         tags: ["Media"],
@@ -304,6 +323,7 @@ export function registerMediaRoutes(
           },
           type: "object",
         },
+        response: folderListResponseSchema,
         summary: "List folders",
         tags: ["Media"],
       },
@@ -341,9 +361,10 @@ export function registerMediaRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns a single media folder by ID",
-        params: {
-          properties: { id: { description: "Folder ID", type: "string" } },
-          type: "object",
+        params: idParamSchema,
+        response: {
+          "2xx": mediaFolderObjectSchema,
+          "404": errorSchema,
         },
         summary: "Get folder",
         tags: ["Media"],
@@ -372,15 +393,12 @@ export function registerMediaRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        body: {
-          properties: {
-            name: { type: "string" },
-            parentId: { nullable: true, type: "number" },
-          },
-          required: ["name"],
-          type: "object",
-        },
+        body: createMediaFolderBodySchema,
         description: "Create a new media folder",
+        response: {
+          "201": mediaFolderObjectSchema,
+          "400": errorSchema,
+        },
         summary: "Create folder",
         tags: ["Media"],
       },
@@ -419,9 +437,11 @@ export function registerMediaRoutes(
           type: "object",
         },
         description: "Update a media folder's name or parent",
-        params: {
-          properties: { id: { description: "Folder ID", type: "string" } },
-          type: "object",
+        params: idParamSchema,
+        response: {
+          "2xx": mediaFolderObjectSchema,
+          "400": errorSchema,
+          "404": errorSchema,
         },
         summary: "Update folder",
         tags: ["Media"],
@@ -465,9 +485,9 @@ export function registerMediaRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Delete a media folder (moves child media and folders to root)",
-        params: {
-          properties: { id: { description: "Folder ID", type: "string" } },
-          type: "object",
+        params: idParamSchema,
+        response: {
+          "2xx": messageResponseSchema,
         },
         summary: "Delete folder",
         tags: ["Media"],

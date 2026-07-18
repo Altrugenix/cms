@@ -10,6 +10,15 @@ import { resolve } from "node:path";
 
 import type { ServerConfig } from "../config.js";
 
+import {
+  errorSchema,
+  messageResponseSchema,
+  schemaInfoObjectSchema,
+  schemaListResponseSchema,
+  typeSlugParamSchema,
+  typeParamSchema,
+} from "../schemas/shared.js";
+
 interface SchemaInfo {
   slug: string;
   label: string;
@@ -186,6 +195,7 @@ export function registerSchemaRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns all collection, global, and component schema definitions",
+        response: schemaListResponseSchema,
         summary: "List schemas",
         tags: ["Schemas"],
       },
@@ -208,12 +218,10 @@ export function registerSchemaRoutes(
       preHandler: [fastify.authenticate],
       schema: {
         description: "Returns a single schema definition by type and slug",
-        params: {
-          properties: {
-            slug: { type: "string" },
-            type: { enum: ["collection", "global", "component"], type: "string" },
-          },
-          type: "object",
+        params: typeSlugParamSchema,
+        response: {
+          "2xx": schemaInfoObjectSchema,
+          "404": errorSchema,
         },
         summary: "Get schema",
         tags: ["Schemas"],
@@ -538,11 +546,19 @@ export function registerSchemaRoutes(
           type: "object",
         },
         description: "Create a new collection, global, or component schema as a .ts file on disk",
-        params: {
-          properties: {
-            type: { enum: ["collection", "global", "component"], type: "string" },
+        params: typeParamSchema,
+        response: {
+          "201": {
+            properties: {
+              message: { type: "string" },
+              slug: { type: "string" },
+              type: { type: "string" },
+            },
+            required: ["message", "slug", "type"],
+            type: "object",
           },
-          type: "object",
+          "400": errorSchema,
+          "409": errorSchema,
         },
         summary: "Create schema",
         tags: ["Schemas"],
@@ -626,12 +642,11 @@ export function registerSchemaRoutes(
           type: "object",
         },
         description: "Overwrite an existing schema definition file on disk",
-        params: {
-          properties: {
-            slug: { type: "string" },
-            type: { enum: ["collection", "global", "component"], type: "string" },
-          },
-          type: "object",
+        params: typeSlugParamSchema,
+        response: {
+          "2xx": messageResponseSchema,
+          "400": errorSchema,
+          "404": errorSchema,
         },
         summary: "Update schema",
         tags: ["Schemas"],
@@ -695,12 +710,11 @@ export function registerSchemaRoutes(
       schema: {
         description:
           "Delete a schema definition file from disk (requires manage:schemas permission)",
-        params: {
-          properties: {
-            slug: { type: "string" },
-            type: { enum: ["collection", "global", "component"], type: "string" },
-          },
-          type: "object",
+        params: typeSlugParamSchema,
+        response: {
+          "2xx": messageResponseSchema,
+          "400": errorSchema,
+          "404": errorSchema,
         },
         summary: "Delete schema",
         tags: ["Schemas"],
