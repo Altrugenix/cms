@@ -6,6 +6,7 @@ import { createHash, randomBytes } from "node:crypto";
 import {
   apiTokenListResponseSchema,
   apiTokenObjectSchema,
+  createApiTokenBodySchema,
   errorSchema,
   idParamSchema,
   messageResponseSchema,
@@ -114,14 +115,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     {
       preHandler: [fastify.authenticate],
       schema: {
-        body: {
-          properties: {
-            description: { type: "string" },
-            name: { type: "string" },
-          },
-          required: ["name"],
-          type: "object",
-        },
+        body: createApiTokenBodySchema,
         description: "Create a new API token. The raw token is returned only once in the response.",
         response: {
           "201": {

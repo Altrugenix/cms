@@ -21,6 +21,28 @@ export const errorWithCodeSchema = {
   type: "object",
 } as const;
 
+export const forbiddenSchema = {
+  properties: {
+    error: {
+      description: "You do not have permission to perform this action",
+      type: "string",
+    },
+  },
+  required: ["error"],
+  type: "object",
+} as const;
+
+export const internalServerErrorSchema = {
+  properties: {
+    error: {
+      description: "An unexpected error occurred",
+      type: "string",
+    },
+  },
+  required: ["error"],
+  type: "object",
+} as const;
+
 // ---------------------------------------------------------------------------
 // Common param / query schemas
 // ---------------------------------------------------------------------------
@@ -114,6 +136,74 @@ export const authUserResponseSchema = {
   type: "object",
 } as const;
 
+export const registerBodySchema = {
+  properties: {
+    email: {
+      examples: ["admin@example.com"],
+      type: "string",
+    },
+    password: {
+      examples: ["admin123456"],
+      type: "string",
+    },
+  },
+  required: ["email", "password"],
+  type: "object",
+} as const;
+
+export const loginBodySchema = {
+  properties: {
+    email: {
+      examples: ["admin@example.com"],
+      type: "string",
+    },
+    password: {
+      examples: ["admin123456"],
+      type: "string",
+    },
+  },
+  required: ["email", "password"],
+  type: "object",
+} as const;
+
+export const forgotPasswordBodySchema = {
+  properties: {
+    email: {
+      examples: ["admin@example.com"],
+      type: "string",
+    },
+  },
+  required: ["email"],
+  type: "object",
+} as const;
+
+export const resetPasswordBodySchema = {
+  properties: {
+    password: {
+      examples: ["newpassword123"],
+      type: "string",
+    },
+    token: {
+      description: "Reset token from email",
+      examples: ["reset-token-here"],
+      type: "string",
+    },
+  },
+  required: ["token", "password"],
+  type: "object",
+} as const;
+
+export const refreshBodySchema = {
+  properties: {
+    refreshToken: {
+      examples: ["refresh-token-here"],
+      type: "string",
+    },
+  },
+  required: ["refreshToken"],
+  type: "object",
+} as const;
+
 // ---------------------------------------------------------------------------
 // User schemas
 // ---------------------------------------------------------------------------
@@ -140,6 +230,26 @@ export const userListResponseSchema = {
   },
 } as const;
 
+export const createUserBodySchema = {
+  properties: {
+    email: {
+      examples: ["user@example.com"],
+      type: "string",
+    },
+    password: {
+      examples: ["securepassword123"],
+      type: "string",
+    },
+    role: {
+      description: "Role ID (defaults to 'user')",
+      examples: ["user"],
+      type: "string",
+    },
+  },
+  required: ["email", "password"],
+  type: "object",
+} as const;
+
 // ---------------------------------------------------------------------------
 // Role schemas
 // ---------------------------------------------------------------------------
@@ -162,6 +272,26 @@ export const roleObjectSchema = {
     permissions: { items: permissionObjectSchema, type: "array" },
     updatedAt: { type: "string" },
   },
+  type: "object",
+} as const;
+
+export const createRoleBodySchema = {
+  properties: {
+    description: {
+      examples: ["Administrator with full access"],
+      type: "string",
+    },
+    name: {
+      examples: ["admin"],
+      type: "string",
+    },
+    permissions: {
+      description: "Array of permission objects",
+      items: permissionObjectSchema,
+      type: "array",
+    },
+  },
+  required: ["name", "permissions"],
   type: "object",
 } as const;
 
@@ -193,6 +323,21 @@ export const apiTokenObjectSchema = {
   type: "object",
 } as const;
 
+export const createApiTokenBodySchema = {
+  properties: {
+    description: {
+      examples: ["CI/CD pipeline token"],
+      type: "string",
+    },
+    name: {
+      examples: ["ci-token"],
+      type: "string",
+    },
+  },
+  required: ["name"],
+  type: "object",
+} as const;
+
 export const apiTokenListResponseSchema = {
   "2xx": {
     properties: {
@@ -220,6 +365,40 @@ export const webhookObjectSchema = {
     updatedAt: { type: "string" },
     url: { type: "string" },
   },
+  type: "object",
+} as const;
+
+export const createWebhookBodySchema = {
+  properties: {
+    collection: {
+      examples: ["posts"],
+      type: "string",
+    },
+    enabled: {
+      examples: [true],
+      type: "boolean",
+    },
+    events: {
+      description: "Events to trigger the webhook (create, update, delete)",
+      examples: [["create", "update"]],
+      items: { type: "string" },
+      type: "array",
+    },
+    name: {
+      examples: ["post-webhook"],
+      type: "string",
+    },
+    secret: {
+      description: "Secret for HMAC signature verification",
+      examples: ["my-webhook-secret"],
+      type: "string",
+    },
+    url: {
+      examples: ["https://example.com/webhook"],
+      type: "string",
+    },
+  },
+  required: ["name", "url", "events", "collection"],
   type: "object",
 } as const;
 
@@ -260,6 +439,22 @@ export const mediaFolderObjectSchema = {
     name: { type: "string" },
     parentId: { type: ["integer", "null"] },
   },
+  type: "object",
+} as const;
+
+export const createMediaFolderBodySchema = {
+  properties: {
+    name: {
+      examples: ["blog-images"],
+      type: "string",
+    },
+    parentId: {
+      description: "Parent folder ID (null for root)",
+      examples: [null],
+      type: ["integer", "null"],
+    },
+  },
+  required: ["name"],
   type: "object",
 } as const;
 

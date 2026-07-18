@@ -10,8 +10,13 @@ import {
   authUserResponseSchema,
   errorSchema,
   errorWithCodeSchema,
+  forgotPasswordBodySchema,
   hasAdminResponseSchema,
+  loginBodySchema,
   messageResponseSchema,
+  refreshBodySchema,
+  registerBodySchema,
+  resetPasswordBodySchema,
   userObjectSchema,
 } from "../schemas/shared.js";
 
@@ -75,14 +80,7 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        body: {
-          properties: {
-            email: { type: "string" },
-            password: { type: "string" },
-          },
-          required: ["email", "password"],
-          type: "object",
-        },
+        body: registerBodySchema,
         description: "Create a new user account (requires setup to be complete)",
         response: {
           "201": {
@@ -133,14 +131,7 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        body: {
-          properties: {
-            email: { format: "email", type: "string" },
-            password: { type: "string" },
-          },
-          required: ["email", "password"],
-          type: "object",
-        },
+        body: loginBodySchema,
         description: "Authenticate with email and password, returns JWT tokens",
         response: {
           "2xx": {
@@ -176,13 +167,7 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        body: {
-          properties: {
-            refreshToken: { type: "string" },
-          },
-          required: ["refreshToken"],
-          type: "object",
-        },
+        body: refreshBodySchema,
         description: "Exchange a refresh token for a new access token and refresh token pair",
         response: {
           "2xx": authTokensResponseSchema,
@@ -208,13 +193,7 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        body: {
-          properties: {
-            email: { format: "email", type: "string" },
-          },
-          required: ["email"],
-          type: "object",
-        },
+        body: forgotPasswordBodySchema,
         description:
           "Request a password reset email (always returns success to prevent email enumeration)",
         response: {
@@ -249,14 +228,7 @@ export async function registerAuth(
     {
       schema: {
         ...publicSchema,
-        body: {
-          properties: {
-            password: { minLength: 8, type: "string" },
-            token: { type: "string" },
-          },
-          required: ["token", "password"],
-          type: "object",
-        },
+        body: resetPasswordBodySchema,
         description: "Reset password using a token from the forgot-password email",
         response: {
           "2xx": messageResponseSchema,

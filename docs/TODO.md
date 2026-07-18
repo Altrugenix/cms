@@ -624,7 +624,7 @@ Make `/docs` (Swagger UI) fully interactive and useful. Currently `components: {
 > **Decision:** Fastify's schema compiler enforces `body`, `querystring`, `response`, and `params` schemas on actual requests — they are not just documentation. Adding them would alter response serialization and break existing tests. Left as `summary`/`description`/`tags`/`security` only for now.
 
 - [x] Document decision to skip `body`, `querystring`, `response`, `params` schemas — Fastify enforces them at runtime, breaking existing behavior
-- [ ] Add detailed request/response schemas in the future when all routes are confirmed compatible with Fastify schema compilation
+- [x] Add detailed request/response schemas in the future when all routes are confirmed compatible with Fastify schema compilation
 
 ### Server URL & Info
 
@@ -637,7 +637,7 @@ Make `/docs` (Swagger UI) fully interactive and useful. Currently `components: {
 
 > **Same rationale as Request/Response Schemas** — Fastify's schema compiler would enforce these examples as actual serialization schemas. Deferred until routes are refactored to be schema-compiler compatible.
 
-- [ ] Add example responses and request bodies in a follow-up when schema compilation is addressed
+- [x] Add example responses and request bodies in a follow-up when schema compilation is addressed
 
 ### Testing
 
@@ -789,7 +789,7 @@ Add Fastify-compatible JSON Schema for request bodies, query params, params, and
 ### Deferred from Milestone 14
 
 - [x] Add detailed request/response schemas when all routes are confirmed compatible with Fastify schema compilation
-- [ ] Add example responses and request bodies when schema compilation is addressed
+- [x] Add example responses and request bodies when schema compilation is addressed
 
 ### Scope
 
@@ -842,10 +842,10 @@ Collection CRUD routes, global routes, auth routes, media routes, user/role rout
 
 - [x] `400` — Bad request (validation error) schema
 - [x] `401` — Unauthorized schema
-- [ ] `403` — Forbidden schema
+- [x] `403` — Forbidden schema
 - [x] `404` — Not found schema
 - [x] `409` — Conflict schema
-- [ ] `500` — Internal server error schema
+- [x] `500` — Internal server error schema
 
 ### Verification
 

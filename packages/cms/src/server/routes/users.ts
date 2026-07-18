@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { AuthService } from "@arche-cms/auth";
 
 import {
+  createUserBodySchema,
   errorSchema,
   idParamSchema,
   userListResponseSchema,
@@ -40,15 +41,7 @@ export function registerUserRoutes(
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("create", "users")],
       schema: {
-        body: {
-          properties: {
-            email: { format: "email", type: "string" },
-            password: { minLength: 8, type: "string" },
-            role: { type: "string" },
-          },
-          required: ["email", "password"],
-          type: "object",
-        },
+        body: createUserBodySchema,
         description: "Create a new user account (requires create:users permission)",
         response: {
           "201": userObjectSchema,

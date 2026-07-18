@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 import { ensureWebhooksTable } from "../lib/webhooks.js";
 import {
+  createWebhookBodySchema,
   errorSchema,
   idParamSchema,
   messageResponseSchema,
@@ -128,17 +129,7 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("manage", "settings")],
       schema: {
-        body: {
-          properties: {
-            collection: { type: "string" },
-            events: { items: { type: "string" }, type: "array" },
-            name: { type: "string" },
-            secret: { type: "string" },
-            url: { format: "uri", type: "string" },
-          },
-          required: ["name", "url", "events"],
-          type: "object",
-        },
+        body: createWebhookBodySchema,
         description: "Create a new webhook configuration (requires manage:settings permission)",
         response: {
           "201": webhookObjectSchema,

@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { AccessControl } from "@arche-cms/permissions";
 
 import {
+  createRoleBodySchema,
   errorSchema,
   idParamSchema,
   permissionObjectSchema,
@@ -60,15 +61,7 @@ export function registerRoleRoutes(fastify: FastifyInstance, adapter: DatabaseAd
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("manage", "roles")],
       schema: {
-        body: {
-          properties: {
-            description: { type: "string" },
-            name: { type: "string" },
-            permissions: { items: permissionObjectSchema, type: "array" },
-          },
-          required: ["name", "description"],
-          type: "object",
-        },
+        body: createRoleBodySchema,
         description: "Create a new role with permissions (requires manage:roles permission)",
         response: {
           "201": roleObjectSchema,

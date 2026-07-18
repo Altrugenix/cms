@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { randomUUID } from "node:crypto";
 
 import {
+  createMediaFolderBodySchema,
   errorSchema,
   folderListResponseSchema,
   idParamSchema,
@@ -392,14 +393,7 @@ export function registerMediaRoutes(
     {
       preHandler: [fastify.authenticate],
       schema: {
-        body: {
-          properties: {
-            name: { type: "string" },
-            parentId: { nullable: true, type: "number" },
-          },
-          required: ["name"],
-          type: "object",
-        },
+        body: createMediaFolderBodySchema,
         description: "Create a new media folder",
         response: {
           "201": mediaFolderObjectSchema,
