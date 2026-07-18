@@ -15,7 +15,11 @@ function collectionTableName(slug: string): string {
 }
 
 function isUniqueConstraintError(err: unknown): boolean {
-  return err instanceof Error && err.message.includes("UNIQUE constraint failed");
+  return (
+    err instanceof Error &&
+    (err.message.includes("UNIQUE constraint failed") ||
+      err.message.includes("duplicate key value violates unique constraint"))
+  );
 }
 
 function parseLimit(raw: unknown, max = 100, def = 10): number {

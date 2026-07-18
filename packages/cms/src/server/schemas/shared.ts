@@ -497,7 +497,7 @@ export const activityObjectSchema = {
     documentId: { type: "string" },
     id: { type: "string" },
     label: { type: "string" },
-    timestamp: { type: "string" },
+    createdAt: { type: "string" },
   },
   type: "object",
 } as const;

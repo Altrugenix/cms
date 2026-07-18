@@ -80,10 +80,10 @@ function generateCollectionSchema(collection: CollectionDefinition): Record<stri
     };
   }
 
-  if (collection.timestamps?.createdAt !== false) {
+  if (collection.timestamps !== false && collection.timestamps?.createdAt !== false) {
     properties.createdAt = { format: "date-time", type: "string" };
   }
-  if (collection.timestamps?.updatedAt !== false) {
+  if (collection.timestamps !== false && collection.timestamps?.updatedAt !== false) {
     properties.updatedAt = { format: "date-time", type: "string" };
   }
 

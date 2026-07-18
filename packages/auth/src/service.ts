@@ -229,8 +229,7 @@ export class AuthService {
     if (!user) return null;
     const updateData: Record<string, unknown> = { ...data, updatedAt: new Date().toISOString() };
     if (data.password) {
-      updateData.passwordHash = await hashPassword(data.password);
-      delete updateData.password;
+      updateData.password = await hashPassword(data.password);
     }
     const updated = await this.db.update(USERS_TABLE, id, updateData);
     if (!updated || !isAuthUser(updated)) return null;

@@ -1061,36 +1061,36 @@ Fix all known bugs that cause incorrect behavior, data loss, or inconsistencies 
 
 ### Auth Bug
 
-- [ ] **Fix `updateUser` password storage key** — `auth/src/service.ts:230-234` sets `updateData.passwordHash` but the DB column is `password`. Password updates are silently broken. Change to `updateData.password = await hashPassword(data.password)`
+- [x] **Fix `updateUser` password storage key** — `auth/src/service.ts:230-234` sets `updateData.passwordHash` but the DB column is `password`. Password updates are silently broken. Change to `updateData.password = await hashPassword(data.password)`
 
 ### Webhook & Activity Bugs
 
-- [ ] **Fix global upsert webhook event name** — `collections.ts:390` fires `"collection:updated"` for globals. Change to `"global:updated"`
-- [ ] **Add `bulkDelete` webhook event** — `collections.ts:74-87` `actionToEvent()` returns `null` for bulkDelete. Add `case "bulkDelete": return "collection:deleted"`
-- [ ] **Fix activity schema field mismatch** — `shared.ts:494` declares `timestamp` but `activity.ts:62` returns `createdAt`. Align schema to match response
+- [x] **Fix global upsert webhook event name** — `collections.ts:390` fires `"collection:updated"` for globals. Change to `"global:updated"`
+- [x] **Add `bulkDelete` webhook event** — `collections.ts:74-87` `actionToEvent()` returns `null` for bulkDelete. Add `case "bulkDelete": return "collection:deleted"`
+- [x] **Fix activity schema field mismatch** — `shared.ts:494` declares `timestamp` but `activity.ts:62` returns `createdAt`. Align schema to match response
 
 ### Schema & Validation Bugs
 
-- [ ] **Fix field name regex** — `validator.ts:22` uses `/^[a-z][a-zA-Z0-9]*$/` which rejects underscores. Change to `/^[a-z][a-zA-Z0-9_]*$/` to allow `my_field` style names
-- [ ] **Fix `defineCollection` timestamp override** — `define-collection.ts:3-6` always sets `timestamps: { createdAt: true, updatedAt: true }` even when user provides `false`. Merge with user values instead of overwriting
+- [x] **Fix field name regex** — `validator.ts:22` uses `/^[a-z][a-zA-Z0-9]*$/` which rejects underscores. Change to `/^[a-z][a-zA-Z0-9_]*$/` to allow `my_field` style names
+- [x] **Fix `defineCollection` timestamp override** — `define-collection.ts:3-6` always sets `timestamps: { createdAt: true, updatedAt: true }` even when user provides `false`. Merge with user values instead of overwriting
 
 ### Generated Code Bugs
 
-- [ ] **Fix GraphQL resolver adapter API** — `generators/src/graphql-schema.ts` generates `adapter.findOne({ collection, id })` but the actual API is `adapter.findOne(collection, id)`. Fix parameter style
-- [ ] **Fix generated migration adapter method** — `generators/src/migrations.ts:68` generates `adapter.executeSql()` but the actual method is `adapter.raw()`
-- [ ] **Fix GraphQL mutation input nullability** — `generators/src/graphql-schema.ts:96-101` `update${name}` input is missing `!` (required marker)
+- [x] **Fix GraphQL resolver adapter API** — `generators/src/graphql-schema.ts` generates `adapter.findOne({ collection, id })` but the actual API is `adapter.findOne(collection, id)`. Fix parameter style
+- [x] **Fix generated migration adapter method** — `generators/src/migrations.ts:68` generates `adapter.executeSql()` but the actual method is `adapter.raw()`
+- [x] **Fix GraphQL mutation input nullability** — `generators/src/graphql-schema.ts:96-101` `update${name}` input is missing `!` (required marker)
 
 ### Error Handling
 
-- [ ] **Fix unique constraint error for Postgres** — `rest-api/src/handlers.ts:17-19` only checks SQLite format (`"UNIQUE constraint failed"`). Add Postgres format check (`"duplicate key value violates unique constraint"`)
-- [ ] **Log errors in silent catch blocks** — Replace 6 bare `catch {}` blocks with `catch (e) { logger.error(e) }` in: `activity.ts:37`, `webhooks.ts:31`, `webhooks.ts:60`, `scheduled-publisher.ts:36`, `collections.ts:262`, `collections.ts:388`
+- [x] **Fix unique constraint error for Postgres** — `rest-api/src/handlers.ts:17-19` only checks SQLite format (`"UNIQUE constraint failed"`). Add Postgres format check (`"duplicate key value violates unique constraint"`)
+- [x] **Log errors in silent catch blocks** — Replace 6 bare `catch {}` blocks with `catch (e) { logger.error(e) }` in: `activity.ts:37`, `webhooks.ts:31`, `webhooks.ts:60`, `scheduled-publisher.ts:36`, `collections.ts:262`, `collections.ts:388`
 
 ### Verification
 
-- [ ] Run `pnpm lint` — no new errors
-- [ ] Run `pnpm typecheck` — no type errors
-- [ ] Run `pnpm test` — all tests pass
-- [ ] Run `pnpm build` — all packages build successfully
+- [x] Run `pnpm lint` — no new errors
+- [x] Run `pnpm typecheck` — no type errors
+- [x] Run `pnpm test` — all tests pass
+- [x] Run `pnpm build` — all packages build successfully
 
 ---
 

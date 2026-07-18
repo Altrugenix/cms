@@ -14,7 +14,7 @@ export interface CollectionDefinition {
   slug: string;
   labels: Labels;
   fields: FieldDefinition[];
-  timestamps?: Partial<CollectionTimestamps> | undefined;
+  timestamps?: Partial<CollectionTimestamps> | false | undefined;
   auth?: boolean | undefined;
   admin?:
     | {

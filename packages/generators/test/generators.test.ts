@@ -104,8 +104,8 @@ describe("graphqlGenerator", () => {
     expect(schemaFile?.content).toContain("createPosts(input: PostsCreateInput!): Posts");
 
     expect(resolversFile?.content).toContain("createResolvers");
-    expect(resolversFile?.content).toContain('collection: "posts"');
-    expect(resolversFile?.content).toContain('collection: "users"');
+    expect(resolversFile?.content).toContain('adapter.findOne("posts"');
+    expect(resolversFile?.content).toContain('adapter.findOne("users"');
   });
 });
 

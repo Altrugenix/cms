@@ -65,7 +65,7 @@ function generateMigrationFile(collections: CollectionDefinition[]): string {
 
   for (const col of collections) {
     const tableName = `__cms_${col.slug}`;
-    lines.push(`    await adapter.executeSql(\`CREATE TABLE IF NOT EXISTS ${tableName} (`);
+    lines.push(`    await adapter.raw(\`CREATE TABLE IF NOT EXISTS ${tableName} (`);
     lines.push(`      id TEXT PRIMARY KEY,`);
     lines.push(`      created_at TEXT DEFAULT (datetime('now')),`);
     lines.push(`      updated_at TEXT DEFAULT (datetime('now'))`);

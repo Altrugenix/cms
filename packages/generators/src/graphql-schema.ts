@@ -69,7 +69,7 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
     typeDefs.push(`input ${name}CreateInput {`);
     for (const f of col.fields) {
       if (f.type === "relation") continue;
-      typeDefs.push(`  ${f.name}: ${fieldToGraphQLType(f)}`);
+      typeDefs.push(`  ${f.name}: ${fieldToGraphQLType(f)}!`);
     }
     typeDefs.push(`}`);
     typeDefs.push(``);
@@ -113,10 +113,10 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
   for (const col of collections) {
     const name = toPascal(col.slug);
     resolversCode.push(
-      `      ${col.slug}: async (_: unknown, args: { id: string }) => adapter.findOne({ collection: "${col.slug}", id: args.id }),`,
+      `      ${col.slug}: async (_: unknown, args: { id: string }) => adapter.findOne("${col.slug}", args.id),`,
     );
     resolversCode.push(
-      `      all${name}: async (_: unknown, args: { limit?: number; offset?: number }) => adapter.findMany({ collection: "${col.slug}", limit: args.limit, offset: args.offset }),`,
+      `      all${name}: async (_: unknown, args: { limit?: number; offset?: number }) => adapter.findMany("${col.slug}", { limit: args.limit, offset: args.offset }),`,
     );
   }
 
@@ -126,13 +126,13 @@ function generateGraphQLFiles(collections: CollectionDefinition[]): GeneratedFil
   for (const col of collections) {
     const name = toPascal(col.slug);
     resolversCode.push(
-      `      create${name}: async (_: unknown, args: { input: Record<string, unknown> }) => adapter.create({ collection: "${col.slug}", data: args.input }),`,
+      `      create${name}: async (_: unknown, args: { input: Record<string, unknown> }) => adapter.create("${col.slug}", args.input),`,
     );
     resolversCode.push(
-      `      update${name}: async (_: unknown, args: { id: string; input: Record<string, unknown> }) => adapter.update({ collection: "${col.slug}", id: args.id, data: args.input }),`,
+      `      update${name}: async (_: unknown, args: { id: string; input: Record<string, unknown> }) => adapter.update("${col.slug}", args.id, args.input),`,
     );
     resolversCode.push(
-      `      delete${name}: async (_: unknown, args: { id: string }) => { await adapter.delete({ collection: "${col.slug}", id: args.id }); return true; },`,
+      `      delete${name}: async (_: unknown, args: { id: string }) => { await adapter.delete("${col.slug}", args.id); return true; },`,
     );
   }
 

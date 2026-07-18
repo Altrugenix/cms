@@ -117,7 +117,10 @@ export function generateTypes(options: TypeGenOptions): string {
     for (const col of options.collections) {
       lines.push(`export interface ${toPascal(col.slug)} {`);
       lines.push("  id: string;");
-      const ts = col.timestamps ?? { createdAt: true, updatedAt: true };
+      const ts =
+        col.timestamps === false
+          ? { createdAt: false, updatedAt: false }
+          : (col.timestamps ?? { createdAt: true, updatedAt: true });
       if (ts.createdAt !== false) lines.push("  createdAt?: string;");
       if (ts.updatedAt !== false) lines.push("  updatedAt?: string;");
       lines.push(...generateFields(col.fields));

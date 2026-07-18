@@ -23,6 +23,10 @@ function mapRow(row: {
   secret?: string;
   created_at: string;
   updated_at: string;
+  last_status?: number | null;
+  last_success?: number;
+  last_error?: string;
+  last_delivered_at?: string | null;
 }) {
   return {
     collection: row.collection,
@@ -31,6 +35,10 @@ function mapRow(row: {
     events: JSON.parse(row.events ?? "[]") as string[],
     hasSecret: Boolean(row.secret),
     id: String(row.rowid),
+    lastDeliveredAt: row.last_delivered_at ?? null,
+    lastError: row.last_error ?? "",
+    lastStatus: row.last_status ?? null,
+    lastSuccess: (row.last_success ?? 0) === 1,
     name: row.name,
     updatedAt: row.updated_at,
     url: row.url,
@@ -52,16 +60,26 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("read", "settings")],
       schema: {
-        description: "Returns all configured webhooks",
+        description: "Returns all configured webhooks (with pagination)",
+        querystring: {
+          properties: {
+            limit: { description: "Max items per page", type: "number" },
+            offset: { description: "Number of items to skip", type: "number" },
+          },
+          type: "object",
+        },
         response: webhookListResponseSchema,
         summary: "List webhooks",
         tags: ["Settings"],
       },
     },
-    async (_request: FastifyRequest, reply: FastifyReply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
+      const query = request.query as { limit?: string; offset?: string };
+      const limit = query.limit ? Math.max(1, Number(query.limit)) : undefined;
+      const offset = query.offset ? Math.max(0, Number(query.offset)) : undefined;
       const rows = (await adapter.raw(
-        `SELECT rowid, name, url, events, collection, enabled, created_at, updated_at FROM ${WEBHOOKS_TABLE} ORDER BY created_at DESC`,
+        `SELECT rowid, name, url, events, collection, enabled, created_at, updated_at, last_status, last_success, last_error, last_delivered_at FROM ${WEBHOOKS_TABLE} ORDER BY created_at DESC`,
       )) as {
         rowid: number;
         name: string;
@@ -71,10 +89,16 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
         enabled: number;
         created_at: string;
         updated_at: string;
+        last_status: number | null;
+        last_success: number;
+        last_error: string;
+        last_delivered_at: string | null;
       }[];
 
-      const data = rows.map(mapRow);
-      return reply.send({ data, total: data.length });
+      const total = rows.length;
+      const sliced = limit !== undefined ? rows.slice(offset ?? 0, (offset ?? 0) + limit) : rows;
+      const data = sliced.map(mapRow);
+      return reply.send({ data, total });
     },
   );
 
@@ -97,7 +121,7 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
       await init();
       const { id } = request.params as { id: string };
       const rows = (await adapter.raw(
-        `SELECT rowid, name, url, events, collection, enabled, secret, created_at, updated_at FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`,
+        `SELECT rowid, name, url, events, collection, enabled, secret, created_at, updated_at, last_status, last_success, last_error, last_delivered_at FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`,
         [Number(id)],
       )) as {
         rowid: number;
@@ -109,6 +133,10 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
         secret: string;
         created_at: string;
         updated_at: string;
+        last_status: number | null;
+        last_success: number;
+        last_error: string;
+        last_delivered_at: string | null;
       }[];
 
       if (!rows || rows.length === 0) {

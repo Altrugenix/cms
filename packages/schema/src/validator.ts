@@ -18,10 +18,10 @@ function validateField(field: FieldDefinition, path: string): ValidationIssue[] 
     issues.push({ message: "Field name is required", path: `${path}.name`, severity: "error" });
   }
 
-  if (field.name && !/^[a-z][a-zA-Z0-9]*$/.test(field.name)) {
+  if (field.name && !/^[a-z][a-zA-Z0-9_]*$/.test(field.name)) {
     issues.push({
       message:
-        "Field name must start with a lowercase letter and contain only alphanumeric characters",
+        "Field name must start with a lowercase letter and contain only alphanumeric characters and underscores",
       path: `${path}.name`,
       severity: "error",
     });

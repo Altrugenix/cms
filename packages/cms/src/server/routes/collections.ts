@@ -81,6 +81,8 @@ function actionToEvent(action: string): string | null {
       return "collection:updated";
     case "delete":
       return "collection:deleted";
+    case "bulkDelete":
+      return "collection:deleted";
     default:
       return null;
   }
@@ -259,11 +261,17 @@ function wrapWithActivity(
         collection,
         documentId,
         label: labelFromBody(body),
-      }).catch(() => {});
+      }).catch((e: unknown) => {
+        console.error("[activity] record failed:", e);
+      });
 
       const event = actionToEvent(action);
       if (event) {
-        dispatchWebhooks(adapter, event, collection, documentId, body ?? undefined).catch(() => {});
+        dispatchWebhooks(adapter, event, collection, documentId, body ?? undefined).catch(
+          (e: unknown) => {
+            console.error("[webhooks] dispatch failed:", e);
+          },
+        );
       }
     }
     return result;
@@ -385,14 +393,14 @@ export function registerGlobalRoutes(
             collection: slug,
             documentId,
             label: body?.name != null ? String(body.name) : g.label,
-          }).catch(() => {});
-          dispatchWebhooks(
-            adapter,
-            "collection:updated",
-            slug,
-            documentId,
-            body ?? undefined,
-          ).catch(() => {});
+          }).catch((e: unknown) => {
+            console.error("[activity] record failed:", e);
+          });
+          dispatchWebhooks(adapter, "global:updated", slug, documentId, body ?? undefined).catch(
+            (e: unknown) => {
+              console.error("[webhooks] dispatch failed:", e);
+            },
+          );
         }
         return reply.status(result.statusCode).send(result.body);
       } catch (error) {

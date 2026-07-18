@@ -78,14 +78,24 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("read", "settings")],
       schema: {
-        description: "Returns all API tokens (without the raw token values)",
+        description: "Returns all API tokens without the raw token values (with pagination)",
+        querystring: {
+          properties: {
+            limit: { description: "Max items per page", type: "number" },
+            offset: { description: "Number of items to skip", type: "number" },
+          },
+          type: "object",
+        },
         response: apiTokenListResponseSchema,
         summary: "List API tokens",
         tags: ["Settings"],
       },
     },
-    async (_request: FastifyRequest, reply: FastifyReply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
+      const query = request.query as { limit?: string; offset?: string };
+      const limit = query.limit ? Math.max(1, Number(query.limit)) : undefined;
+      const offset = query.offset ? Math.max(0, Number(query.offset)) : undefined;
       const rows = (await adapter.raw(
         `SELECT rowid, name, last_four, description, role, created_at, created_by, last_used_at FROM ${TOKENS_TABLE} ORDER BY created_at DESC`,
       )) as {
@@ -99,7 +109,9 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
         last_used_at: string | null;
       }[];
 
-      const data = rows.map((r) => ({
+      const total = rows.length;
+      const sliced = limit !== undefined ? rows.slice(offset ?? 0, (offset ?? 0) + limit) : rows;
+      const data = sliced.map((r) => ({
         createdAt: r.created_at,
         createdBy: r.created_by,
         description: r.description,
@@ -110,7 +122,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
         role: r.role,
       }));
 
-      return reply.send({ data, total: data.length });
+      return reply.send({ data, total });
     },
   );
 

@@ -8,6 +8,7 @@ import Fastify from "fastify";
 import type { ServerConfig } from "./config.js";
 
 import { ensureActivityTable } from "./lib/activity.js";
+import { buildCollectionMeta, buildGlobalMeta } from "./lib/utils.js";
 import { registerAuth } from "./plugins/auth.js";
 import { registerCors } from "./plugins/cors.js";
 import { registerErrorHandler } from "./plugins/error-handler.js";
@@ -25,14 +26,6 @@ import { registerRoleRoutes } from "./routes/roles.js";
 import { registerSchemaRoutes } from "./routes/schemas.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerWebhookRoutes } from "./routes/webhooks.js";
-
-function normalizeOptions(opts: unknown[]): string[] {
-  return opts.map((o) => {
-    if (typeof o === "string") return o;
-    if (o && typeof o === "object" && "value" in o) return String((o as { value: string }).value);
-    return String(o);
-  });
-}
 
 export interface AppOptions {
   config: ServerConfig;
@@ -123,51 +116,8 @@ export async function createApp(options: AppOptions): Promise<FastifyInstance> {
 
   await options.pluginManager?.runHook("afterRouteRegister");
 
-  let collectionMeta: Record<string, unknown>[] = (collections ?? []).map((c) => ({
-    // fallow-ignore-next-line complexity
-    fields: (c.fields ?? []).map((f) => {
-      const base = {
-        label: f.label ?? f.name,
-        name: f.name,
-        required: f.validation?.required ?? false,
-        type: f.type,
-      };
-      if (f.type === "relation") {
-        return { ...base, to: (f as { to?: string }).to ?? "" };
-      }
-      if (f.type === "select" || f.type === "multiSelect" || f.type === "radio") {
-        const opts = (f as { options?: unknown[] }).options ?? [];
-        return { ...base, options: normalizeOptions(opts) };
-      }
-      return base;
-    }),
-    label: c.labels?.plural ?? c.slug,
-    labels: c.labels,
-    slug: c.slug,
-    versions: c.versions,
-  }));
-
-  let globalMeta: Record<string, unknown>[] = (globals ?? []).map((g) => ({
-    // fallow-ignore-next-line complexity
-    fields: (g.fields ?? []).map((f) => {
-      const base = {
-        label: f.label ?? f.name,
-        name: f.name,
-        required: f.validation?.required ?? false,
-        type: f.type,
-      };
-      if (f.type === "relation") {
-        return { ...base, to: (f as { to?: string }).to ?? "" };
-      }
-      if (f.type === "select" || f.type === "multiSelect" || f.type === "radio") {
-        const opts = (f as { options?: unknown[] }).options ?? [];
-        return { ...base, options: normalizeOptions(opts) };
-      }
-      return base;
-    }),
-    label: g.label,
-    slug: g.slug,
-  }));
+  let collectionMeta: Record<string, unknown>[] = buildCollectionMeta(collections ?? []);
+  let globalMeta: Record<string, unknown>[] = buildGlobalMeta(globals ?? []);
 
   registerSchemaRoutes(fastify, config, adapter, (newCollections, newGlobals) => {
     collectionMeta = newCollections;

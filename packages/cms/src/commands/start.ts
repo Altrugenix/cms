@@ -88,14 +88,17 @@ export async function start(options: StartOptions): Promise<void> {
 
     const server = await createAndStartApp(config, adapter, collections, globals, pluginHooks);
 
-    process.on("SIGINT", () => {
+    const shutdown = () => {
       void (async () => {
         logger.info("Shutting down...");
         await server.stop();
         await adapter.disconnect();
         process.exit(0);
       })();
-    });
+    };
+
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
 
     await new Promise(() => {});
   } catch (err) {

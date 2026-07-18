@@ -14,6 +14,10 @@ export interface WebhookRow {
   secret: string;
   created_at: string;
   updated_at: string;
+  last_status: number | null;
+  last_success: number;
+  last_error: string;
+  last_delivered_at: string | null;
 }
 
 export async function ensureWebhooksTable(adapter: DatabaseAdapter): Promise<void> {
@@ -23,13 +27,29 @@ export async function ensureWebhooksTable(adapter: DatabaseAdapter): Promise<voi
       created_at: "TEXT NOT NULL",
       enabled: "INTEGER NOT NULL DEFAULT 1",
       events: "TEXT NOT NULL DEFAULT '[]'",
+      last_delivered_at: "TEXT",
+      last_error: "TEXT NOT NULL DEFAULT ''",
+      last_status: "INTEGER",
+      last_success: "INTEGER NOT NULL DEFAULT 0",
       name: "TEXT NOT NULL",
       secret: "TEXT NOT NULL DEFAULT ''",
       updated_at: "TEXT NOT NULL",
       url: "TEXT NOT NULL",
     });
   } catch {
-    // table already exists
+    // table already exists — try adding new columns for delivery tracking
+    for (const stmt of [
+      `ALTER TABLE ${WEBHOOKS_TABLE} ADD COLUMN last_status INTEGER`,
+      `ALTER TABLE ${WEBHOOKS_TABLE} ADD COLUMN last_success INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE ${WEBHOOKS_TABLE} ADD COLUMN last_error TEXT NOT NULL DEFAULT ''`,
+      `ALTER TABLE ${WEBHOOKS_TABLE} ADD COLUMN last_delivered_at TEXT`,
+    ]) {
+      try {
+        await adapter.raw(stmt);
+      } catch {
+        // column already exists
+      }
+    }
   }
 }
 
@@ -53,8 +73,8 @@ export async function dispatchWebhooks(
       const eventList: string[] = JSON.parse(webhook.events ?? "[]") as string[];
       if (!eventList.includes(event)) continue;
 
-      fireWebhook(webhook.url, body, webhook.secret).catch(() => {
-        // silently ignore webhook failures
+      fireWebhookWithRetry(adapter, webhook, body).catch((e: unknown) => {
+        console.error("[webhooks] retry exhausted:", e);
       });
     }
   } catch {
@@ -62,7 +82,62 @@ export async function dispatchWebhooks(
   }
 }
 
-async function fireWebhook(url: string, body: string, secret: string): Promise<void> {
+async function fireWebhookWithRetry(
+  adapter: DatabaseAdapter,
+  webhook: WebhookRow,
+  body: string,
+): Promise<void> {
+  const MAX_RETRIES = 3;
+  const BACKOFF_MS = [1000, 2000, 4000];
+  let lastError: string | null = null;
+  let lastStatus: number | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, BACKOFF_MS[attempt - 1]));
+    }
+
+    try {
+      const status = await fireWebhook(webhook.url, body, webhook.secret);
+      lastStatus = status;
+      if (status >= 200 && status < 300) {
+        await updateDeliveryStatus(adapter, webhook.rowid, status, true, "");
+        return;
+      }
+      lastError = `HTTP ${status}`;
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : "Network error";
+    }
+  }
+
+  await updateDeliveryStatus(
+    adapter,
+    webhook.rowid,
+    lastStatus,
+    false,
+    lastError ?? "Unknown error",
+  );
+}
+
+async function updateDeliveryStatus(
+  adapter: DatabaseAdapter,
+  webhookId: number,
+  status: number | null,
+  success: boolean,
+  error: string,
+): Promise<void> {
+  const now = new Date().toISOString();
+  await adapter
+    .raw(
+      `UPDATE ${WEBHOOKS_TABLE} SET last_status = ?, last_success = ?, last_error = ?, last_delivered_at = ? WHERE rowid = ?`,
+      [status, success ? 1 : 0, error, now, webhookId],
+    )
+    .catch(() => {
+      // best-effort — don't break webhook flow if tracking fails
+    });
+}
+
+async function fireWebhook(url: string, body: string, secret: string): Promise<number> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "User-Agent": "ArcheCMS-Webhook/1.0",
@@ -77,12 +152,13 @@ async function fireWebhook(url: string, body: string, secret: string): Promise<v
   const timeout = setTimeout(() => controller.abort(), 10000);
 
   try {
-    await fetch(url, {
+    const response = await fetch(url, {
       body,
       headers,
       method: "POST",
       signal: controller.signal,
     });
+    return response.status;
   } finally {
     clearTimeout(timeout);
   }
