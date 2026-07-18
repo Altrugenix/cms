@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: Milestone 19 complete — fixed schema field type gaps across all generator and REST API layers. Admin forms: 7 complex types mapped (component, dynamicZone, array, object, group, repeater, tabs). GraphQL: 5 complex type mappings added (array→[JSON!], object→JSON, group→JSON, repeater→[JSON!], tabs→JSON). Migrations: 7 complex types now generate TEXT columns instead of being skipped. SDK: 7 complex types mapped with proper TypeScript types. OpenAPI: date format corrected (date→date), email format added, richText format added, password excluded from response schemas. 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass. Next: Milestone 20 — admin panel feature completeness.
+> Project status: Milestone 19 complete — fixed schema field type gaps across all generator and REST API layers. 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass. Next: Milestone 20 — security hardening.
 
 ---
 
@@ -1011,3 +1011,233 @@ Complex/nested: `component`, `dynamicZone`, `array`, `object`, `group`, `tabs`, 
 - [x] Run `pnpm test` — all tests pass, update any affected snapshots
 - [x] Run `pnpm build` — all packages build successfully
 - [x] Verify generated output for a schema with all 29 field types matches expected output across all generator layers
+
+---
+
+## Milestone 20: Security Hardening
+
+### Objective
+
+Fix all critical and high-severity security vulnerabilities identified in the codebase audit. These are issues that could lead to XSS, unauthorized access, data leakage, or privilege escalation.
+
+### XSS & Input Sanitization
+
+- [ ] **Sanitize RichTextInput output** — `field-input.tsx:502` uses `dangerouslySetInnerHTML` with unsanitized user content. Add DOMPurify sanitization (same pattern as MarkdownInput at line 554)
+- [ ] **Add slug path traversal validation** — `schemas.ts:598` uses `resolve()` but does not validate slug against `../` sequences. Add regex check before file write operations
+- [ ] **Validate media upload MIME types** — `media.ts:163-201` accepts any file type without validation. Add allowlist check against declared mimeType and file extension
+
+### Authentication & Authorization
+
+- [ ] **Remove hardcoded admin password** — `auth.ts:40` seeds `"admin123"` on every start. Generate a random password on first run and print it to console, or require explicit configuration
+- [ ] **Remove hardcoded dev secret fallback** — `bootstrap.ts:67` sets `AUTH_SECRET` to a well-known value when unset. Refuse to start in production mode without explicit secret
+- [ ] **Add permission checks to unprotected routes** — Add `requirePermission()` preHandler to: `POST/PUT/DELETE /api/schemas/*`, `POST/DELETE /api/media/*`, `POST/DELETE /api/media/folders/*`, `GET /api/users`, `GET /api/users/:id`, `POST /api/settings/api-tokens`, `GET/POST/PUT/DELETE /api/settings/webhooks/*`
+- [ ] **Add auth to activity route** — `activity.ts:14` uses `security: []` (public). Add `fastify.authenticate` preHandler
+- [ ] **Scope API token permissions** — `api-tokens.ts:55-61` hardcodes `role: "admin"`. Add optional `role` field to token creation and use it in verification
+- [ ] **Prevent self-role escalation** — `users.ts:95` allows users to update their own role. Add check: non-admin users cannot modify their own `role` field
+
+### Upload Security
+
+- [ ] **Add file size validation** — `media.ts:163` accepts unlimited base64 data. Validate decoded size against configurable max (default 10MB)
+- [ ] **Add explicit body limit configuration** — `app.ts:70` uses Fastify's default 1MB. Set explicit `bodyLimit` in Fastify options (e.g., 50MB for media uploads)
+
+### Security Headers
+
+- [ ] **Add missing security headers** — `app.ts:84-91` manually sets 4 headers. Add `Content-Security-Policy`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`
+
+### Verification
+
+- [ ] Run `pnpm lint` — no new errors
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm test` — all tests pass
+- [ ] Run `pnpm build` — all packages build successfully
+
+---
+
+## Milestone 21: Bug Fixes & Data Integrity
+
+### Objective
+
+Fix all known bugs that cause incorrect behavior, data loss, or inconsistencies across the codebase.
+
+### Auth Bug
+
+- [ ] **Fix `updateUser` password storage key** — `auth/src/service.ts:230-234` sets `updateData.passwordHash` but the DB column is `password`. Password updates are silently broken. Change to `updateData.password = await hashPassword(data.password)`
+
+### Webhook & Activity Bugs
+
+- [ ] **Fix global upsert webhook event name** — `collections.ts:390` fires `"collection:updated"` for globals. Change to `"global:updated"`
+- [ ] **Add `bulkDelete` webhook event** — `collections.ts:74-87` `actionToEvent()` returns `null` for bulkDelete. Add `case "bulkDelete": return "collection:deleted"`
+- [ ] **Fix activity schema field mismatch** — `shared.ts:494` declares `timestamp` but `activity.ts:62` returns `createdAt`. Align schema to match response
+
+### Schema & Validation Bugs
+
+- [ ] **Fix field name regex** — `validator.ts:22` uses `/^[a-z][a-zA-Z0-9]*$/` which rejects underscores. Change to `/^[a-z][a-zA-Z0-9_]*$/` to allow `my_field` style names
+- [ ] **Fix `defineCollection` timestamp override** — `define-collection.ts:3-6` always sets `timestamps: { createdAt: true, updatedAt: true }` even when user provides `false`. Merge with user values instead of overwriting
+
+### Generated Code Bugs
+
+- [ ] **Fix GraphQL resolver adapter API** — `generators/src/graphql-schema.ts` generates `adapter.findOne({ collection, id })` but the actual API is `adapter.findOne(collection, id)`. Fix parameter style
+- [ ] **Fix generated migration adapter method** — `generators/src/migrations.ts:68` generates `adapter.executeSql()` but the actual method is `adapter.raw()`
+- [ ] **Fix GraphQL mutation input nullability** — `generators/src/graphql-schema.ts:96-101` `update${name}` input is missing `!` (required marker)
+
+### Error Handling
+
+- [ ] **Fix unique constraint error for Postgres** — `rest-api/src/handlers.ts:17-19` only checks SQLite format (`"UNIQUE constraint failed"`). Add Postgres format check (`"duplicate key value violates unique constraint"`)
+- [ ] **Log errors in silent catch blocks** — Replace 6 bare `catch {}` blocks with `catch (e) { logger.error(e) }` in: `activity.ts:37`, `webhooks.ts:31`, `webhooks.ts:60`, `scheduled-publisher.ts:36`, `collections.ts:262`, `collections.ts:388`
+
+### Verification
+
+- [ ] Run `pnpm lint` — no new errors
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm test` — all tests pass
+- [ ] Run `pnpm build` — all packages build successfully
+
+---
+
+## Milestone 22: Server Completeness
+
+### Objective
+
+Fill missing server-side features: activity/webhook coverage for all mutation types, pagination on admin endpoints, graceful shutdown, and webhook reliability.
+
+### Activity & Webhooks Coverage
+
+- [ ] **Add activity recording to media routes** — `media.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete, and folder operations
+- [ ] **Add activity recording to user routes** — `users.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete
+- [ ] **Add activity recording to role routes** — `roles.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete
+- [ ] **Add activity recording to scheduled publisher** — `scheduled-publisher.ts:30-34` auto-publishes without audit trail. Call `recordActivity()` after status change
+- [ ] **Add webhook dispatch to media routes** — Fire `media:created`, `media:updated`, `media:deleted` events
+- [ ] **Add webhook dispatch to user routes** — Fire `user:created`, `user:updated`, `user:deleted` events
+- [ ] **Add webhook dispatch to role routes** — Fire `role:created`, `role:updated`, `role:deleted` events
+- [ ] **Add webhook dispatch to scheduled publisher** — Fire `collection:published` when auto-publishing drafts
+- [ ] **Extend webhook event list** — Add to admin UI: `collection:published`, `collection:unpublished`, `global:updated`, `media:created`, `media:updated`, `media:deleted`, `user:created`, `user:updated`, `user:deleted`, `role:created`, `role:updated`, `role:deleted`
+
+### Webhook Reliability
+
+- [ ] **Add webhook retry with exponential backoff** — `webhooks.ts:65-88` has 10s timeout and no retry. Add 3 retries with 1s/2s/4s backoff
+- [ ] **Add webhook delivery status tracking** — Store last delivery status (success/failure, status code, timestamp) in `__cms_webhooks` table. Show in admin UI
+
+### Pagination
+
+- [ ] **Add pagination to `GET /api/users`** — `users.ts:34` returns all users. Add `limit`/`offset` query params
+- [ ] **Add pagination to `GET /api/roles`** — `roles.ts:31` returns all roles. Add `limit`/`offset` query params
+- [ ] **Add pagination to `GET /api/activity`** — `activity.ts:20` hardcodes limit 10. Add `limit`/`offset`/`collection`/`action` query params
+- [ ] **Add pagination to `GET /api/settings/webhooks`** — `webhooks.ts:63` returns all webhooks. Add `limit`/`offset` query params
+- [ ] **Add pagination to `GET /api/settings/api-tokens`** — `api-tokens.ts:87` returns all tokens. Add `limit`/`offset` query params
+- [ ] **Add pagination to `GET /api/media`** — `media.ts:88` returns all files. Add `limit`/`offset` query params
+
+### Graceful Shutdown
+
+- [ ] **Register SIGTERM/SIGINT handlers** — `bootstrap.ts:144-146` only calls `fastify.close()`. Add signal handlers that stop the server, drain in-flight requests, and close DB connections
+- [ ] **Clean up scheduled publisher timer** — Ensure the scheduled publisher interval is cleared on shutdown (verify `onClose` hook handles this)
+
+### Code Cleanup
+
+- [ ] **Extract `normalizeOptions`** — Deduplicate `normalizeOptions` from `app.ts:29-35` and `schemas.ts:51-57` into a shared utility
+- [ ] **Extract collection/global metadata builder** — Deduplicate the `collectionMeta`/`globalMeta` mapping logic from `app.ts:119-163` into a shared function
+- [ ] **Remove dead code** — `bootstrap.ts:62-83` exports `ensureDevAuthSecret` and `applyCliOverrides` which are never called. Remove them
+
+### Verification
+
+- [ ] Run `pnpm lint` — no new errors
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm test` — all tests pass
+- [ ] Run `pnpm build` — all packages build successfully
+
+---
+
+## Milestone 23: Admin UI Quality & Consistency
+
+### Objective
+
+Fix admin UI inconsistencies, add missing UX features (pagination, 404, forgot password), and unify data fetching patterns.
+
+### Pagination
+
+- [ ] **Build `Pagination` component** — Reusable component with page numbers, prev/next, items-per-page selector
+- [ ] **Add pagination to collection entries list** — `collections/$slug.tsx` loads all entries. Add server-side pagination with the new component
+- [ ] **Add pagination to media library** — `media/index.tsx` loads all files. Add server-side pagination
+- [ ] **Add pagination to users list** — `settings/users/index.tsx` loads all users
+- [ ] **Add pagination to roles list** — `settings/roles/index.tsx` loads all roles
+- [ ] **Add pagination to API tokens list** — `settings/api-tokens.tsx` loads all tokens
+- [ ] **Add pagination to webhooks list** — `settings/webhooks/index.tsx` loads all webhooks
+
+### Missing Routes & Flows
+
+- [ ] **Add 404 catch-all route** — Add `rootRoute.errorComponent` or a `*` catch-all route that renders a "Page Not Found" page
+- [ ] **Complete forgot password flow** — `forgot-password.tsx` submits but has no reset form. Add `/reset-password` route with token input + new password form
+- [ ] **Add collection entry count to collections list** — `collections/index.tsx` shows field count but not entry count. Fetch and display entry counts
+
+### Data Fetching Consistency
+
+- [ ] **Migrate settings/users to TanStack Query** — `settings/users/index.tsx`, `settings/users/$id.tsx` use manual `useEffect`. Replace with `useQuery`/`useMutation` hooks
+- [ ] **Migrate settings/roles to TanStack Query** — `settings/roles/index.tsx`, `settings/roles/$id.tsx` use manual `useEffect`. Replace with `useQuery`/`useMutation` hooks
+- [ ] **Migrate media library to TanStack Query** — `media/index.tsx` uses manual `useEffect`. Replace with `useQuery`
+- [ ] **Add `useCreateEntry` / `useUpdateEntry` mutation hooks** — `new.$slug.tsx` and `$id_.$slug.edit.tsx` call `apiFetch()` directly. Create mutation hooks with cache invalidation
+
+### Code Quality
+
+- [ ] **Fix duplicate `API_URL`** — `auth.tsx:21` defines its own `API_URL`. Import `getApiUrl()` from `api.ts` instead
+- [ ] **Remove dead state in schema editor** — `schemas/$type.$slug.tsx:624-627` declares `selectedIdx`, `showPreview`, `dragIdx`, `newFieldType` that are unused in the parent component
+- [ ] **Fix `useCollection`/`useGlobal` loading states** — `hooks.ts:39-55` always returns `isLoading: false`. Pass through the actual loading state from the parent query
+- [ ] **Fix ComponentInput async render call** — `field-input.tsx:890-902` calls `loadComponent()` in render body instead of `useEffect`. Move to `useEffect`
+- [ ] **Fix DynamicZoneInput async render call** — `field-input.tsx:1006-1008` calls `loadComponents()` in render body. Move to `useEffect` and fix the `components === null` check (initialized as `{}`, never `null`)
+
+### Rich Text Editor
+
+- [ ] **Add DOMPurify to RichTextInput** — Sanitize `dangerouslySetInnerHTML` content before rendering
+- [ ] **Expand toolbar** — Add H1, H3, H4 headings, blockquote, horizontal rule, image placeholder, undo/redo
+- [ ] **Replace `prompt()` for link insertion** — Use a proper modal/popover UI instead of blocking browser dialog
+- [ ] **Replace deprecated `document.execCommand`** — Evaluate migration to TipTap or similar library (can be deferred to a follow-up if scope is too large)
+
+### Verification
+
+- [ ] Run `pnpm lint` — no new errors
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm test` — all tests pass
+- [ ] Run `pnpm build` — all packages build successfully
+- [ ] Admin panel builds successfully (Vite build)
+
+---
+
+## Milestone 24: GraphQL & REST API Completeness
+
+### Objective
+
+Complete the GraphQL and REST API layers: add global definitions to GraphQL, fix pagination metadata, add missing OpenAPI request body schemas, and improve error handling.
+
+### GraphQL — Globals
+
+- [ ] **Generate GraphQL types for globals** — `type-defs.ts` only handles collections. Add `type SiteSettings { ... }` with all global fields
+- [ ] **Generate GraphQL queries for globals** — Add `siteSettings: SiteSettings` query
+- [ ] **Generate GraphQL mutations for globals** — Add `updateSiteSettings(input: SiteSettingsInput!): SiteSettings` mutation
+- [ ] **Generate resolvers for globals** — Add query/mutation resolvers that call `adapter.findOne()` / `adapter.upsert()` for globals
+
+### GraphQL — Pagination & Error Handling
+
+- [ ] **Add pagination metadata to list queries** — Return `{ data: [Type], total: Int, limit: Int, offset: Int }` instead of bare `[Type]`
+- [ ] **Use `safeParse` in mutation resolvers** — `resolvers.ts:165-188` calls `schema.parse()` which throws on invalid input. Use `safeParse()` and return structured GraphQL errors
+- [ ] **Add draft/soft-delete awareness to resolvers** — Filter by `_status` and `_deletedAt` in list queries
+
+### GraphQL — Type Completeness
+
+- [ ] **Fix `checkbox` scalar mapping** — `types.ts:20-36` `SCALAR_MAP` is missing `checkbox`. Add `checkbox: "Boolean"`
+- [ ] **Generate full component types** — `type-defs.ts:112-160` generates stub types with `_: Boolean`. Generate actual field types for referenced components
+
+### REST API — OpenAPI
+
+- [ ] **Add request body schemas to OpenAPI operations** — `openapi.ts:127-166` generates `Create`/`Update` schemas but never references them in operations. Add `requestBody.content.application/json.schema.$ref` to POST/PUT/PATCH operations
+- [ ] **Add OpenAPI types for missing field types** — `openapi.ts:29` `SIMPLE_OPENAPI_TYPES` is missing `textarea`, `code`, `slug`, `markdown`. Add descriptive types (e.g., `textarea` → `{ type: "string", format: "textarea" }`)
+- [ ] **Fix version response schema** — `collections.ts:114-128` uses `additionalProperties: true` with no fields. Define actual version object schema
+
+### REST API — Middleware & Error Handling
+
+- [ ] **Apply middleware hooks to global routes** — `route-generator.ts:177-192` `createGlobalRouter` does not call `applyMiddleware()`. Add middleware support for global endpoints
+- [ ] **Fix `isUniqueConstraintError` for Postgres** — `handlers.ts:17-19` only checks SQLite format. Add Postgres check (`duplicate key value violates unique constraint`)
+
+### Verification
+
+- [ ] Run `pnpm lint` — no new errors
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm test` — all tests pass
+- [ ] Run `pnpm build` — all packages build successfully
