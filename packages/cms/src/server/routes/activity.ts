@@ -10,9 +10,11 @@ export function registerActivityRoutes(fastify: FastifyInstance, adapter: Databa
     {
       preHandler: [fastify.authenticate, fastify.requirePermission("read", "activity")],
       schema: {
-        description: "Returns activity log entries (with pagination)",
+        description: "Returns activity log entries (with pagination and optional filters)",
         querystring: {
           properties: {
+            action: { description: "Filter by action (create, update, delete)", type: "string" },
+            collection: { description: "Filter by collection slug", type: "string" },
             limit: { description: "Max items per page (default 10)", type: "number" },
             offset: { description: "Number of items to skip", type: "number" },
           },
@@ -24,11 +26,20 @@ export function registerActivityRoutes(fastify: FastifyInstance, adapter: Databa
       },
     },
     async (request: FastifyRequest) => {
-      const query = request.query as { limit?: string; offset?: string };
+      const query = request.query as {
+        action?: string;
+        collection?: string;
+        limit?: string;
+        offset?: string;
+      };
       const limit = query.limit ? Math.max(1, Number(query.limit)) : 10;
-      const data = await fetchRecentActivity(adapter, limit);
-      const total = data.length;
-      return { data, total };
+      const offset = query.offset ? Math.max(0, Number(query.offset)) : 0;
+      const data = await fetchRecentActivity(adapter, limit, {
+        action: query.action || undefined,
+        collection: query.collection || undefined,
+        offset,
+      });
+      return { data, total: data.length };
     },
   );
 }

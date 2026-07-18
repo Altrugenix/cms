@@ -42,6 +42,7 @@ export async function recordActivity(
 export async function fetchRecentActivity(
   adapter: DatabaseAdapter,
   limit = 10,
+  filters?: { collection?: string | undefined; action?: string | undefined; offset?: number },
 ): Promise<
   Array<{
     id: string;
@@ -52,9 +53,21 @@ export async function fetchRecentActivity(
     createdAt: string;
   }>
 > {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (filters?.collection) {
+    conditions.push("collection = ?");
+    params.push(filters.collection);
+  }
+  if (filters?.action) {
+    conditions.push("action = ?");
+    params.push(filters.action);
+  }
+  const where = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
+  const offset = filters?.offset ?? 0;
   const rows = await adapter.raw(
-    `SELECT id, action, collection, document_id as documentId, label, created_at as createdAt FROM ${TABLE} ORDER BY id DESC LIMIT ?`,
-    [limit],
+    `SELECT id, action, collection, document_id as documentId, label, created_at as createdAt FROM ${TABLE}${where} ORDER BY id DESC LIMIT ? OFFSET ?`,
+    [...params, limit, offset],
   );
   return (rows as Array<Record<string, unknown>>).map((r) => ({
     action: String(r.action),

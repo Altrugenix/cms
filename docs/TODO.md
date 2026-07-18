@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: Milestone 19 complete — fixed schema field type gaps across all generator and REST API layers. 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass. Next: Milestone 20 — security hardening.
+> Project status: Milestone 22 complete — server completeness (activity/webhook coverage, pagination, graceful shutdown, webhook reliability, code cleanup). 32 typecheck tasks pass, 19 lint tasks pass, 19 test tasks pass, 19 build tasks pass. Next: Milestone 23 — admin UI quality & consistency.
 
 ---
 
@@ -1102,47 +1102,47 @@ Fill missing server-side features: activity/webhook coverage for all mutation ty
 
 ### Activity & Webhooks Coverage
 
-- [ ] **Add activity recording to media routes** — `media.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete, and folder operations
-- [ ] **Add activity recording to user routes** — `users.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete
-- [ ] **Add activity recording to role routes** — `roles.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete
-- [ ] **Add activity recording to scheduled publisher** — `scheduled-publisher.ts:30-34` auto-publishes without audit trail. Call `recordActivity()` after status change
-- [ ] **Add webhook dispatch to media routes** — Fire `media:created`, `media:updated`, `media:deleted` events
-- [ ] **Add webhook dispatch to user routes** — Fire `user:created`, `user:updated`, `user:deleted` events
-- [ ] **Add webhook dispatch to role routes** — Fire `role:created`, `role:updated`, `role:deleted` events
-- [ ] **Add webhook dispatch to scheduled publisher** — Fire `collection:published` when auto-publishing drafts
-- [ ] **Extend webhook event list** — Add to admin UI: `collection:published`, `collection:unpublished`, `global:updated`, `media:created`, `media:updated`, `media:deleted`, `user:created`, `user:updated`, `user:deleted`, `role:created`, `role:updated`, `role:deleted`
+- [x] **Add activity recording to media routes** — `media.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete, and folder operations
+- [x] **Add activity recording to user routes** — `users.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete
+- [x] **Add activity recording to role routes** — `roles.ts` CRUD operations do not call `recordActivity()`. Wire into create, update, delete
+- [x] **Add activity recording to scheduled publisher** — `scheduled-publisher.ts:30-34` auto-publishes without audit trail. Call `recordActivity()` after status change
+- [x] **Add webhook dispatch to media routes** — Fire `media:created`, `media:updated`, `media:deleted` events
+- [x] **Add webhook dispatch to user routes** — Fire `user:created`, `user:updated`, `user:deleted` events
+- [x] **Add webhook dispatch to role routes** — Fire `role:created`, `role:updated`, `role:deleted` events
+- [x] **Add webhook dispatch to scheduled publisher** — Fire `collection:published` when auto-publishing drafts
+- [x] **Extend webhook event list** — Add to admin UI: `collection:published`, `collection:unpublished`, `global:updated`, `media:created`, `media:updated`, `media:deleted`, `user:created`, `user:updated`, `user:deleted`, `role:created`, `role:updated`, `role:deleted`
 
 ### Webhook Reliability
 
-- [ ] **Add webhook retry with exponential backoff** — `webhooks.ts:65-88` has 10s timeout and no retry. Add 3 retries with 1s/2s/4s backoff
-- [ ] **Add webhook delivery status tracking** — Store last delivery status (success/failure, status code, timestamp) in `__cms_webhooks` table. Show in admin UI
+- [x] **Add webhook retry with exponential backoff** — `webhooks.ts:65-88` has 10s timeout and no retry. Add 3 retries with 1s/2s/4s backoff
+- [x] **Add webhook delivery status tracking** — Store last delivery status (success/failure, status code, timestamp) in `__cms_webhooks` table. Show in admin UI
 
 ### Pagination
 
-- [ ] **Add pagination to `GET /api/users`** — `users.ts:34` returns all users. Add `limit`/`offset` query params
-- [ ] **Add pagination to `GET /api/roles`** — `roles.ts:31` returns all roles. Add `limit`/`offset` query params
-- [ ] **Add pagination to `GET /api/activity`** — `activity.ts:20` hardcodes limit 10. Add `limit`/`offset`/`collection`/`action` query params
-- [ ] **Add pagination to `GET /api/settings/webhooks`** — `webhooks.ts:63` returns all webhooks. Add `limit`/`offset` query params
-- [ ] **Add pagination to `GET /api/settings/api-tokens`** — `api-tokens.ts:87` returns all tokens. Add `limit`/`offset` query params
-- [ ] **Add pagination to `GET /api/media`** — `media.ts:88` returns all files. Add `limit`/`offset` query params
+- [x] **Add pagination to `GET /api/users`** — `users.ts:34` returns all users. Add `limit`/`offset` query params
+- [x] **Add pagination to `GET /api/roles`** — `roles.ts:31` returns all roles. Add `limit`/`offset` query params
+- [x] **Add pagination to `GET /api/activity`** — `activity.ts:20` hardcodes limit 10. Add `limit`/`offset`/`collection`/`action` query params
+- [x] **Add pagination to `GET /api/settings/webhooks`** — `webhooks.ts:63` returns all webhooks. Add `limit`/`offset` query params
+- [x] **Add pagination to `GET /api/settings/api-tokens`** — `api-tokens.ts:87` returns all tokens. Add `limit`/`offset` query params
+- [x] **Add pagination to `GET /api/media`** — `media.ts:88` returns all files. Add `limit`/`offset` query params
 
 ### Graceful Shutdown
 
-- [ ] **Register SIGTERM/SIGINT handlers** — `bootstrap.ts:144-146` only calls `fastify.close()`. Add signal handlers that stop the server, drain in-flight requests, and close DB connections
-- [ ] **Clean up scheduled publisher timer** — Ensure the scheduled publisher interval is cleared on shutdown (verify `onClose` hook handles this)
+- [x] **Register SIGTERM/SIGINT handlers** — `bootstrap.ts:144-146` only calls `fastify.close()`. Add signal handlers that stop the server, drain in-flight requests, and close DB connections
+- [x] **Clean up scheduled publisher timer** — Ensure the scheduled publisher interval is cleared on shutdown (verify `onClose` hook handles this)
 
 ### Code Cleanup
 
-- [ ] **Extract `normalizeOptions`** — Deduplicate `normalizeOptions` from `app.ts:29-35` and `schemas.ts:51-57` into a shared utility
-- [ ] **Extract collection/global metadata builder** — Deduplicate the `collectionMeta`/`globalMeta` mapping logic from `app.ts:119-163` into a shared function
-- [ ] **Remove dead code** — `bootstrap.ts:62-83` exports `ensureDevAuthSecret` and `applyCliOverrides` which are never called. Remove them
+- [x] **Extract `normalizeOptions`** — Deduplicate `normalizeOptions` from `app.ts:29-35` and `schemas.ts:51-57` into a shared utility
+- [x] **Extract collection/global metadata builder** — Deduplicate the `collectionMeta`/`globalMeta` mapping logic from `app.ts:119-163` into a shared function
+- [x] **Remove dead code** — `bootstrap.ts:62-83` exports `ensureDevAuthSecret` and `applyCliOverrides` which are never called. ~~Remove them~~ Investigated: both are used by `dev.ts` and `start.ts` — not dead code.
 
 ### Verification
 
-- [ ] Run `pnpm lint` — no new errors
-- [ ] Run `pnpm typecheck` — no type errors
-- [ ] Run `pnpm test` — all tests pass
-- [ ] Run `pnpm build` — all packages build successfully
+- [x] Run `pnpm lint` — no new errors
+- [x] Run `pnpm typecheck` — no type errors
+- [x] Run `pnpm test` — all tests pass
+- [x] Run `pnpm build` — all packages build successfully
 
 ---
 
