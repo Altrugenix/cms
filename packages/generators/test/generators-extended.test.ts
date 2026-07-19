@@ -506,7 +506,7 @@ describe("apiRoutesGenerator - jsValue fallback coverage", () => {
       fields: [{ name: "title", type: "text" }],
       labels: { plural: "Tests", singular: "Test" },
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await apiRoutesGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -521,7 +521,7 @@ describe("apiRoutesGenerator - jsValue fallback coverage", () => {
       labels: { plural: "Tests", singular: "Test" },
       nullProp: null,
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await apiRoutesGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -539,7 +539,7 @@ describe("validationGenerator - jsValue fallback coverage", () => {
       fields: [{ name: "title", type: "text" }],
       labels: { plural: "Tests", singular: "Test" },
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -554,7 +554,7 @@ describe("validationGenerator - jsValue fallback coverage", () => {
       labels: { plural: "Tests", singular: "Test" },
       nullProp: null,
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -570,7 +570,7 @@ describe("validationGenerator - jsValue fallback coverage", () => {
       fields: [{ name: "title", type: "text" }],
       labels: { plural: "Tests", singular: "Test" },
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
       outputDir: "/tmp",

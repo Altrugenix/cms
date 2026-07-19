@@ -166,6 +166,8 @@ Do not skip steps. Do not implement features until the architecture has been rev
 - `pnpm test` — run all tests
 - `pnpm test:watch` — test watch mode
 - `pnpm format` — format with Prettier
+- `pnpm knip` — detect unused exports, dependencies, and types
+- `pnpm knip:fix` — auto-fix knip findings
 - `cms dev` — start CMS dev mode (CLI)
 - `cms build` — build CMS for production
 - `cms generate` — run code generation
