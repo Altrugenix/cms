@@ -24,7 +24,7 @@ features:
   - title: Multi-Database
     details: SQLite, PostgreSQL, MySQL, Turso, Cloudflare D1 support via Drizzle ORM adapter pattern. Swap databases with a config change.
   - title: Auto API
-    details: REST API with OpenAPI/Swagger, GraphQL with GraphiQL, and TypeScript SDK — all generated automatically from your schemas.
-  - title: Self-Hosted
-    details: Deploy anywhere — Docker, VPS, serverless. Local, S3, or Cloudflare R2 storage. Full control of your data.
+    details: REST API with OpenAPI/Swagger, GraphQL with GraphiQL, and a typed TypeScript SDK — all generated automatically from your schemas.
+  - title: Admin UI
+    details: React 19 dashboard with TanStack Router, TanStack Query, shadcn/ui, and Tailwind CSS v4. Pagination, media library, schema builder.
 ---

@@ -130,8 +130,6 @@ function FieldEditorList({
 }) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [showPicker, setShowPicker] = useState(false);
-  const [newFieldType] = useState("text");
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   const updateField = (idx: number, updates: Partial<FieldDefinition>) => {
     onChange(fields.map((f, i) => (i === idx ? ({ ...f, ...updates } as FieldDefinition) : f)));
@@ -142,33 +140,13 @@ function FieldEditorList({
     setSelectedIdx((prev) => (prev === idx ? null : prev));
   };
 
-  const addField = (type?: string) => {
-    const t = type ?? newFieldType;
-    const field = defaultField(t);
+  const addField = (type: string) => {
+    const field = defaultField(type);
     field.name = `field_${fields.length + 1}`;
     onChange([...fields, field]);
     setSelectedIdx(fields.length);
     setShowPicker(false);
   };
-
-  const moveField = (from: number, to: number) => {
-    const next = [...fields];
-    const [moved] = next.splice(from, 1);
-    if (moved) {
-      next.splice(to, 0, moved);
-      onChange(next);
-    }
-    setSelectedIdx(to);
-  };
-
-  const handleDragStart = (idx: number) => setDragIdx(idx);
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
-    e.preventDefault();
-    if (dragIdx === null || dragIdx === idx) return;
-    moveField(dragIdx, idx);
-    setDragIdx(idx);
-  };
-  const handleDragEnd = () => setDragIdx(null);
 
   const selectedField = selectedIdx !== null ? fields[selectedIdx] : null;
 
@@ -624,7 +602,7 @@ function SchemaEditor() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [newFieldType] = useState("text");
+  const [newFieldType, setNewFieldType] = useState("text");
   const saveSchemaMutation = useSaveSchema();
   const [showNewFieldPicker, setShowNewFieldPicker] = useState(false);
   const previewRef = useRef<HTMLPreElement>(null);

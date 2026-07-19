@@ -1,12 +1,13 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { Pencil, Trash2, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Pagination } from "@/components/pagination";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
-import { fetchUsers, deleteUser, type UserMeta } from "@/lib/api";
+import { useUsersList, useDeleteUser } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
@@ -15,33 +16,17 @@ export const Route = createRoute({
   path: "users",
 });
 
+const PAGE_SIZE = 20;
+
 function UsersList() {
   const { toast } = useToast();
-  const [users, setUsers] = useState<UserMeta[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState({ limit: PAGE_SIZE, offset: 0 });
+  const { data, error, isLoading: loading } = useUsersList(page);
+  const deleteUser = useDeleteUser();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await fetchUsers();
-        if (cancelled) return;
-        setUsers(data.data);
-        setTotal(data.total);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load users");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const users = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   const handleDelete = (id: string) => {
     setConfirmDeleteId(id);
@@ -50,14 +35,11 @@ function UsersList() {
   const handleConfirmDelete = async () => {
     if (!confirmDeleteId) return;
     try {
-      await deleteUser(confirmDeleteId);
-      setUsers((prev) => prev.filter((u) => u.id !== confirmDeleteId));
-      setTotal((prev) => prev - 1);
+      await deleteUser.mutateAsync(confirmDeleteId);
       setConfirmDeleteId(null);
       toast("User deleted", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to delete user";
-      setError(msg);
       toast(msg, "error");
     }
   };
@@ -114,56 +96,73 @@ function UsersList() {
         </Link>
       </div>
 
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-4 text-destructive">
+          {error instanceof Error ? error.message : "Failed to load users"}
+        </div>
+      )}
 
       {users.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-lg border p-12 text-center">
           <p className="text-lg text-muted-foreground">No users found</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[500px]">
-            <thead>
-              <tr className="border-b">
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Email
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Role
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Created
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="border-b last:border-0 hover:bg-muted/50">
-                  <td className="px-4 py-3 text-sm">{user.email}</td>
-                  <td className="px-4 py-3 text-sm capitalize">{user.role}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link to="/settings/users/$id" params={{ id: user.id }}>
-                        <Button variant="ghost" size="icon">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
+        <>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[500px]">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Role
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Created
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="border-b last:border-0 hover:bg-muted/50">
+                    <td className="px-4 py-3 text-sm">{user.email}</td>
+                    <td className="px-4 py-3 text-sm capitalize">{user.role}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link to="/settings/users/$id" params={{ id: user.id }}>
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(user.id)}
+                          disabled={deleteUser.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            limit={page.limit}
+            offset={page.offset}
+            total={total}
+            onChange={(limit, offset) => setPage({ limit, offset })}
+          />
+        </>
       )}
 
       <ConfirmDialog

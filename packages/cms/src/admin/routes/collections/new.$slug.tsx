@@ -6,8 +6,8 @@ import { FieldInput } from "@/components/field-input";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
-import { apiFetch, ApiError } from "@/lib/api";
-import { useCollection } from "@/lib/hooks";
+import { ApiError } from "@/lib/api";
+import { useCollection, useCreateEntry } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
@@ -21,9 +21,9 @@ function CreateEntry() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { collection, error: loadError, isLoading: loading } = useCollection(slug);
+  const createEntry = useCreateEntry(slug);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(loadError ?? null);
   const [locale, setLocale] = useState("en");
   const [initialized, setInitialized] = useState(false);
@@ -58,18 +58,15 @@ function CreateEntry() {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    setSaving(true);
+    const payload: Record<string, unknown> = {};
+    for (const f of collection.fields) {
+      const v = values[f.name];
+      if (v === "" || v === undefined) continue;
+      payload[f.name] = f.localized ? { [locale]: v } : v;
+    }
+
     try {
-      const payload: Record<string, unknown> = {};
-      for (const f of collection.fields) {
-        const v = values[f.name];
-        if (v === "" || v === undefined) continue;
-        payload[f.name] = f.localized ? { [locale]: v } : v;
-      }
-      await apiFetch(`/api/${slug}`, {
-        body: JSON.stringify(payload),
-        method: "POST",
-      });
+      await createEntry.mutateAsync(payload);
       toast("Entry created", "success");
       navigate({ params: { slug }, to: "/collections/$slug" });
     } catch (err) {
@@ -85,8 +82,6 @@ function CreateEntry() {
         setError(msg);
         toast(msg, "error");
       }
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -159,8 +154,8 @@ function CreateEntry() {
           />
         ))}
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Creating..." : "Create"}
+          <Button type="submit" disabled={createEntry.isPending}>
+            {createEntry.isPending ? "Creating..." : "Create"}
           </Button>
           <Link to="/collections/$slug" params={{ slug }}>
             <Button type="button" variant="outline">

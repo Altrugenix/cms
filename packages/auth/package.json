@@ -31,9 +31,6 @@
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.3"
   },
-  "devDependencies": {
-    "@types/bcryptjs": "^3.0.0"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Arche-CMS/arche-cms.git",

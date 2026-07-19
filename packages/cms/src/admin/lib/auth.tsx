@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 
+import { getApiUrl } from "@/lib/api";
+
 type User = {
   id: string;
   email: string;
@@ -17,8 +19,6 @@ type AuthState = {
 };
 
 const AuthContext = createContext<AuthState | null>(null);
-
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/auth/me`, {
+        const res = await fetch(`${getApiUrl()}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const refreshToken = localStorage.getItem("cms_refresh");
       if (refreshToken) {
         try {
-          const r = await fetch(`${API_URL}/api/auth/refresh`, {
+          const r = await fetch(`${getApiUrl()}/api/auth/refresh`, {
             body: JSON.stringify({ refreshToken }),
             headers: { "Content-Type": "application/json" },
             method: "POST",
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      const res = await fetch(`${getApiUrl()}/api/auth/login`, {
         body: JSON.stringify({ email, password }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
+      const res = await fetch(`${getApiUrl()}/api/auth/register`, {
         body: JSON.stringify({ email, password }),
         headers: { "Content-Type": "application/json" },
         method: "POST",

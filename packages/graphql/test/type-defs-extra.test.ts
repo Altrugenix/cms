@@ -1,4 +1,4 @@
-import type { CollectionDefinition } from "@arche-cms/types";
+import type { CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
 
 import { describe, it, expect } from "vitest";
 
@@ -105,5 +105,159 @@ describe("type-defs branch coverage", () => {
     };
     const sdl = generateTypeDefs([collection]);
     expect(sdl).toContain("count: Float");
+  });
+});
+
+describe("type-defs — component refs collection", () => {
+  it("generates placeholder component type for direct component field", () => {
+    const collection: CollectionDefinition = {
+      fields: [
+        { name: "title", type: "text" },
+        { component: "seo-widget", name: "seo", type: "component" },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const sdl = generateTypeDefs([collection]);
+    expect(sdl).toContain("type SeoWidget {");
+    expect(sdl).toContain("_: Boolean");
+  });
+
+  it("generates placeholder component type for component nested inside array", () => {
+    const collection: CollectionDefinition = {
+      fields: [
+        {
+          fields: [{ component: "hero-block", name: "hero", type: "component" }],
+          name: "blocks",
+          type: "array",
+        },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const sdl = generateTypeDefs([collection]);
+    expect(sdl).toContain("type HeroBlock {");
+    expect(sdl).toContain("_: Boolean");
+  });
+
+  it("generates placeholder component type for component nested inside object", () => {
+    const collection: CollectionDefinition = {
+      fields: [
+        {
+          fields: [{ component: "meta-info", name: "meta", type: "component" }],
+          name: "settings",
+          type: "object",
+        },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const sdl = generateTypeDefs([collection]);
+    expect(sdl).toContain("type MetaInfo {");
+  });
+
+  it("generates placeholder component type for component nested inside group", () => {
+    const collection: CollectionDefinition = {
+      fields: [
+        {
+          fields: [{ component: "address-fields", name: "address", type: "component" }],
+          name: "profile",
+          type: "group",
+        },
+      ],
+      labels: { plural: "Users", singular: "User" },
+      slug: "users",
+    };
+    const sdl = generateTypeDefs([collection]);
+    expect(sdl).toContain("type AddressFields {");
+  });
+
+  it("generates placeholder component type for component nested inside repeater", () => {
+    const collection: CollectionDefinition = {
+      fields: [
+        {
+          fields: [{ component: "slide-item", name: "slide", type: "component" }],
+          name: "slides",
+          type: "repeater",
+        },
+      ],
+      labels: { plural: "Carousels", singular: "Carousel" },
+      slug: "carousels",
+    };
+    const sdl = generateTypeDefs([collection]);
+    expect(sdl).toContain("type SlideItem {");
+  });
+
+  it("generates placeholder component type for component inside tabs", () => {
+    const collection: CollectionDefinition = {
+      fields: [
+        {
+          name: "content",
+          tabs: [
+            {
+              fields: [{ component: "seo-widget", name: "seo", type: "component" }],
+              label: "SEO",
+            },
+          ],
+          type: "tabs",
+        },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const sdl = generateTypeDefs([collection]);
+    expect(sdl).toContain("type SeoWidget {");
+    expect(sdl).toContain("_: Boolean");
+  });
+
+  it("does not duplicate component types for same slug", () => {
+    const collection: CollectionDefinition = {
+      fields: [
+        { component: "seo-widget", name: "seo1", type: "component" },
+        { component: "seo-widget", name: "seo2", type: "component" },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const sdl = generateTypeDefs([collection]);
+    const matches = sdl.match(/type SeoWidget \{/g);
+    expect(matches).toHaveLength(1);
+  });
+});
+
+describe("type-defs — globals edge cases", () => {
+  it("generates _: Boolean and _: String for empty globals array with no fields", () => {
+    const emptyGlobal: GlobalDefinition = {
+      fields: [],
+      label: "Empty",
+      slug: "empty",
+    };
+    const sdl = generateTypeDefs([], [emptyGlobal]);
+    expect(sdl).toContain("type Empty {");
+    expect(sdl).toContain("_: Boolean");
+    expect(sdl).toContain("input EmptyInput {");
+    expect(sdl).toContain("_: String");
+  });
+
+  it("generates _: Boolean for global with no fields in type", () => {
+    const global: GlobalDefinition = {
+      fields: [],
+      label: "Navigation",
+      slug: "navigation",
+    };
+    const sdl = generateTypeDefs([], [global]);
+    expect(sdl).toContain("type Navigation {");
+    expect(sdl).toContain("_: Boolean");
+  });
+
+  it("generates global query and mutation fields", () => {
+    const global: GlobalDefinition = {
+      fields: [{ name: "logo", type: "text" }],
+      label: "Brand",
+      slug: "brand",
+    };
+    const sdl = generateTypeDefs([], [global]);
+    expect(sdl).toContain("brand: Brand");
+    expect(sdl).toContain("updateBrand(data: BrandInput!): Brand!");
   });
 });

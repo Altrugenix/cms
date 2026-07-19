@@ -8,6 +8,8 @@ import {
   fetchWebhooks,
   fetchWebhook,
   fetchPlugins,
+  fetchUsers,
+  fetchRoles,
   saveSchema,
   createApiToken,
   deleteApiToken,
@@ -37,20 +39,20 @@ export function useGlobals() {
 }
 
 export function useCollection(slug: string) {
-  const { data: collections = [] } = useCollections();
+  const { data: collections = [], error, isLoading } = useCollections();
   return {
     collection: collections.find((c: CollectionMeta) => c.slug === slug),
-    error: null,
-    isLoading: false,
+    error,
+    isLoading,
   };
 }
 
 export function useGlobal(slug: string) {
-  const { data: globals = [] } = useGlobals();
+  const { data: globals = [], error, isLoading } = useGlobals();
   return {
-    error: null,
+    error,
     global: globals.find((g: GlobalMeta) => g.slug === slug),
-    isLoading: false,
+    isLoading,
   };
 }
 
@@ -110,18 +112,34 @@ export function useDashboardData(colSlugs: string[]) {
   });
 }
 
-export function useApiTokensList() {
+export function useApiTokensList(params?: { limit?: number; offset?: number }) {
   return useQuery({
-    queryFn: fetchApiTokens,
-    queryKey: ["api-tokens"],
+    queryFn: () => fetchApiTokens(params),
+    queryKey: ["api-tokens", params],
     staleTime: 30_000,
   });
 }
 
-export function useWebhooksList() {
+export function useUsersList(params?: { limit?: number; offset?: number }) {
   return useQuery({
-    queryFn: fetchWebhooks,
-    queryKey: ["webhooks"],
+    queryFn: () => fetchUsers(params),
+    queryKey: ["users", params],
+    staleTime: 30_000,
+  });
+}
+
+export function useRolesList(params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryFn: () => fetchRoles(params),
+    queryKey: ["roles", params],
+    staleTime: 30_000,
+  });
+}
+
+export function useWebhooksList(params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryFn: () => fetchWebhooks(params),
+    queryKey: ["webhooks", params],
     staleTime: 30_000,
   });
 }
@@ -153,6 +171,33 @@ export function useRelationEntries(to: string) {
       }));
     },
     queryKey: ["relation-entries", to],
+  });
+}
+
+export function useCollectionEntryCounts(slugs: string[]) {
+  return useQuery({
+    enabled: slugs.length > 0,
+    queryFn: async () => {
+      const counts = await Promise.all(
+        slugs.map(async (slug) => {
+          try {
+            const data = await apiFetch<{ total: number }>(`/api/${slug}`);
+            return { count: data.total, slug };
+          } catch {
+            return { count: 0, slug };
+          }
+        }),
+      );
+      return counts.reduce(
+        (acc, { count, slug }) => {
+          acc[slug] = count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+    },
+    queryKey: ["collection-entry-counts", slugs],
+    staleTime: 30_000,
   });
 }
 
@@ -196,26 +241,14 @@ export function useBulkDelete(slug: string) {
   });
 }
 
-export function usePublishEntry(slug: string) {
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await apiFetch(`/api/${slug}/${id}/publish`, { method: "POST" });
-    },
-  });
-}
-
-export function useUnpublishEntry(slug: string) {
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await apiFetch(`/api/${slug}/${id}/unpublish`, { method: "POST" });
-    },
-  });
-}
-
 export function useRestoreEntry(slug: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       await apiFetch(`/api/${slug}/${id}/restore`, { method: "POST" });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
   });
 }
@@ -289,6 +322,86 @@ export function useDeleteWebhook() {
   });
 }
 
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { deleteUser } = await import("@/lib/api");
+      return deleteUser(id);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useDeleteRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { deleteRole } = await import("@/lib/api");
+      return deleteRole(id);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}
+
+export function useCreateEntry(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      return apiFetch(`/api/${slug}`, {
+        body: JSON.stringify(data),
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+    },
+  });
+}
+
+export function useUpdateEntry(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ data, id }: { id: string; data: Record<string, unknown> }) => {
+      return apiFetch(`/api/${slug}/${id}`, {
+        body: JSON.stringify(data),
+        method: "PATCH",
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+    },
+  });
+}
+
+export function usePublishEntry(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiFetch(`/api/${slug}/${id}/publish`, { method: "POST" });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+    },
+  });
+}
+
+export function useUnpublishEntry(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiFetch(`/api/${slug}/${id}/unpublish`, { method: "POST" });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+    },
+  });
+}
+
 export function useSaveSchema() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -314,4 +427,6 @@ export {
   useCreateWebhook as useCreateWebhookMutation,
   useUpdateWebhook as useUpdateWebhookMutation,
   useDeleteWebhook as useDeleteWebhookMutation,
+  useDeleteUser as useDeleteUserMutation,
+  useDeleteRole as useDeleteRoleMutation,
 };

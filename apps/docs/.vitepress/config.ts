@@ -69,13 +69,6 @@ export default defineConfig({
           ],
           text: "API Reference",
         },
-        {
-          items: [
-            { link: "/reference/schema", text: "Schema API" },
-            { link: "/reference/plugin-api", text: "Plugin API" },
-          ],
-          text: "Package Reference",
-        },
       ],
     },
 

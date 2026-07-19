@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "exclude": ["files", "duplicates"],
+  "ignoreDependencies": ["@arche-cms/*", "@libsql/client", "drizzle-orm", "pg", "zod"],
+  "ignoreFiles": [
+    "**/test/**",
+    "**/__generated__/**",
+    "**/dist/**",
+    "packages/create-app/explicit/**",
+    "packages/create-app/my-cms/**",
+    "packages/create-app/my-value/**"
+  ],
+  "ignoreIssues": {
+    "packages/cms/src/admin/**": ["exports", "types"],
+    "packages/cms/src/server/schemas/**": ["exports", "types"],
+    "packages/cms/src/server/lib/**": ["exports", "types"],
+    "packages/graphql/src/types.ts": ["exports", "types"],
+    "packages/types/src/schema.ts": ["types"]
+  },
+  "workspaces": {
+    ".": {
+      "entry": [
+        "packages/*/src/index.ts",
+        "packages/cms/src/admin/main.tsx",
+        "apps/docs/.vitepress/config.ts"
+      ]
+    }
+  }
+}

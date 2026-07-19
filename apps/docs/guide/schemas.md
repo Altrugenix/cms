@@ -27,7 +27,7 @@ export default defineCollection({
 Globals are for singleton content (like site settings, navigation).
 
 ```ts
-import { defineGlobal, text, textarea, image } from "@arche-cms/schema";
+import { defineGlobal, text, textarea, media } from "@arche-cms/schema";
 
 export default defineGlobal({
   slug: "site-settings",
@@ -35,7 +35,7 @@ export default defineGlobal({
   fields: [
     text("siteName", { validation: { required: true } }),
     textarea("description"),
-    image("logo"),
+    media("logo"),
   ],
 });
 ```

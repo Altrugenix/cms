@@ -8,7 +8,7 @@
     "**/.vitepress/cache/**",
     "packages/cms/src/admin/**",
     "packages/generators/test/**",
-    "apps/test-cms/cms/collections/posts.ts",
+    "apps/playground/cms/collections/posts.ts",
     "packages/create-app/explicit/cms/collections/posts.ts",
     "packages/create-app/my-cms/cms/collections/posts.ts",
     "packages/create-app/my-value/cms/collections/posts.ts"

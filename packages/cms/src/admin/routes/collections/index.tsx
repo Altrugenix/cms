@@ -3,7 +3,7 @@ import { FileText, Plus } from "lucide-react";
 
 import { Skeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
-import { useCollections } from "@/lib/hooks";
+import { useCollections, useCollectionEntryCounts } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
@@ -14,6 +14,8 @@ export const Route = createRoute({
 
 function CollectionsList() {
   const { data: collections = [], error, isLoading: loading } = useCollections();
+  const slugs = collections.map((c) => c.slug);
+  const { data: counts = {} } = useCollectionEntryCounts(slugs);
 
   if (loading) {
     return (
@@ -42,7 +44,11 @@ function CollectionsList() {
   }
 
   if (error) {
-    return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
+    return (
+      <div className="rounded-md bg-destructive/10 p-4 text-destructive">
+        {error instanceof Error ? error.message : "Failed to load collections"}
+      </div>
+    );
   }
 
   return (
@@ -72,6 +78,7 @@ function CollectionsList() {
               <div>
                 <h3 className="font-semibold">{col.label}</h3>
                 <p className="text-sm text-muted-foreground">
+                  {counts[col.slug] ?? 0} entry{(counts[col.slug] ?? 0) !== 1 ? "s" : ""} ·{" "}
                   {col.fields.length} field{col.fields.length !== 1 ? "s" : ""}
                 </p>
               </div>

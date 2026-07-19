@@ -129,4 +129,4 @@ docker build -t my-cms .
 docker run -p 3000:3000 my-cms
 ```
 
-The built `Dockerfile` uses `node:22-alpine`, installs production dependencies, and runs `cms start`.
+The built `Dockerfile` uses `node:24-alpine`, installs production dependencies, and runs `cms start`.

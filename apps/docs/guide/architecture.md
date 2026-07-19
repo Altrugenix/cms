@@ -7,7 +7,8 @@ Arche CMS follows a **modular monolith** architecture — all packages live in a
 ```
 ┌─────────────────────────────────────────────┐
 │                  Admin UI                    │
-│          (React 19 + Vite + shadcn)         │
+│    (React 19 + Vite + TanStack Router       │
+│     + TanStack Query + shadcn/ui)           │
 ├─────────────────────────────────────────────┤
 │                 API Server                   │
 │         (Fastify + Mercurius GraphQL)        │
@@ -17,7 +18,7 @@ Arche CMS follows a **modular monolith** architecture — all packages live in a
 ├──────────┴──────────┴──────────┴────────────┤
 │            Plugin System                     │
 ├──────────┬──────────┬──────────┬────────────┤
-│ Schema   │ Database │ Permissions│ Storage  │
+│ Schema   │ Database │Permissions│ Storage  │
 │ Engine   │ Adapter  │  Engine   │ Adapter   │
 ├──────────┴──────────┴──────────┴────────────┤
 │              Core Framework                  │
@@ -25,6 +26,26 @@ Arche CMS follows a **modular monolith** architecture — all packages live in a
 │               Config, Logger)               │
 └─────────────────────────────────────────────┘
 ```
+
+## Packages
+
+| Package                  | Description                                             |
+| ------------------------ | ------------------------------------------------------- |
+| `@arche-cms/cms`         | CLI binary, server logic, admin panel                   |
+| `@arche-cms/core`        | DI container, event bus, lifecycle, logger              |
+| `@arche-cms/schema`      | Schema definition API (defineCollection, field helpers) |
+| `@arche-cms/database`    | Database adapter layer (Drizzle ORM)                    |
+| `@arche-cms/auth`        | JWT authentication service                              |
+| `@arche-cms/permissions` | RBAC / permissions engine                               |
+| `@arche-cms/storage`     | File storage adapters (local, S3, R2)                   |
+| `@arche-cms/rest-api`    | REST API route generator                                |
+| `@arche-cms/graphql`     | GraphQL schema generator                                |
+| `@arche-cms/validation`  | Zod validation schema generator                         |
+| `@arche-cms/generators`  | Code generation pipeline (types, routes, migrations)    |
+| `@arche-cms/plugins`     | Plugin system + official plugins                        |
+| `@arche-cms/create-app`  | Project scaffolding CLI                                 |
+| `@arche-cms/sdk`         | TypeScript client SDK                                   |
+| `@arche-cms/types`       | Shared TypeScript types                                 |
 
 ## Key Design Decisions
 
@@ -52,7 +73,7 @@ Client Request
       ▼
   Fastify Server
       │
-      ├── Auth Middleware (JWT verification)
+      ├── Auth Middleware (JWT verification + API key fallback)
       ├── Permissions Checker (RBAC)
       ├── Plugin Hooks (beforeRequest)
       │

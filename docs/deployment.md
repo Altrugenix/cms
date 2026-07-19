@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js >= 20
+- Node.js >= 22
 - Database (SQLite or PostgreSQL)
 - (Optional) S3-compatible storage
 
@@ -11,7 +11,7 @@
 ```bash
 # Clone and install
 git clone https://github.com/Arche-CMS/arche-cms.git
-cd cms
+cd arche-cms
 corepack enable
 pnpm install
 
@@ -34,34 +34,47 @@ pnpm build
 
 Config via environment variables:
 
-| Variable               | Default                 | Description                               |
-| ---------------------- | ----------------------- | ----------------------------------------- |
-| `PORT`                 | 3000                    | Server port                               |
-| `HOST`                 | 0.0.0.0                 | Server host                               |
-| `DB_URL`               | `file:./cms.db`         | Database URL                              |
-| `DB_ADAPTER`           | `sqlite`                | Database adapter (`sqlite` or `postgres`) |
-| `AUTH_SECRET`          | `dev-secret...`         | JWT signing secret (change in production) |
-| `AUTH_ACCESS_EXPIRES`  | `15m`                   | Access token TTL                          |
-| `AUTH_REFRESH_EXPIRES` | `7d`                    | Refresh token TTL                         |
-| `SCHEMA_DIR`           | `./cms`                 | Schema definition directory               |
-| `STORAGE_DIR`          | `./uploads`             | Upload directory                          |
-| `CORS_ORIGIN`          | `http://localhost:5173` | Allowed CORS origins                      |
-| `RATE_LIMIT_MAX`       | 100                     | Max requests per window                   |
-| `RATE_LIMIT_WINDOW`    | `1 minute`              | Rate limit window                         |
-| `LOG_LEVEL`            | `info`                  | Log level                                 |
+| Variable               | Default                 | Description                                 |
+| ---------------------- | ----------------------- | ------------------------------------------- |
+| `PORT`                 | 3000                    | Server port                                 |
+| `HOST`                 | 0.0.0.0                 | Server host                                 |
+| `DB_URL`               | `file:./cms.db`         | Database URL                                |
+| `DB_ADAPTER`           | `sqlite`                | Database adapter (`sqlite` or `postgres`)   |
+| `AUTH_SECRET`          | —                       | JWT signing secret (required in production) |
+| `AUTH_ACCESS_EXPIRES`  | `15m`                   | Access token TTL                            |
+| `AUTH_REFRESH_EXPIRES` | `7d`                    | Refresh token TTL                           |
+| `SCHEMA_DIR`           | `./cms`                 | Schema definition directory                 |
+| `STORAGE_DIR`          | `./uploads`             | Upload directory                            |
+| `CORS_ORIGIN`          | `http://localhost:5173` | Allowed CORS origins                        |
+| `RATE_LIMIT_MAX`       | 100                     | Max requests per window                     |
+| `RATE_LIMIT_WINDOW`    | `1 minute`              | Rate limit window                           |
+| `LOG_LEVEL`            | `info`                  | Log level                                   |
 
 ## Deployment Options
 
-### Docker
+### Docker (Scaffolded)
+
+The `@arche-cms/create-app` tool generates a multi-stage Dockerfile:
 
 ```dockerfile
-FROM node:20-alpine
+FROM node:24-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN corepack enable && pnpm install --frozen-lockfile
 RUN pnpm build
+
+FROM node:24-alpine
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/cms ./cms
 EXPOSE 3000
-CMD ["pnpm", "--filter", "@arche-cms/api-server", "start"]
+USER cms
+CMD ["npx", "cms", "start"]
 ```
 
 ### Docker Compose
@@ -101,17 +114,17 @@ volumes:
 pnpm build
 
 # Run migrations
-pnpm cms migrate --run
+npx cms migrate --run
 
 # Start server
-node packages/cms/api/dist/index.js
+npx cms start
 ```
 
 ### Using a Process Manager (PM2)
 
 ```bash
 npm install -g pm2
-pm2 start packages/cms/api/dist/index.js --name cms-api
+pm2 start "npx cms start" --name cms-api
 pm2 save
 pm2 startup
 ```

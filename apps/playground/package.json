@@ -1,19 +1,12 @@
 {
   "name": "@arche-cms/playground",
-  "version": "0.1.5",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "echo 'dev not configured yet'",
-    "build": "echo 'build not configured yet'",
-    "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
-    "test": "echo 'no tests'",
-    "clean": "rm -rf dist .next"
+    "dev": "cms dev",
+    "start": "cms start"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Arche-CMS/arche-cms.git",
-    "directory": "packages/playground"
+  "dependencies": {
+    "@arche-cms/cms": "workspace:*"
   }
 }

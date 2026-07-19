@@ -25,6 +25,10 @@
     "test:watch": "vitest",
     "clean": "rm -rf dist"
   },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "peerDependenciesMeta": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Arche-CMS/arche-cms.git",

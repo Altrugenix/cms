@@ -131,3 +131,43 @@ describe("ask() — undefined defaultVal branches", () => {
     expect(result).toBe("explicit");
   });
 });
+
+describe("main — line 215: catch handler", () => {
+  it("logs Error instances with err.message", async () => {
+    vi.resetModules();
+    process.argv = ["node", "test", "error-test"];
+    process.cwd = () => tmpDir;
+
+    vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    vi.doMock("node:fs", () => ({
+      existsSync: () => {
+        throw new Error("disk full");
+      },
+      mkdirSync: () => {},
+      writeFileSync: () => {},
+    }));
+
+    await import("../src/index.js").catch(() => {});
+
+    expect(console.error).toHaveBeenCalledWith("Error:", "disk full");
+  });
+
+  it("logs non-Error values with String(err)", async () => {
+    vi.resetModules();
+    process.argv = ["node", "test", "error-test-2"];
+    process.cwd = () => tmpDir;
+
+    vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    vi.doMock("node:fs", () => ({
+      existsSync: () => {
+        throw "something went wrong";
+      },
+      mkdirSync: () => {},
+      writeFileSync: () => {},
+    }));
+
+    await import("../src/index.js").catch(() => {});
+
+    expect(console.error).toHaveBeenCalledWith("Error:", "something went wrong");
+  });
+});

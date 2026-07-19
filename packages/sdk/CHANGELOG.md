@@ -1,5 +1,23 @@
 # @arche-cms/sdk
 
+## 0.2.0
+
+### Minor Changes
+
+- Implement full typed SDK client:
+  - `createClient()` factory with `baseUrl`, `token`, and custom `fetch` support
+  - Typed collection client: `list`, `get`, `create`, `update`, `delete`, `bulkDelete`, `publish`, `unpublish`, `restore`, `versions`, `restoreVersion`
+  - Typed global client: `get`, `upsert`
+  - Auth client: `login`, `register`, `refresh`, `forgotPassword`, `resetPassword`, `me`, `setupStatus`
+  - Media client: `list`, `get`, `upload`, `update`, `delete`, `getFile`, plus `folders` sub-client
+  - Users client: `list`, `get`, `create`, `update`, `delete`
+  - Roles client: `list`, `get`, `create`, `update`, `delete`
+  - Activity client: `list` with filter params
+  - Settings client: `apiTokens` (list, create, delete) and `webhooks` (list, get, create, update, delete)
+  - `ApiError` class with `status`, `message`, `details`, and `code`
+  - Request/response/error interceptors
+  - 55 tests covering all clients, error handling, auth headers, and URL construction
+
 ## 0.1.0
 
 ### Minor Changes

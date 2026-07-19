@@ -201,8 +201,15 @@ export type UserMeta = {
   updatedAt: string;
 };
 
-export async function fetchUsers(): Promise<{ data: UserMeta[]; total: number }> {
-  return apiFetch("/api/users");
+export async function fetchUsers(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: UserMeta[]; total: number; limit: number; offset: number }> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
+  if (params?.offset !== undefined) searchParams.set("offset", String(params.offset));
+  const qs = searchParams.toString();
+  return apiFetch(`/api/users${qs ? `?${qs}` : ""}`);
 }
 
 export type RoleMeta = {
@@ -214,8 +221,15 @@ export type RoleMeta = {
   updatedAt: string;
 };
 
-export async function fetchRoles(): Promise<{ data: RoleMeta[]; total: number }> {
-  return apiFetch("/api/roles");
+export async function fetchRoles(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: RoleMeta[]; total: number; limit: number; offset: number }> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
+  if (params?.offset !== undefined) searchParams.set("offset", String(params.offset));
+  const qs = searchParams.toString();
+  return apiFetch(`/api/roles${qs ? `?${qs}` : ""}`);
 }
 
 export async function createRole(data: {
@@ -280,14 +294,18 @@ export type MediaFolder = {
 
 export async function fetchMedia(
   folderId?: string | null,
-): Promise<{ data: MediaMeta[]; total: number }> {
-  let path = "/api/media";
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: MediaMeta[]; total: number; limit: number; offset: number }> {
+  const searchParams = new URLSearchParams();
   if (folderId) {
-    path += `?folderId=${folderId}`;
+    searchParams.set("folderId", folderId);
   } else if (folderId === null) {
-    path += "?folderId=null";
+    searchParams.set("folderId", "null");
   }
-  return apiFetch(path);
+  if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
+  if (params?.offset !== undefined) searchParams.set("offset", String(params.offset));
+  const qs = searchParams.toString();
+  return apiFetch(`/api/media${qs ? `?${qs}` : ""}`);
 }
 
 export async function uploadMedia(
@@ -382,8 +400,15 @@ export type ActivityEntry = {
   createdAt: string;
 };
 
-export async function fetchActivity(): Promise<{ data: ActivityEntry[]; total: number }> {
-  return apiFetch("/api/activity");
+export async function fetchActivity(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: ActivityEntry[]; total: number; limit: number; offset: number }> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
+  if (params?.offset !== undefined) searchParams.set("offset", String(params.offset));
+  const qs = searchParams.toString();
+  return apiFetch(`/api/activity${qs ? `?${qs}` : ""}`);
 }
 
 export type ApiTokenMeta = {
@@ -396,8 +421,15 @@ export type ApiTokenMeta = {
   lastUsedAt: string | null;
 };
 
-export async function fetchApiTokens(): Promise<{ data: ApiTokenMeta[]; total: number }> {
-  return apiFetch("/api/settings/api-tokens");
+export async function fetchApiTokens(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: ApiTokenMeta[]; total: number; limit: number; offset: number }> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
+  if (params?.offset !== undefined) searchParams.set("offset", String(params.offset));
+  const qs = searchParams.toString();
+  return apiFetch(`/api/settings/api-tokens${qs ? `?${qs}` : ""}`);
 }
 
 export async function createApiToken(data: {
@@ -426,8 +458,15 @@ export type WebhookMeta = {
   updatedAt: string;
 };
 
-export async function fetchWebhooks(): Promise<{ data: WebhookMeta[]; total: number }> {
-  return apiFetch("/api/settings/webhooks");
+export async function fetchWebhooks(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: WebhookMeta[]; total: number; limit: number; offset: number }> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
+  if (params?.offset !== undefined) searchParams.set("offset", String(params.offset));
+  const qs = searchParams.toString();
+  return apiFetch(`/api/settings/webhooks${qs ? `?${qs}` : ""}`);
 }
 
 export async function fetchWebhook(id: string): Promise<WebhookMeta> {

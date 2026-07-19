@@ -5,7 +5,7 @@
 The Arche CMS API is auto-generated from your schema definitions. Every collection and global produces corresponding REST endpoints and GraphQL operations.
 
 - **Base URL**: `http://localhost:3000`
-- **Auth**: JWT Bearer tokens via `Authorization: Bearer <token>` header
+- **Auth**: JWT Bearer tokens or API tokens via `Authorization: Bearer <token>` header
 - **Format**: JSON
 
 ---
@@ -14,14 +14,31 @@ The Arche CMS API is auto-generated from your schema definitions. Every collecti
 
 ### Authentication
 
-| Endpoint                    | Method | Description               |
-| --------------------------- | ------ | ------------------------- |
-| `/api/auth/register`        | POST   | Register a new user       |
-| `/api/auth/login`           | POST   | Login and get tokens      |
-| `/api/auth/refresh`         | POST   | Refresh access token      |
-| `/api/auth/me`              | GET    | Get current user          |
-| `/api/auth/forgot-password` | POST   | Request password reset    |
-| `/api/auth/reset-password`  | POST   | Reset password with token |
+Two authentication methods are supported:
+
+1. **JWT Token** — short-lived access tokens with refresh rotation
+2. **API Token** — long-lived, explicitly revocable tokens created in the admin UI
+
+```bash
+# JWT authentication
+curl -H "Authorization: Bearer <jwt-token>" http://localhost:3000/api/posts
+
+# API token authentication
+curl -H "Authorization: Bearer cms_<token>" http://localhost:3000/api/posts
+```
+
+#### Auth Endpoints
+
+| Endpoint                    | Method | Description               | Auth |
+| --------------------------- | ------ | ------------------------- | ---- |
+| `/api/auth/register`        | POST   | Register a new user       | No*  |
+| `/api/auth/login`           | POST   | Login and get tokens      | No   |
+| `/api/auth/refresh`         | POST   | Refresh access token      | No   |
+| `/api/auth/forgot-password` | POST   | Request password reset    | No   |
+| `/api/auth/reset-password`  | POST   | Reset password with token | No   |
+| `/api/auth/setup-status`    | GET    | Check if admin exists     | No   |
+
+*Register requires admin permissions unless it's the first user (setup guard).
 
 #### POST /api/auth/register
 
@@ -64,29 +81,41 @@ Response (200): Same format as register.
 
 Response (200): New `accessToken` and `refreshToken`.
 
-#### GET /api/auth/me
-
-Headers: `Authorization: Bearer <token>`
-
-Response (200):
-
-```json
-{
-  "id": "1",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "role": "admin"
-}
-```
-
 ### Collections
 
 For each collection (e.g. `posts`), the following routes are generated:
 
+| Method | Path                                                | Description                |
+| ------ | --------------------------------------------------- | -------------------------- |
+| GET    | `/api/{collection}`                                 | List entries               |
+| GET    | `/api/{collection}/:id`                             | Get single entry           |
+| POST   | `/api/{collection}`                                 | Create entry               |
+| PATCH  | `/api/{collection}/:id`                             | Update entry               |
+| DELETE | `/api/{collection}/:id`                             | Delete entry               |
+| POST   | `/api/{collection}/bulk-delete`                     | Bulk delete entries        |
+| POST   | `/api/{collection}/:id/publish`                     | Publish draft              |
+| POST   | `/api/{collection}/:id/unpublish`                   | Unpublish entry            |
+| POST   | `/api/{collection}/:id/restore`                     | Restore soft-deleted entry |
+| GET    | `/api/{collection}/:id/versions`                    | List versions              |
+| POST   | `/api/{collection}/:id/versions/:versionId/restore` | Restore version            |
+
+#### Query Parameters
+
+| Param          | Type    | Default          | Description                          |
+| -------------- | ------- | ---------------- | ------------------------------------ |
+| `limit`        | int     | 10               | Max results (max 100)                |
+| `offset`       | int     | 0                | Number to skip                       |
+| `sort`         | string  | `createdAt:desc` | Field and direction                  |
+| `select`       | string  | —                | Field selection (e.g., `title,body`) |
+| `populate`     | string  | —                | Relation population (e.g., `author`) |
+| `where[field]` | any     | —                | Filter by field value                |
+| `locale`       | string  | —                | Locale for localized content         |
+| `deleted`      | boolean | false            | Include soft-deleted entries         |
+
 #### List entries
 
 ```
-GET /api/posts?limit=10&offset=0&sort=createdAt:desc&filter={"status":"published"}
+GET /api/posts?limit=10&offset=0&sort=createdAt:desc&where[status]=published
 ```
 
 Response (200):
@@ -94,18 +123,11 @@ Response (200):
 ```json
 {
   "data": [{ "id": "1", "title": "Hello", "status": "published" }],
-  "meta": { "total": 42, "limit": 10, "offset": 0 }
+  "total": 42,
+  "limit": 10,
+  "offset": 0
 }
 ```
-
-Query parameters:
-
-| Param    | Type   | Default          | Description           |
-| -------- | ------ | ---------------- | --------------------- |
-| `limit`  | int    | 10               | Max results (max 100) |
-| `offset` | int    | 0                | Number to skip        |
-| `sort`   | string | `createdAt:desc` | Field and direction   |
-| `filter` | JSON   | —                | Field filters         |
 
 #### Get entry
 
@@ -173,28 +195,24 @@ Response (200):
 
 For each global (e.g. `site-settings`):
 
-```
-GET  /api/globals/site-settings
-POST /api/globals/site-settings
-```
+| Method | Path                 | Description        |
+| ------ | -------------------- | ------------------ |
+| GET    | `/api/globals/:slug` | Get global data    |
+| PUT    | `/api/globals/:slug` | Upsert global data |
 
-GET returns the current value. POST creates or updates (upsert).
+GET returns the current value. PUT creates or updates (upsert).
 
 ### Media
 
-| Endpoint                 | Method | Auth | Description           |
-| ------------------------ | ------ | ---- | --------------------- |
-| `/api/media`             | GET    | Yes  | List media files      |
-| `/api/media/:id`         | GET    | Yes  | Get media metadata    |
-| `/api/media`             | POST   | Yes  | Upload file           |
-| `/api/media/:id`         | PATCH  | Yes  | Update media metadata |
-| `/api/media/:id`         | DELETE | Yes  | Delete media          |
-| `/api/media/file/:id`    | GET    | Yes  | Serve file            |
-| `/api/media/folders`     | GET    | Yes  | List folders          |
-| `/api/media/folders/:id` | GET    | Yes  | Get folder            |
-| `/api/media/folders`     | POST   | Yes  | Create folder         |
-| `/api/media/folders/:id` | PATCH  | Yes  | Update folder         |
-| `/api/media/folders/:id` | DELETE | Yes  | Delete folder         |
+| Endpoint                 | Method | Auth | Description        |
+| ------------------------ | ------ | ---- | ------------------ |
+| `/api/media`             | GET    | Yes  | List media files   |
+| `/api/media/:id`         | GET    | Yes  | Get media metadata |
+| `/api/media`             | POST   | Yes  | Upload file        |
+| `/api/media/:id`         | DELETE | Yes  | Delete media       |
+| `/api/media/file/:id`    | GET    | Yes  | Serve file         |
+| `/api/media/folders`     | POST   | Yes  | Create folder      |
+| `/api/media/folders/:id` | DELETE | Yes  | Delete folder      |
 
 #### POST /api/media (Upload)
 
@@ -209,26 +227,46 @@ GET returns the current value. POST creates or updates (upsert).
 
 The `data` field is base64-encoded file content.
 
-### Meta Endpoints
+### Users
 
-| Endpoint           | Method | Description                              |
-| ------------------ | ------ | ---------------------------------------- |
-| `/api/collections` | GET    | List all collections with field metadata |
-| `/api/globals`     | GET    | List all globals with field metadata     |
-| `/api/schemas`     | GET    | List saved schema files                  |
-| `/api/roles`       | GET    | List roles                               |
-| `/api/roles/:id`   | GET    | Get role                                 |
-| `/api/roles`       | POST   | Create role                              |
-| `/api/roles/:id`   | PATCH  | Update role                              |
-| `/api/roles/:id`   | DELETE | Delete role                              |
-| `/api/users`       | GET    | List users                               |
-| `/api/users/:id`   | GET    | Get user                                 |
-| `/api/users/:id`   | PATCH  | Update user                              |
-| `/api/users/:id`   | DELETE | Delete user                              |
-| `/api/activity`    | GET    | Recent activity feed                     |
-| `/health`          | GET    | Health check                             |
-| `/docs`            | GET    | Swagger UI                               |
-| `/docs/json`       | GET    | OpenAPI spec (JSON)                      |
+| Method | Path             | Description |
+| ------ | ---------------- | ----------- |
+| GET    | `/api/users`     | List users  |
+| GET    | `/api/users/:id` | Get user    |
+| POST   | `/api/users`     | Create user |
+| PATCH  | `/api/users/:id` | Update user |
+| DELETE | `/api/users/:id` | Delete user |
+
+### Roles
+
+| Method | Path             | Description |
+| ------ | ---------------- | ----------- |
+| GET    | `/api/roles`     | List roles  |
+| GET    | `/api/roles/:id` | Get role    |
+| POST   | `/api/roles`     | Create role |
+| PATCH  | `/api/roles/:id` | Update role |
+| DELETE | `/api/roles/:id` | Delete role |
+
+### Settings
+
+| Method | Path                           | Description      |
+| ------ | ------------------------------ | ---------------- |
+| GET    | `/api/settings/api-tokens`     | List API tokens  |
+| POST   | `/api/settings/api-tokens`     | Create API token |
+| DELETE | `/api/settings/api-tokens/:id` | Revoke API token |
+| GET    | `/api/settings/webhooks`       | List webhooks    |
+| GET    | `/api/settings/webhooks/:id`   | Get webhook      |
+| POST   | `/api/settings/webhooks`       | Create webhook   |
+| PUT    | `/api/settings/webhooks/:id`   | Update webhook   |
+| DELETE | `/api/settings/webhooks/:id`   | Delete webhook   |
+
+### System
+
+| Method | Path            | Description  |
+| ------ | --------------- | ------------ |
+| GET    | `/health`       | Health check |
+| GET    | `/api/activity` | Activity log |
+| GET    | `/api/plugins`  | List plugins |
 
 ### Error Responses
 
@@ -272,19 +310,24 @@ For a collection `posts`, the following queries are generated:
 ```graphql
 # Get by ID
 query {
-  post(id: "1") {
+  getPost(id: "1") {
     id
     title
     status
   }
 }
 
-# List with filtering
+# List with pagination
 query {
-  postsList(limit: 10, offset: 0, sort: CREATEDAT_DESC) {
-    id
-    title
-    status
+  listPosts(limit: 10, offset: 0, sort: createdAt_desc) {
+    data {
+      id
+      title
+      status
+    }
+    total
+    limit
+    offset
   }
 }
 ```
@@ -294,7 +337,7 @@ query {
 ```graphql
 # Create
 mutation {
-  createPost(data: { title: "New Post", status: draft }) {
+  createPost(input: { title: "New Post", status: draft }) {
     id
     title
   }
@@ -302,7 +345,7 @@ mutation {
 
 # Update
 mutation {
-  updatePost(id: "1", data: { title: "Updated" }) {
+  updatePost(id: "1", input: { title: "Updated" }) {
     id
     title
   }
@@ -314,13 +357,34 @@ mutation {
 }
 ```
 
+### Globals
+
+Globals are also available via GraphQL:
+
+```graphql
+query {
+  getSiteSettings {
+    siteName
+    description
+  }
+}
+
+mutation {
+  updateSiteSettings(data: { siteName: "My Blog" }) {
+    siteName
+  }
+}
+```
+
 ### Filtering
 
 ```graphql
 query {
-  postsList(filter: { status: { equals: "published" }, title: { contains: "hello" } }) {
-    id
-    title
+  listPosts(filter: { status: { equals: "published" }, title: { contains: "hello" } }) {
+    data {
+      id
+      title
+    }
   }
 }
 ```
@@ -331,14 +395,14 @@ Supported filter operators: `equals`, `notEquals`, `contains`, `notContains`, `g
 
 ```graphql
 query {
-  postsList(sort: TITLE_ASC, limit: 10) {
-    id
-    title
+  listPosts(sort: title_asc, limit: 10) {
+    data {
+      id
+      title
+    }
   }
 }
 ```
-
-Sort values: `{FIELD}_ASC` / `{FIELD}_DESC` (e.g. `TITLE_ASC`, `CREATEDAT_DESC`).
 
 ### Relation Resolution
 
@@ -346,7 +410,7 @@ Relations are resolved automatically at the type level:
 
 ```graphql
 query {
-  post(id: "1") {
+  getPost(id: "1") {
     title
     author {
       id
@@ -359,17 +423,35 @@ query {
 
 ---
 
-## SDK
+## TypeScript SDK
 
-A TypeScript SDK is available at `@arche-cms/sdk`:
+The `@arche-cms/sdk` package provides a fully-typed HTTP client:
 
 ```ts
 import { createClient } from "@arche-cms/sdk";
 
 const client = createClient({
-  baseUrl: "https://cms.example.com",
-  token: "your-token",
+  baseUrl: "http://localhost:3000",
+  token: "your-jwt-or-api-token",
 });
 
-const posts = await client.posts.list({ limit: 10 });
+// List posts
+const posts = await client.collection("posts").list({ limit: 10 });
+
+// Get single post
+const post = await client.collection("posts").get("1");
+
+// Create post
+const created = await client.collection("posts").create({
+  title: "Hello World",
+  status: "published",
+});
+
+// Global settings
+const settings = await client.global("site-settings").get();
+
+// Auth
+const { token } = await client.auth.login("admin@example.com", "password");
 ```
+
+See the [SDK Reference](../apps/docs/reference/sdk.md) for full API documentation.

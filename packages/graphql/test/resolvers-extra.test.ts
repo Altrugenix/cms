@@ -470,6 +470,31 @@ describe("resolvers - filterLocale with primitive values", () => {
   });
 });
 
+describe("resolvers - update mutation validation failure (lines 202-206)", () => {
+  it("updatePosts rejects invalid data via safeParse", async () => {
+    const col: CollectionDefinition = {
+      fields: [
+        {
+          name: "status",
+          options: [
+            { label: "Draft", value: "draft" },
+            { label: "Published", value: "published" },
+          ],
+          type: "select",
+        },
+      ],
+      labels: { plural: "Posts", singular: "Post" },
+      slug: "posts",
+    };
+    const resolvers = generateResolvers([col], mockAdapter) as {
+      Mutation: Record<string, (...args: unknown[]) => unknown>;
+    };
+    await expect(
+      resolvers.Mutation.updatePosts({}, { data: { status: "invalid-status" }, id: "1" }),
+    ).rejects.toThrow("Validation failed");
+  });
+});
+
 describe("resolvers - filterLocale with nested arrays", () => {
   it("returns primitive localized field as-is when queried with locale", async () => {
     const adapter = {

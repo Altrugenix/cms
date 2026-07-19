@@ -17,12 +17,11 @@ Arche CMS is a file-based, developer-first headless CMS built as a modular monol
 
 ```
 apps/
-├── admin/          # React admin panel (Vite + TanStack Router)
-├── api/            # Fastify API server
-├── docs/           # Documentation site
+├── docs/           # VitePress documentation site
 └── playground/     # Dev playground
 
 packages/
+├── cms/            # CLI binary + server logic + admin panel
 ├── core/           # DI container, event bus, lifecycle, logger, config
 ├── schema/         # Schema definition API (defineCollection, field helpers)
 ├── types/          # Shared TypeScript types
@@ -34,12 +33,30 @@ packages/
 ├── graphql/        # GraphQL schema generator
 ├── validation/     # Zod validation schema generator
 ├── plugins/        # Plugin system + official plugins
-├── admin-ui/       # Shared admin UI components
-├── builder/        # Visual schema builder
 ├── generators/     # Code generation pipeline
+├── create-app/     # Project scaffolding CLI
 ├── sdk/            # TypeScript client SDK
-└── cli/            # CLI tools
 ```
+
+## Packages (17)
+
+| Package                  | Description                                        |
+| ------------------------ | -------------------------------------------------- |
+| `@arche-cms/cms`         | CLI binary, server logic, admin panel              |
+| `@arche-cms/core`        | DI container, event bus, lifecycle, logger, config |
+| `@arche-cms/schema`      | Schema definition API                              |
+| `@arche-cms/types`       | Shared TypeScript types                            |
+| `@arche-cms/database`    | Database adapters (SQLite, PostgreSQL)             |
+| `@arche-cms/auth`        | JWT authentication                                 |
+| `@arche-cms/permissions` | RBAC engine                                        |
+| `@arche-cms/storage`     | File storage (local, S3, R2)                       |
+| `@arche-cms/rest-api`    | REST API route generator                           |
+| `@arche-cms/graphql`     | GraphQL schema generator                           |
+| `@arche-cms/validation`  | Zod validation generator                           |
+| `@arche-cms/plugins`     | Plugin system + official plugins                   |
+| `@arche-cms/generators`  | Code generation pipeline                           |
+| `@arche-cms/create-app`  | Project scaffolding CLI                            |
+| `@arche-cms/sdk`         | TypeScript client SDK                              |
 
 ## Data Flow
 

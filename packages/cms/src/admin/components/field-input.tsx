@@ -409,7 +409,7 @@ function TextareaInput({
   );
 }
 
-/* ─── RichText (contentEditable with minimal toolbar) ─── */
+/* ─── RichText (contentEditable with toolbar) ─── */
 
 function RichTextInput({
   error,
@@ -424,10 +424,19 @@ function RichTextInput({
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [showLinkPopover, setShowLinkPopover] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const linkInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (showLinkPopover) {
+      setTimeout(() => linkInputRef.current?.focus(), 0);
+    }
+  }, [showLinkPopover]);
 
   const exec = (cmd: string, val?: string) => {
     document.execCommand(cmd, false, val);
@@ -447,6 +456,14 @@ function RichTextInput({
     e.preventDefault();
     const text = e.clipboardData.getData("text/plain");
     document.execCommand("insertText", false, text);
+  };
+
+  const insertLink = () => {
+    if (linkUrl.trim()) {
+      exec("createLink", linkUrl.trim());
+    }
+    setShowLinkPopover(false);
+    setLinkUrl("");
   };
 
   if (!isMounted) {
@@ -469,30 +486,96 @@ function RichTextInput({
       <FieldLabel field={field} />
       <div className="rounded-md border border-input overflow-hidden">
         <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/50 px-2 py-1.5">
-          <ToolbarBtn onClick={() => exec("bold")} title="Bold" label="B" />
-          <ToolbarBtn onClick={() => exec("italic")} title="Italic" label="I" className="italic" />
+          <ToolbarBtn onClick={() => exec("bold")} title="Bold (Ctrl+B)" label="B" />
+          <ToolbarBtn
+            onClick={() => exec("italic")}
+            title="Italic (Ctrl+I)"
+            label="I"
+            className="italic"
+          />
           <ToolbarBtn
             onClick={() => exec("underline")}
-            title="Underline"
+            title="Underline (Ctrl+U)"
             label="U"
             className="underline"
           />
+          <ToolbarBtn
+            onClick={() => exec("strikeThrough")}
+            title="Strikethrough"
+            label="S"
+            className="line-through"
+          />
           <span className="mx-1 h-5 w-px bg-border" />
-          <ToolbarBtn onClick={() => exec("formatBlock", "h2")} title="Heading" label="H" />
+          <ToolbarBtn onClick={() => exec("formatBlock", "h1")} title="Heading 1" label="H1" />
+          <ToolbarBtn onClick={() => exec("formatBlock", "h2")} title="Heading 2" label="H2" />
+          <ToolbarBtn onClick={() => exec("formatBlock", "h3")} title="Heading 3" label="H3" />
+          <ToolbarBtn onClick={() => exec("formatBlock", "h4")} title="Heading 4" label="H4" />
           <ToolbarBtn onClick={() => exec("formatBlock", "p")} title="Paragraph" label="P" />
           <span className="mx-1 h-5 w-px bg-border" />
           <ToolbarBtn onClick={() => exec("insertUnorderedList")} title="Bullet list" label="•" />
           <ToolbarBtn onClick={() => exec("insertOrderedList")} title="Numbered list" label="1." />
-          <span className="mx-1 h-5 w-px bg-border" />
           <ToolbarBtn
-            onClick={() => {
-              const url = prompt("Link URL:");
-              if (url) exec("createLink", url);
-            }}
-            title="Link"
-            label="🔗"
+            onClick={() => exec("formatBlock", "blockquote")}
+            title="Blockquote"
+            label={"\u201C"}
           />
-          <ToolbarBtn onClick={() => exec("removeFormat")} title="Remove format" label="×" />
+          <ToolbarBtn
+            onClick={() => exec("insertHorizontalRule")}
+            title="Horizontal rule"
+            label="—"
+          />
+          <span className="mx-1 h-5 w-px bg-border" />
+          <div className="relative">
+            <ToolbarBtn
+              onClick={() => setShowLinkPopover(!showLinkPopover)}
+              title="Insert link"
+              label="🔗"
+            />
+            {showLinkPopover && (
+              <div className="absolute left-0 top-full z-10 mt-1 w-64 rounded-md border bg-popover p-2 shadow-md">
+                <input
+                  ref={linkInputRef}
+                  type="url"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") insertLink();
+                    if (e.key === "Escape") {
+                      setShowLinkPopover(false);
+                      setLinkUrl("");
+                    }
+                  }}
+                  placeholder="https://example.com"
+                  className="w-full rounded border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <div className="mt-1.5 flex justify-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLinkPopover(false);
+                      setLinkUrl("");
+                    }}
+                    className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={insertLink}
+                    className="rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground hover:bg-primary/90"
+                  >
+                    Insert
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <ToolbarBtn onClick={() => exec("unlink")} title="Remove link" label="🔗×" />
+          <span className="mx-1 h-5 w-px bg-border" />
+          <ToolbarBtn onClick={() => exec("undo")} title="Undo" label="↩" />
+          <ToolbarBtn onClick={() => exec("redo")} title="Redo" label="↪" />
+          <span className="mx-1 h-5 w-px bg-border" />
+          <ToolbarBtn onClick={() => exec("removeFormat")} title="Remove formatting" label="×" />
         </div>
         <div
           ref={editorRef}
@@ -501,7 +584,7 @@ function RichTextInput({
           onInput={onInput}
           onPaste={onPaste}
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(strVal) }}
-          className="min-h-[200px] w-full bg-background px-3 py-2 text-sm focus-visible:outline-none [&_h2]:text-lg [&_h2]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-primary [&_a]:underline"
+          className="min-h-[200px] w-full bg-background px-3 py-2 text-sm focus-visible:outline-none [&_h1]:text-xl [&_h1]:font-bold [&_h2]:text-lg [&_h2]:font-bold [&_h3]:text-base [&_h3]:font-semibold [&_h4]:text-sm [&_h4]:font-semibold [&_blockquote]:border-l-4 [&_blockquote]:border-muted [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-primary [&_a]:underline [&_hr]:my-4 [&_hr]:border-muted"
         />
       </div>
       <FieldError error={error} />
@@ -897,9 +980,9 @@ function ComponentInput({
     }
   }, [schemaSlug]);
 
-  if (!compFields && schemaSlug) {
+  useEffect(() => {
     loadComponent();
-  }
+  }, [loadComponent]);
 
   if (!schemaSlug) {
     return (
@@ -1003,9 +1086,9 @@ function DynamicZoneInput({
     setLoading(false);
   }, [componentSlugs.join(",")]);
 
-  if (components === null && componentSlugs.length > 0) {
+  useEffect(() => {
     loadComponents();
-  }
+  }, [loadComponents]);
 
   const items = Array.isArray(value) ? value : [];
 

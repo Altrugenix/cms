@@ -388,4 +388,220 @@ describe("generateOpenApiSpec", () => {
     expect(parameters.find((p) => p.name === "offset")).toBeDefined();
     expect(parameters.find((p) => p.name === "sort")).toBeDefined();
   });
+
+  it("handles tabs field type with nested fields", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        {
+          name: "meta",
+          tabs: [
+            {
+              fields: [
+                { label: "SEO Title", name: "title", type: "text" },
+                { label: "SEO Description", name: "description", type: "textarea" },
+              ],
+              label: "SEO",
+            },
+          ],
+          type: "tabs",
+        },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const { routes } = createCollectionRouter(col, mockAdapter);
+    const spec = generateOpenApiSpec([col], routes);
+    const schemas = (spec.components as Record<string, unknown>).schemas as Record<string, unknown>;
+    const responseSchema = schemas.PagesResponse as Record<string, unknown>;
+    const properties = responseSchema.properties as Record<string, unknown>;
+    const meta = properties.meta as Record<string, unknown>;
+    expect(meta.type).toBe("object");
+    expect(meta.nullable).toBe(true);
+    const tabProps = meta.properties as Record<string, unknown>;
+    expect(tabProps.title).toBeDefined();
+    expect(tabProps.description).toBeDefined();
+  });
+
+  it("excludes password fields from response schema", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        { name: "title", type: "text" },
+        { name: "secret", type: "password" },
+      ],
+      labels: { plural: "Secrets", singular: "Secret" },
+      slug: "secrets",
+    };
+    const { routes } = createCollectionRouter(col, mockAdapter);
+    const spec = generateOpenApiSpec([col], routes);
+    const schemas = (spec.components as Record<string, unknown>).schemas as Record<string, unknown>;
+    const responseSchema = schemas.SecretsResponse as Record<string, unknown>;
+    const properties = responseSchema.properties as Record<string, unknown>;
+    expect(properties.title).toBeDefined();
+    expect(properties.secret).toBeUndefined();
+  });
+
+  it("makes password field nullable in PATCH requestBody (update mode)", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        { name: "title", type: "text" },
+        { name: "password", type: "password" },
+      ],
+      labels: { plural: "Users", singular: "User" },
+      slug: "users",
+    };
+    const routes = [
+      {
+        handler: async () => ({ body: {}, statusCode: 200 }),
+        method: "PATCH" as const,
+        operationId: "updateUsers",
+        path: "/api/users/:id",
+        summary: "Update a user",
+        tags: ["Users"],
+      },
+    ];
+    const spec = generateOpenApiSpec([col], routes);
+    const paths = spec.paths as Record<string, Record<string, unknown>>;
+    const patchOp = paths["/api/users/:id"].patch as Record<string, unknown>;
+    const requestBody = patchOp.requestBody as Record<string, unknown>;
+    const json = (requestBody.content as Record<string, Record<string, unknown>>)[
+      "application/json"
+    ];
+    const schema = json.schema as Record<string, unknown>;
+    const properties = schema.properties as Record<string, unknown>;
+    expect(properties.password).toBeDefined();
+    expect((properties.password as Record<string, unknown>).nullable).toBe(true);
+  });
+
+  it("handles radio field type with options", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        {
+          name: "priority",
+          options: [
+            { label: "Low", value: "low" },
+            { label: "High", value: "high" },
+          ],
+          type: "radio",
+        },
+      ],
+      labels: { plural: "Tasks", singular: "Task" },
+      slug: "tasks",
+    };
+    const { routes } = createCollectionRouter(col, mockAdapter);
+    const spec = generateOpenApiSpec([col], routes);
+    const schemas = (spec.components as Record<string, unknown>).schemas as Record<string, unknown>;
+    const responseSchema = schemas.TasksResponse as Record<string, unknown>;
+    const properties = responseSchema.properties as Record<string, unknown>;
+    const priority = properties.priority as Record<string, unknown>;
+    expect(priority.type).toBe("string");
+    expect(priority.enum).toEqual(["low", "high"]);
+    expect(priority.nullable).toBe(true);
+  });
+
+  it("generates requestBody for POST route matching a collection", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        { name: "title", type: "text", validation: { required: true } },
+        { name: "secret", type: "password" },
+      ],
+      labels: { plural: "Articles", singular: "Article" },
+      slug: "articles",
+    };
+    const routes = [
+      {
+        handler: async () => ({ body: {}, statusCode: 201 }),
+        method: "POST" as const,
+        operationId: "createArticles",
+        path: "/api/articles",
+        summary: "Create an article",
+        tags: ["Articles"],
+      },
+    ];
+    const spec = generateOpenApiSpec([col], routes);
+    const paths = spec.paths as Record<string, Record<string, unknown>>;
+    const postOp = paths["/api/articles"].post as Record<string, unknown>;
+    expect(postOp.requestBody).toBeDefined();
+    const responses = postOp.responses as Record<string, unknown>;
+    expect(responses["201"]).toBeDefined();
+    expect(responses["409"]).toBeDefined();
+    const requestBody = postOp.requestBody as Record<string, unknown>;
+    const json = (requestBody.content as Record<string, Record<string, unknown>>)[
+      "application/json"
+    ];
+    const schema = json.schema as Record<string, unknown>;
+    const properties = schema.properties as Record<string, unknown>;
+    expect(properties.title).toBeDefined();
+    expect(properties.secret).toBeUndefined();
+  });
+
+  it("handles tabs field with undefined tabs array (falls back to empty)", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        {
+          name: "meta",
+          tabs: undefined as unknown as Array<{ label: string; fields: FieldDefinition[] }>,
+          type: "tabs",
+        },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const { routes } = createCollectionRouter(col, mockAdapter);
+    const spec = generateOpenApiSpec([col], routes);
+    const schemas = (spec.components as Record<string, unknown>).schemas as Record<string, unknown>;
+    const responseSchema = schemas.PagesResponse as Record<string, unknown>;
+    const properties = responseSchema.properties as Record<string, unknown>;
+    const meta = properties.meta as Record<string, unknown>;
+    expect(meta.type).toBe("object");
+    expect(meta.properties).toEqual({});
+  });
+
+  it("handles select options as plain strings", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        {
+          name: "status",
+          options: ["draft", "published"] as unknown as Array<{ label: string; value: string }>,
+          type: "select",
+        },
+      ],
+      labels: { plural: "Items", singular: "Item" },
+      slug: "items",
+    };
+    const { routes } = createCollectionRouter(col, mockAdapter);
+    const spec = generateOpenApiSpec([col], routes);
+    const schemas = (spec.components as Record<string, unknown>).schemas as Record<string, unknown>;
+    const responseSchema = schemas.ItemsResponse as Record<string, unknown>;
+    const properties = responseSchema.properties as Record<string, unknown>;
+    const status = properties.status as Record<string, unknown>;
+    expect(status.type).toBe("string");
+    expect(status.enum).toEqual(["draft", "published"]);
+  });
+
+  it("uses field name as description fallback when label is undefined", () => {
+    const col: CollectionDefinition = {
+      fields: [
+        {
+          name: "meta",
+          tabs: [
+            {
+              fields: [{ name: "desc", type: "text" }],
+              label: "Info",
+            },
+          ],
+          type: "tabs",
+        },
+      ],
+      labels: { plural: "Pages", singular: "Page" },
+      slug: "pages",
+    };
+    const { routes } = createCollectionRouter(col, mockAdapter);
+    const spec = generateOpenApiSpec([col], routes);
+    const schemas = (spec.components as Record<string, unknown>).schemas as Record<string, unknown>;
+    const responseSchema = schemas.PagesResponse as Record<string, unknown>;
+    const properties = responseSchema.properties as Record<string, unknown>;
+    const meta = properties.meta as Record<string, unknown>;
+    const tabProps = meta.properties as Record<string, Record<string, unknown>>;
+    expect(tabProps.desc.description).toBe("desc");
+  });
 });

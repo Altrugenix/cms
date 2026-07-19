@@ -6,8 +6,14 @@ import { FieldInput } from "@/components/field-input";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
-import { apiFetch, ApiError } from "@/lib/api";
-import { useCollection, useEntry } from "@/lib/hooks";
+import { ApiError } from "@/lib/api";
+import {
+  useCollection,
+  useEntry,
+  useUpdateEntry,
+  usePublishEntry,
+  useUnpublishEntry,
+} from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
@@ -21,14 +27,15 @@ function EditEntry() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { collection, isLoading: colLoading } = useCollection(slug);
+  const [locale, setLocale] = useState("en");
   const { data: entry, error: entryError, isLoading: entryLoading } = useEntry(slug, id, locale);
+  const updateEntry = useUpdateEntry(slug);
+  const publishEntry = usePublishEntry(slug);
+  const unpublishEntry = useUnpublishEntry(slug);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [entryStatus, setEntryStatus] = useState<string>("");
-  const [publishing, setPublishing] = useState(false);
-  const [locale, setLocale] = useState("en");
   const [initialized, setInitialized] = useState(false);
 
   if (collection && entry && !initialized) {
@@ -59,18 +66,15 @@ function EditEntry() {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    setSaving(true);
+    const payload: Record<string, unknown> = {};
+    for (const f of collection.fields) {
+      const v = values[f.name];
+      if (v === "" || v === undefined) continue;
+      payload[f.name] = f.localized ? { [locale]: v } : v;
+    }
+
     try {
-      const payload: Record<string, unknown> = {};
-      for (const f of collection.fields) {
-        const v = values[f.name];
-        if (v === "" || v === undefined) continue;
-        payload[f.name] = f.localized ? { [locale]: v } : v;
-      }
-      await apiFetch(`/api/${slug}/${id}`, {
-        body: JSON.stringify(payload),
-        method: "PATCH",
-      });
+      await updateEntry.mutateAsync({ data: payload, id });
       toast("Entry saved", "success");
       navigate({ params: { slug }, to: "/collections/$slug" });
     } catch (err) {
@@ -86,34 +90,26 @@ function EditEntry() {
         setFormError(msg);
         toast(msg, "error");
       }
-    } finally {
-      setSaving(false);
     }
   };
 
   const handlePublish = async () => {
-    setPublishing(true);
     try {
-      await apiFetch(`/api/${slug}/${id}/publish`, { method: "POST" });
+      await publishEntry.mutateAsync(id);
       setEntryStatus("published");
       toast("Entry published", "success");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to publish entry", "error");
-    } finally {
-      setPublishing(false);
     }
   };
 
   const handleUnpublish = async () => {
-    setPublishing(true);
     try {
-      await apiFetch(`/api/${slug}/${id}/unpublish`, { method: "POST" });
+      await unpublishEntry.mutateAsync(id);
       setEntryStatus("draft");
       toast("Entry unpublished", "success");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to unpublish entry", "error");
-    } finally {
-      setPublishing(false);
     }
   };
 
@@ -201,8 +197,8 @@ function EditEntry() {
           />
         ))}
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
+          <Button type="submit" disabled={updateEntry.isPending}>
+            {updateEntry.isPending ? "Saving..." : "Save Changes"}
           </Button>
           {collection.versions?.drafts && (
             <>
@@ -210,19 +206,19 @@ function EditEntry() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={publishing}
+                  disabled={unpublishEntry.isPending}
                   onClick={handleUnpublish}
                 >
-                  {publishing ? "Unpublishing..." : "Unpublish"}
+                  {unpublishEntry.isPending ? "Unpublishing..." : "Unpublish"}
                 </Button>
               ) : (
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={publishing}
+                  disabled={publishEntry.isPending}
                   onClick={handlePublish}
                 >
-                  {publishing ? "Publishing..." : "Publish"}
+                  {publishEntry.isPending ? "Publishing..." : "Publish"}
                 </Button>
               )}
             </>

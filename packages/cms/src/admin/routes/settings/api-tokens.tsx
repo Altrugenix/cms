@@ -3,6 +3,7 @@ import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Pagination } from "@/components/pagination";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
@@ -18,9 +19,12 @@ export const Route = createRoute({
   path: "api-tokens",
 });
 
+const PAGE_SIZE = 20;
+
 function ApiTokensPage() {
   const { toast } = useToast();
-  const { data: tokensData, error, isLoading: loading } = useApiTokensList();
+  const [page, setPage] = useState({ limit: PAGE_SIZE, offset: 0 });
+  const { data: tokensData, error, isLoading: loading } = useApiTokensList(page);
   const createApiToken = useCreateApiToken();
   const deleteApiToken = useDeleteApiToken();
   const tokens: ApiTokenMeta[] = tokensData?.data ?? [];
@@ -211,57 +215,65 @@ function ApiTokensPage() {
           </Button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b">
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Name
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Token
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Created
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Last Used
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tokens.map((token) => (
-                <tr key={token.id} className="border-b last:border-0 hover:bg-muted/50">
-                  <td className="px-4 py-3">
-                    <div className="text-sm font-medium">{token.name}</div>
-                    {token.description && (
-                      <div className="text-xs text-muted-foreground">{token.description}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <code className="text-sm font-mono text-muted-foreground">
-                      …{token.lastFour}
-                    </code>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {new Date(token.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleDateString() : "Never"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(token.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
+        <>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[600px]">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Token
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Created
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Last Used
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {tokens.map((token) => (
+                  <tr key={token.id} className="border-b last:border-0 hover:bg-muted/50">
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-medium">{token.name}</div>
+                      {token.description && (
+                        <div className="text-xs text-muted-foreground">{token.description}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <code className="text-sm font-mono text-muted-foreground">
+                        …{token.lastFour}
+                      </code>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {new Date(token.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleDateString() : "Never"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(token.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            limit={page.limit}
+            offset={page.offset}
+            total={total}
+            onChange={(limit, offset) => setPage({ limit, offset })}
+          />
+        </>
       )}
 
       <ConfirmDialog

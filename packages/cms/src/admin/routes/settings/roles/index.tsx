@@ -1,12 +1,13 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { Pencil, Trash2, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Pagination } from "@/components/pagination";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
-import { fetchRoles, deleteRole, type RoleMeta } from "@/lib/api";
+import { useRolesList, useDeleteRole } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
@@ -15,33 +16,17 @@ export const Route = createRoute({
   path: "roles",
 });
 
+const PAGE_SIZE = 20;
+
 function RolesList() {
   const { toast } = useToast();
-  const [roles, setRoles] = useState<RoleMeta[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState({ limit: PAGE_SIZE, offset: 0 });
+  const { data, error, isLoading: loading } = useRolesList(page);
+  const deleteRole = useDeleteRole();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await fetchRoles();
-        if (cancelled) return;
-        setRoles(data.data);
-        setTotal(data.total);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load roles");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const roles = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   const handleDelete = (id: string) => {
     setConfirmDeleteId(id);
@@ -50,14 +35,11 @@ function RolesList() {
   const handleConfirmDelete = async () => {
     if (!confirmDeleteId) return;
     try {
-      await deleteRole(confirmDeleteId);
-      setRoles((prev) => prev.filter((r) => r.id !== confirmDeleteId));
-      setTotal((prev) => prev - 1);
+      await deleteRole.mutateAsync(confirmDeleteId);
       setConfirmDeleteId(null);
       toast("Role deleted", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to delete role";
-      setError(msg);
       toast(msg, "error");
     }
   };
@@ -116,7 +98,11 @@ function RolesList() {
         </Link>
       </div>
 
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-4 text-destructive">
+          {error instanceof Error ? error.message : "Failed to load roles"}
+        </div>
+      )}
 
       {roles.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-lg border p-12 text-center">
@@ -128,49 +114,62 @@ function RolesList() {
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[500px]">
-            <thead>
-              <tr className="border-b">
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Name
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Description
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                  Permissions
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {roles.map((role) => (
-                <tr key={role.id} className="border-b last:border-0 hover:bg-muted/50">
-                  <td className="px-4 py-3 text-sm font-medium capitalize">{role.name}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{role.description}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {role.permissions.length} permission{role.permissions.length === 1 ? "" : "s"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link to="/settings/roles/$id" params={{ id: role.id }}>
-                        <Button variant="ghost" size="icon">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(role.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
+        <>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[500px]">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Description
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Permissions
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {roles.map((role) => (
+                  <tr key={role.id} className="border-b last:border-0 hover:bg-muted/50">
+                    <td className="px-4 py-3 text-sm font-medium capitalize">{role.name}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{role.description}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {role.permissions.length} permission{role.permissions.length === 1 ? "" : "s"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link to="/settings/roles/$id" params={{ id: role.id }}>
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(role.id)}
+                          disabled={deleteRole.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            limit={page.limit}
+            offset={page.offset}
+            total={total}
+            onChange={(limit, offset) => setPage({ limit, offset })}
+          />
+        </>
       )}
 
       <ConfirmDialog

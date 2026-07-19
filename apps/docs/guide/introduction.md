@@ -13,27 +13,27 @@ Arche CMS is a **file-based, developer-first, open-source headless CMS**. Schema
 
 | Feature           | Description                                                                  |
 | ----------------- | ---------------------------------------------------------------------------- |
-| Schema Definition | 30 field types, collections, globals, components                             |
+| Schema Definition | 29 field types, collections, globals, components                             |
 | REST API          | Auto-generated CRUD with filtering, sorting, pagination, relation population |
 | GraphQL API       | Auto-generated queries and mutations with GraphiQL                           |
 | OpenAPI Spec      | Auto-generated OpenAPI 3.1 with Swagger UI                                   |
-| TypeScript SDK    | Auto-generated typed client                                                  |
+| TypeScript SDK    | Auto-generated typed client for external integrations                        |
 | Validation        | Auto-generated Zod schemas from field definitions                            |
 | Database          | SQLite, PostgreSQL, MySQL, Turso, Cloudflare D1                              |
 | Storage           | Local, S3-compatible, Cloudflare R2                                          |
-| Auth              | JWT with access/refresh tokens, email/password, forgot/reset                 |
+| Auth              | JWT with access/refresh tokens, API tokens, forgot/reset password            |
 | Permissions       | RBAC with field-level access control                                         |
 | Plugins           | SEO, Audit Log, Webhooks, Search, Comments, Analytics                        |
-| Admin UI          | React 19 dashboard, collection views, media library, schema builder          |
-| CLI               | dev, build, generate, migrate, typegen, lint, doctor                         |
+| Admin UI          | React 19 dashboard with TanStack Router, TanStack Query, shadcn/ui           |
+| CLI               | dev, build, start, generate, migrate, typegen, lint, doctor                  |
 
 ## Tech Stack
 
-- **Runtime**: Node.js 20+
+- **Runtime**: Node.js 22+
 - **Language**: TypeScript (strict mode)
 - **API Server**: Fastify with Mercurius (GraphQL)
 - **Database**: Drizzle ORM with adapter pattern
-- **Admin UI**: React 19, Vite, TanStack Router, Tailwind CSS v4, shadcn/ui
+- **Admin UI**: React 19, Vite, TanStack Router, TanStack Query, Tailwind CSS v4, shadcn/ui
 - **Validation**: Zod
 - **Auth**: JWT (jose)
 - **Package Manager**: pnpm

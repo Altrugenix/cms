@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-- Node.js >= 20
+- Node.js >= 22
 - pnpm (`corepack enable`)
 - Git
 
@@ -12,7 +12,7 @@
 
 ```bash
 git clone https://github.com/Arche-CMS/arche-cms.git
-cd cms
+cd arche-cms
 corepack enable
 pnpm install
 ```
@@ -37,7 +37,7 @@ pnpm lint && pnpm typecheck && pnpm test
 
 ```
 apps/           # Application packages (docs, playground)
-packages/       # Library packages (core, schema, database, plugins, etc.)
+packages/       # Library packages (cms, core, schema, database, plugins, etc.)
 docs/           # Documentation
 cms/            # CMS schema definitions (user-created)
 ```
@@ -108,10 +108,11 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
 4. **Type safety** — leverage TypeScript fully, avoid `any`
 5. **Documentation** — every package has a README, every feature is documented
 
-## Packages
+## Packages (17)
 
 | Package                  | Description                                        |
 | ------------------------ | -------------------------------------------------- |
+| `@arche-cms/cms`         | CLI binary, server logic, admin panel              |
 | `@arche-cms/core`        | DI container, event bus, lifecycle, logger, config |
 | `@arche-cms/schema`      | Schema definition API                              |
 | `@arche-cms/types`       | Shared TypeScript types                            |
@@ -124,6 +125,5 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
 | `@arche-cms/validation`  | Zod validation generator                           |
 | `@arche-cms/plugins`     | Plugin system + official plugins                   |
 | `@arche-cms/generators`  | Code generation pipeline                           |
-| `@arche-cms/cms`         | CLI tools + server                                 |
-| `@arche-cms/admin-ui`    | Shared admin UI components                         |
+| `@arche-cms/create-app`  | Project scaffolding CLI                            |
 | `@arche-cms/sdk`         | TypeScript client SDK                              |

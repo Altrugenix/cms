@@ -1,6 +1,6 @@
 # Field Types
 
-Arche CMS provides 30 field types covering a wide range of content modeling needs.
+Arche CMS provides 29 field types covering a wide range of content modeling needs.
 
 ## Text & Rich Content
 
@@ -30,11 +30,10 @@ Arche CMS provides 30 field types covering a wide range of content modeling need
 
 ## Media & Files
 
-| Field    | Import              | Description               |
-| -------- | ------------------- | ------------------------- |
-| `media`  | `@arche-cms/schema` | Single media/file upload  |
-| `upload` | `@arche-cms/schema` | Multiple file upload      |
-| `image`  | `@arche-cms/schema` | Image picker with preview |
+| Field    | Import              | Description              |
+| -------- | ------------------- | ------------------------ |
+| `media`  | `@arche-cms/schema` | Single media/file upload |
+| `upload` | `@arche-cms/schema` | Multiple file upload     |
 
 ## Choice Fields
 
@@ -52,15 +51,15 @@ Arche CMS provides 30 field types covering a wide range of content modeling need
 
 ## Structured
 
-| Field         | Import              | Description                                      |
-| ------------- | ------------------- | ------------------------------------------------ |
-| `component`   | `@arche-cms/schema` | Reusable component instance                      |
-| `dynamicZone` | `@arche-cms/schema` | Dynamic zone (choose one of multiple components) |
-| `array`       | `@arche-cms/schema` | Array of sub-fields                              |
-| `object`      | `@arche-cms/schema` | Grouped sub-fields                               |
-| `group`       | `@arche-cms/schema` | Named field group                                |
-| `tabs`        | `@arche-cms/schema` | Tabbed interface for organizing fields           |
-| `repeater`    | `@arche-cms/schema` | Repeatable set of fields                         |
+| Field            | Import              | Description                                      |
+| ---------------- | ------------------- | ------------------------------------------------ |
+| `componentField` | `@arche-cms/schema` | Reusable component instance                      |
+| `dynamicZone`    | `@arche-cms/schema` | Dynamic zone (choose one of multiple components) |
+| `arrayField`     | `@arche-cms/schema` | Array of sub-fields                              |
+| `objectField`    | `@arche-cms/schema` | Grouped sub-fields                               |
+| `groupField`     | `@arche-cms/schema` | Named field group                                |
+| `tabsField`      | `@arche-cms/schema` | Tabbed interface for organizing fields           |
+| `repeater`       | `@arche-cms/schema` | Repeatable set of fields                         |
 
 ## Utility
 
@@ -112,20 +111,21 @@ import {
   code,
   color,
   media,
+  upload,
   select,
   multiSelect,
   radio,
   checkbox,
   relation,
-  component,
+  componentField,
   dynamicZone,
-  array,
-  object,
-  group,
+  arrayField,
+  objectField,
+  groupField,
+  tabsField,
   repeater,
   slug,
   password,
-  tabs,
 } from "@arche-cms/schema";
 
 export default defineCollection({
@@ -151,12 +151,12 @@ export default defineCollection({
     radio("layout", { options: ["default", "full-width", "compact"] }),
     checkbox("showInMenu"),
     relation("author", { to: "users" }),
-    component("seo", { component: "seo" }),
+    componentField("seo", { component: "seo" }),
     dynamicZone("blocks", { components: ["hero", "cta", "faq"] }),
-    array("links", { fields: [text("label"), url("url")] }),
-    object("settings", { fields: [text("theme"), boolean("darkMode")] }),
-    group("social", { fields: [url("twitter"), url("github")] }),
-    tabs("details", { tabs: [{ label: "Content", fields: ["title", "body"] }] }),
+    arrayField("links", { fields: [text("label"), url("url")] }),
+    objectField("settings", { fields: [text("theme"), boolean("darkMode")] }),
+    groupField("social", { fields: [url("twitter"), url("github")] }),
+    tabsField("details", { tabs: [{ label: "Content", fields: ["title", "body"] }] }),
     repeater("faq", { fields: [text("question"), textarea("answer")] }),
     slug("slug", { from: "title" }),
     password("secretKey"),

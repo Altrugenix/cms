@@ -1,7 +1,7 @@
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { SchemaLoader } from "../src/loader.js";
 
@@ -215,5 +215,24 @@ describe("SchemaLoader", () => {
 
     expect(result.components.has("button")).toBe(true);
     expect(result.components.size).toBe(1);
+  });
+
+  it("logs non-ENOENT errors during file import", async () => {
+    await writeSchema(
+      resolve(testDir, "collections"),
+      "broken.ts",
+      `throw new Error("bad module")`,
+    );
+
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const loader = new SchemaLoader({ baseDir: testDir });
+    const result = await loader.load();
+
+    expect(result.collections.size).toBe(0);
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy.mock.calls[0][0]).toContain("[SchemaLoader] Error loading collections");
+
+    spy.mockRestore();
   });
 });

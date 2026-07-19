@@ -5,14 +5,14 @@ We welcome contributions! Here's how to get started:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run `yarn lint` and `yarn test`
+4. Run `pnpm lint` and `pnpm test`
 5. Submit a pull request
 
 ## Development Setup
 
 ```bash
-yarn install
-yarn dev
+pnpm install
+pnpm dev
 ```
 
 ## Commit Convention

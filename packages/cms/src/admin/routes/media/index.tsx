@@ -12,6 +12,7 @@ import {
 import { useEffect, useState, useRef, useCallback } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Pagination } from "@/components/pagination";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
@@ -56,14 +57,15 @@ function MediaLibrary() {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const newFolderInputRef = useRef<HTMLInputElement>(null);
+  const [page, setPage] = useState({ limit: 20, offset: 0 });
 
-  const load = useCallback(async (folderId: number | null) => {
+  const load = useCallback(async (folderId: number | null, limit: number, offset: number) => {
     setLoading(true);
     setError(null);
     const folderIdStr = folderId != null ? String(folderId) : null;
     try {
       const [mediaData, folderData] = await Promise.all([
-        fetchMedia(folderIdStr),
+        fetchMedia(folderIdStr, { limit, offset }),
         fetchFolders(folderIdStr),
       ]);
       setMedia(mediaData.data);
@@ -77,23 +79,26 @@ function MediaLibrary() {
   }, []);
 
   useEffect(() => {
-    load(currentFolderId);
-  }, [currentFolderId, load]);
+    load(currentFolderId, page.limit, page.offset);
+  }, [currentFolderId, page, load]);
 
   const navigateInto = (folder: MediaFolder) => {
     setFolderPath((prev) => [...prev, { id: folder.id, name: folder.name }]);
     setCurrentFolderId(folder.id);
+    setPage((p) => ({ ...p, offset: 0 }));
   };
 
   const navigateBreadcrumb = (index: number) => {
     const target = folderPath[index];
     setFolderPath(folderPath.slice(0, index));
     setCurrentFolderId(target?.id ?? null);
+    setPage((p) => ({ ...p, offset: 0 }));
   };
 
   const navigateRoot = () => {
     setFolderPath([]);
     setCurrentFolderId(null);
+    setPage((p) => ({ ...p, offset: 0 }));
   };
 
   const handleCreateFolder = async () => {
@@ -107,7 +112,7 @@ function MediaLibrary() {
       setNewFolderName("");
       setShowNewFolder(false);
       toast("Folder created", "success");
-      await load(currentFolderId);
+      setPage((p) => ({ ...p, offset: 0 }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create folder";
       toast(msg, "error");
@@ -130,9 +135,8 @@ function MediaLibrary() {
           failCount++;
         }
       }
-      if (items.length > 0) {
-        setMedia((prev) => [...items, ...prev]);
-        setTotal((prev) => prev + items.length);
+      if (successCount > 0) {
+        setPage((p) => ({ ...p, offset: 0 }));
       }
       if (successCount > 0) {
         toast(`${successCount} file${successCount === 1 ? "" : "s"} uploaded`, "success");
@@ -533,6 +537,14 @@ function MediaLibrary() {
             </div>
           ))}
         </div>
+      )}
+      {total > 0 && (
+        <Pagination
+          limit={page.limit}
+          offset={page.offset}
+          total={total}
+          onChange={(limit, offset) => setPage({ limit, offset })}
+        />
       )}
       <ConfirmDialog
         open={confirmDeleteId !== null}

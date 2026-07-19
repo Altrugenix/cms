@@ -11,7 +11,9 @@ import { Route as globalsListRoute } from "@/routes/globals/index";
 import { Route as indexRoute } from "@/routes/index";
 import { Route as loginRoute } from "@/routes/login";
 import { Route as mediaRoute } from "@/routes/media/index";
+import { Route as notFoundRoute } from "@/routes/not-found";
 import { Route as registerRoute } from "@/routes/register";
+import { Route as resetPasswordRoute } from "@/routes/reset-password";
 import { Route as roleEditRoute } from "@/routes/roles/$id";
 import { Route as rolesListRoute } from "@/routes/roles/index";
 import { Route as roleCreateRoute } from "@/routes/roles/new";
@@ -53,6 +55,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
   forgotPasswordRoute,
+  resetPasswordRoute,
   usersListRoute,
   userCreateRoute,
   userEditRoute,
@@ -70,6 +73,7 @@ const routeTree = rootRoute.addChildren([
   schemasListRoute,
   schemasNewRoute,
   schemaEditRoute,
+  notFoundRoute,
 ]);
 
 export const router = createRouter({ routeTree });

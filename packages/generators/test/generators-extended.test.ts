@@ -1,4 +1,4 @@
-import type { CollectionDefinition } from "@arche-cms/types";
+import type { CollectionDefinition, GlobalDefinition } from "@arche-cms/types";
 
 import { describe, it, expect } from "vitest";
 
@@ -506,7 +506,7 @@ describe("apiRoutesGenerator - jsValue fallback coverage", () => {
       fields: [{ name: "title", type: "text" }],
       labels: { plural: "Tests", singular: "Test" },
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await apiRoutesGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -521,7 +521,7 @@ describe("apiRoutesGenerator - jsValue fallback coverage", () => {
       labels: { plural: "Tests", singular: "Test" },
       nullProp: null,
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await apiRoutesGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -539,7 +539,7 @@ describe("validationGenerator - jsValue fallback coverage", () => {
       fields: [{ name: "title", type: "text" }],
       labels: { plural: "Tests", singular: "Test" },
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -554,7 +554,7 @@ describe("validationGenerator - jsValue fallback coverage", () => {
       labels: { plural: "Tests", singular: "Test" },
       nullProp: null,
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -570,7 +570,7 @@ describe("validationGenerator - jsValue fallback coverage", () => {
       fields: [{ name: "title", type: "text" }],
       labels: { plural: "Tests", singular: "Test" },
       slug: "test",
-    } as unknown as import("../src/types.js").CollectionDefinition;
+    } as unknown as import("@arche-cms/types").CollectionDefinition;
     const files = await validationGenerator.generate({
       collections: [col],
       outputDir: "/tmp",
@@ -595,5 +595,234 @@ describe("migrationGenerator - default case and component case coverage", () => 
     const content = files[0]?.content ?? "";
     expect(content).toContain("title TEXT");
     expect(content).toContain("custom TEXT");
+  });
+});
+
+describe("graphqlGenerator — globals coverage", () => {
+  const siteSettings: GlobalDefinition = {
+    fields: [
+      { name: "title", type: "text" },
+      { name: "description", type: "textarea" },
+    ],
+    label: "Site Settings",
+    slug: "siteSettings",
+  };
+
+  it("generates global type and input in typeDefs", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      globals: [siteSettings],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    expect(schemaFile).toBeDefined();
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("type SiteSettings {");
+    expect(content).toContain("  title: String");
+    expect(content).toContain("  description: String");
+    expect(content).toContain("input SiteSettingsInput {");
+  });
+
+  it("generates global query field in typeDefs", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      globals: [siteSettings],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("siteSettings: SiteSettings");
+  });
+
+  it("generates global mutation field in typeDefs", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      globals: [siteSettings],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("updateSiteSettings(input: SiteSettingsInput!): SiteSettings");
+  });
+
+  it("generates global resolvers (query + mutation)", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      globals: [siteSettings],
+      outputDir: "/tmp",
+    });
+    const resolversFile = files.find((f) => f.path === "graphql/resolvers.ts");
+    expect(resolversFile).toBeDefined();
+    const content = resolversFile?.content ?? "";
+    expect(content).toContain("updateSiteSettings: async");
+    expect(content).toContain('adapter.findOne("siteSettings", "1")');
+    expect(content).toContain('adapter.update("siteSettings", "1", args.input)');
+    expect(content).toContain('adapter.create("siteSettings", { id: 1, ...args.input })');
+  });
+
+  it("generates global query resolver code", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      globals: [siteSettings],
+      outputDir: "/tmp",
+    });
+    const resolversFile = files.find((f) => f.path === "graphql/resolvers.ts");
+    const content = resolversFile?.content ?? "";
+    expect(content).toContain("siteSettings: async () => adapter.findOne");
+  });
+
+  it("generates globals with no fields", async () => {
+    const emptyGlobal: GlobalDefinition = {
+      fields: [],
+      label: "Empty",
+      slug: "empty",
+    };
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      globals: [emptyGlobal],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("type Empty {");
+    expect(content).toContain("input EmptyInput {");
+    expect(content).toContain("empty: Empty");
+    expect(content).toContain("updateEmpty(input: EmptyInput!): Empty");
+  });
+
+  it("generates resolvers with globals but no collections", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [],
+      globals: [siteSettings],
+      outputDir: "/tmp",
+    });
+    expect(files).toHaveLength(0);
+  });
+});
+
+describe("graphqlGenerator — fieldToGraphQLType edge cases", () => {
+  it("maps relation field to target collection pascal case type", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "author", to: "users", type: "relation" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("author: Users");
+  });
+
+  it("maps relation field with no matching collection to String", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "ref", to: "nonexistent", type: "relation" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("ref: String");
+  });
+
+  it("maps component field to pascal case component name", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [{ component: "seo-widget", name: "seo", type: "component" }],
+          labels: { plural: "Pages", singular: "Page" },
+          slug: "pages",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("seo: SeoWidget");
+  });
+
+  it("maps dynamicZone field to union of component types", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [
+            { components: ["hero-block", "text-block"], name: "content", type: "dynamicZone" },
+          ],
+          labels: { plural: "Pages", singular: "Page" },
+          slug: "pages",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("content: HeroBlock | TextBlock");
+  });
+
+  it("handles tabs field type in filter (skips tabs in filter input)", async () => {
+    const files = await graphqlGenerator.generate({
+      collections: [
+        {
+          fields: [
+            {
+              name: "content",
+              tabs: [{ fields: [{ name: "inner", type: "text" }], label: "Tab1" }],
+              type: "tabs",
+            },
+          ],
+          labels: { plural: "Pages", singular: "Page" },
+          slug: "pages",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const schemaFile = files.find((f) => f.path === "graphql/schema.graphql");
+    const content = schemaFile?.content ?? "";
+    expect(content).toContain("input PagesFilter {");
+    expect(content).not.toMatch(/content:.*String/);
   });
 });
