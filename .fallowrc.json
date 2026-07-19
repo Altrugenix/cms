@@ -103,8 +103,17 @@
       },
       {
         "files": ["packages/cms/src/server/routes/collections.ts"],
-        "maxCognitive": 60,
-        "reason": "collection CRUD route registration with relations, versions, permissions"
+        "maxCognitive": 90,
+        "maxCyclomatic": 25,
+        "maxCrap": 120,
+        "reason": "collection CRUD route registration with relations, versions, permissions, and bulk operations"
+      },
+      {
+        "files": ["packages/rest-api/src/handlers.ts"],
+        "maxCyclomatic": 15,
+        "maxCognitive": 15,
+        "maxCrap": 55,
+        "reason": "REST API handlers with query validation, bulk operations, and version management"
       },
       {
         "files": ["packages/cms/src/server/routes/webhooks.ts"],

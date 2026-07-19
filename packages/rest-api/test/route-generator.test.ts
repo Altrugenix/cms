@@ -143,9 +143,11 @@ describe("createCollectionRouter", () => {
       versions: { drafts: true },
     };
     const { routes } = createCollectionRouter(collection, mockAdapter);
-    expect(routes).toHaveLength(10);
+    expect(routes).toHaveLength(12);
     expect(routes.find((r) => r.operationId === "publishPosts")).toBeDefined();
     expect(routes.find((r) => r.operationId === "unpublishPosts")).toBeDefined();
+    expect(routes.find((r) => r.operationId === "bulkPublishPosts")).toBeDefined();
+    expect(routes.find((r) => r.operationId === "bulkUnpublishPosts")).toBeDefined();
     const publish = routes.find((r) => r.operationId === "publishPosts") as {
       method: string;
       path: string;

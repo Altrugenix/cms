@@ -74,6 +74,20 @@ export async function bulkDelete(path: string, ids: string[]): Promise<void> {
   });
 }
 
+export async function bulkPublish(path: string, ids: string[]): Promise<void> {
+  await apiFetch(`/api/${path}/bulk-publish`, {
+    body: JSON.stringify({ ids }),
+    method: "POST",
+  });
+}
+
+export async function bulkUnpublish(path: string, ids: string[]): Promise<void> {
+  await apiFetch(`/api/${path}/bulk-unpublish`, {
+    body: JSON.stringify({ ids }),
+    method: "POST",
+  });
+}
+
 export async function deleteSchema(type: string, slug: string): Promise<void> {
   await apiFetch(`/api/schemas/${type}/${slug}`, { method: "DELETE" });
 }

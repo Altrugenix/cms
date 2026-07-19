@@ -1,5 +1,15 @@
 import { createRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Plus, Pencil, Trash2, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Pencil,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Send,
+  Undo2,
+} from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -11,6 +21,8 @@ import {
   useEntries,
   useDeleteEntry,
   useBulkDelete,
+  useBulkPublish,
+  useBulkUnpublish,
   usePublishEntry,
   useUnpublishEntry,
   useRestoreEntry,
@@ -44,6 +56,8 @@ function CollectionEntries() {
   const total = entriesData?.total ?? 0;
   const deleteEntry = useDeleteEntry(slug);
   const bulkDelete = useBulkDelete(slug);
+  const bulkPublish = useBulkPublish(slug);
+  const bulkUnpublish = useBulkUnpublish(slug);
   const publishEntry = usePublishEntry(slug);
   const unpublishEntry = useUnpublishEntry(slug);
   const restoreEntry = useRestoreEntry(slug);
@@ -73,6 +87,30 @@ function CollectionEntries() {
       toast(`Deleted ${ids.length} entr${ids.length === 1 ? "y" : "ies"}`, "success");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to delete entries", "error");
+    }
+  };
+
+  const handleBulkPublish = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    try {
+      await bulkPublish.mutateAsync(ids);
+      setSelected(new Set());
+      toast(`Published ${ids.length} entr${ids.length === 1 ? "y" : "ies"}`, "success");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Failed to publish entries", "error");
+    }
+  };
+
+  const handleBulkUnpublish = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    try {
+      await bulkUnpublish.mutateAsync(ids);
+      setSelected(new Set());
+      toast(`Unpublished ${ids.length} entr${ids.length === 1 ? "y" : "ies"}`, "success");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Failed to unpublish entries", "error");
     }
   };
 
@@ -279,6 +317,26 @@ function CollectionEntries() {
           {selected.size > 0 && (
             <div className="flex items-center gap-3">
               <p className="text-sm text-muted-foreground">{selected.size} selected</p>
+              {hasDrafts && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkPublish}
+                    disabled={bulkPublish.isPending}
+                  >
+                    <Send className="mr-1.5 h-4 w-4" /> Publish
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkUnpublish}
+                    disabled={bulkUnpublish.isPending}
+                  >
+                    <Undo2 className="mr-1.5 h-4 w-4" /> Unpublish
+                  </Button>
+                </>
+              )}
               <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
                 <Trash2 className="mr-1.5 h-4 w-4" /> Delete Selected
               </Button>

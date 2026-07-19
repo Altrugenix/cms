@@ -51,11 +51,15 @@ function slugFromPath(path: string): string {
 function isMutation(method: string, path: string): boolean {
   if (method === "GET") return false;
   if (path.endsWith("/bulk-delete")) return true;
+  if (path.endsWith("/bulk-publish")) return true;
+  if (path.endsWith("/bulk-unpublish")) return true;
   return ["POST", "PATCH", "PUT", "DELETE"].includes(method);
 }
 
 function actionFor(method: string, path: string): string {
   if (path.endsWith("/bulk-delete")) return "bulkDelete";
+  if (path.endsWith("/bulk-publish")) return "bulkPublish";
+  if (path.endsWith("/bulk-unpublish")) return "bulkUnpublish";
   if (method === "POST") return "create";
   if (method === "PATCH") return "update";
   if (method === "DELETE") return "delete";
@@ -137,8 +141,10 @@ function buildCollectionRouteSchema(
   const hasId = path.includes("/:id");
   const hasVersionId = path.includes("/:versionId");
   const isBulkDelete = path.endsWith("/bulk-delete");
-  const isPublish = path.includes("/publish") && !path.includes("/unpublish");
-  const isUnpublish = path.includes("/unpublish");
+  const isBulkPublish = path.endsWith("/bulk-publish");
+  const isBulkUnpublish = path.endsWith("/bulk-unpublish");
+  const isPublish = path.includes("/publish") && !path.includes("/unpublish") && !isBulkPublish;
+  const isUnpublish = path.includes("/unpublish") && !isBulkUnpublish;
   const isRestore = path.includes("/restore") && !path.includes("/versions");
   const isListVersions = path.endsWith("/versions");
 
@@ -192,7 +198,7 @@ function buildCollectionRouteSchema(
   }
 
   // Create
-  if (method === "POST" && !isBulkDelete) {
+  if (method === "POST" && !isBulkDelete && !isBulkPublish && !isBulkUnpublish) {
     return {
       body: { additionalProperties: true, type: "object" },
       response: {
@@ -202,8 +208,8 @@ function buildCollectionRouteSchema(
     };
   }
 
-  // Bulk delete
-  if (isBulkDelete) {
+  // Bulk operations (delete, publish, unpublish)
+  if (isBulkDelete || isBulkPublish || isBulkUnpublish) {
     return {
       body: {
         properties: {
@@ -304,15 +310,19 @@ export function registerCollectionRoutes(
               : `List ${slug} entries (with pagination, filtering, sorting)`
             : routeDef.path.endsWith("/bulk-delete")
               ? `Bulk delete ${slug} entries`
-              : routeDef.path.includes("/publish")
-                ? `Publish a ${slug} entry`
-                : routeDef.path.includes("/unpublish")
-                  ? `Unpublish a ${slug} entry`
-                  : routeDef.path.includes("/restore")
-                    ? `Restore a deleted ${slug} entry`
-                    : routeDef.path.includes("/versions")
-                      ? `List or restore ${slug} versions`
-                      : `${methodLabel === "POST" ? "Create" : methodLabel === "PATCH" ? "Update" : methodLabel === "DELETE" ? "Delete" : "Upsert"} a ${slug} entry`,
+              : routeDef.path.endsWith("/bulk-publish")
+                ? `Bulk publish ${slug} entries`
+                : routeDef.path.endsWith("/bulk-unpublish")
+                  ? `Bulk unpublish ${slug} entries`
+                  : routeDef.path.includes("/publish")
+                    ? `Publish a ${slug} entry`
+                    : routeDef.path.includes("/unpublish")
+                      ? `Unpublish a ${slug} entry`
+                      : routeDef.path.includes("/restore")
+                        ? `Restore a deleted ${slug} entry`
+                        : routeDef.path.includes("/versions")
+                          ? `List or restore ${slug} versions`
+                          : `${methodLabel === "POST" ? "Create" : methodLabel === "PATCH" ? "Update" : methodLabel === "DELETE" ? "Delete" : "Upsert"} a ${slug} entry`,
         summary: `${methodLabel} /api/${slug}`,
         tags: ["Collections"],
       },

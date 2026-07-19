@@ -6,6 +6,7 @@ import {
   Pencil,
   Folder,
   FolderPlus,
+  FolderPen,
   ChevronRight,
   Home,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import {
   fetchMedia,
   fetchFolders,
   createFolder,
+  updateFolder,
   uploadMedia,
   updateMedia,
   deleteMedia,
@@ -58,6 +60,8 @@ function MediaLibrary() {
   const [newFolderName, setNewFolderName] = useState("");
   const newFolderInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState({ limit: 20, offset: 0 });
+  const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState("");
 
   const load = useCallback(async (folderId: number | null, limit: number, offset: number) => {
     setLoading(true);
@@ -116,6 +120,38 @@ function MediaLibrary() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create folder";
       toast(msg, "error");
+    }
+  };
+
+  const startRenameFolder = (folder: MediaFolder) => {
+    setEditingFolderId(folder.id);
+    setEditingFolderName(folder.name);
+  };
+
+  const cancelRenameFolder = () => {
+    setEditingFolderId(null);
+    setEditingFolderName("");
+  };
+
+  const saveRenameFolder = async () => {
+    if (editingFolderId === null) return;
+    const trimmed = editingFolderName.trim();
+    if (!trimmed) {
+      toast("Folder name cannot be empty", "error");
+      return;
+    }
+    try {
+      await updateFolder(editingFolderId, { name: trimmed });
+      setFolders((prev) =>
+        prev.map((f) => (f.id === editingFolderId ? { ...f, name: trimmed } : f)),
+      );
+      setFolderPath((prev) =>
+        prev.map((b) => (b.id === editingFolderId ? { ...b, name: trimmed } : b)),
+      );
+      setEditingFolderId(null);
+      toast("Folder renamed", "success");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Failed to rename folder", "error");
     }
   };
 
@@ -432,11 +468,62 @@ function MediaLibrary() {
           {folders.map((folder) => (
             <div
               key={`folder-${folder.id}`}
-              onClick={() => navigateInto(folder)}
-              className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 transition-shadow hover:shadow-md"
+              className="group relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 transition-shadow hover:shadow-md"
+              onClick={() => editingFolderId !== folder.id && navigateInto(folder)}
             >
-              <Folder className="h-10 w-10 text-primary/70" />
-              <p className="truncate text-center text-sm font-medium">{folder.name}</p>
+              {editingFolderId === folder.id ? (
+                <div
+                  className="flex w-full flex-col items-center gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Folder className="h-10 w-10 text-primary/70" />
+                  <Input
+                    value={editingFolderName}
+                    onChange={(e) => setEditingFolderName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveRenameFolder();
+                      if (e.key === "Escape") cancelRenameFolder();
+                    }}
+                    onBlur={saveRenameFolder}
+                    className="h-7 text-center text-xs"
+                    autoFocus
+                  />
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={saveRenameFolder}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={cancelRenameFolder}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Folder className="h-10 w-10 text-primary/70" />
+                  <p className="truncate text-center text-sm font-medium">{folder.name}</p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startRenameFolder(folder);
+                    }}
+                  >
+                    <FolderPen className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
             </div>
           ))}
           {media.map((item) => (

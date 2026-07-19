@@ -591,6 +591,70 @@ export function createBulkDeleteHandler(
   };
 }
 
+export function createBulkPublishHandler(
+  collection: CollectionDefinition,
+  adapter: DatabaseAdapter,
+): RouteHandler {
+  return async (ctx) => {
+    try {
+      if (
+        !ctx.body ||
+        typeof ctx.body !== "object" ||
+        !Array.isArray((ctx.body as Record<string, unknown>).ids)
+      ) {
+        return errorResult(400, "Request body must contain an ids array");
+      }
+      const ids = (ctx.body as Record<string, unknown>).ids as string[];
+      if (ids.length === 0) {
+        return errorResult(400, "ids array must not be empty");
+      }
+      const tableName = collectionTableName(collection.slug);
+      const now = new Date().toISOString();
+      for (const id of ids) {
+        await adapter.update(tableName, id, {
+          _publishedAt: now,
+          _status: "published",
+        } as Record<string, unknown>);
+      }
+      return { body: { published: ids.length }, statusCode: 200 };
+    } catch {
+      return errorResult(500, "Internal server error");
+    }
+  };
+}
+
+export function createBulkUnpublishHandler(
+  collection: CollectionDefinition,
+  adapter: DatabaseAdapter,
+): RouteHandler {
+  return async (ctx) => {
+    try {
+      if (
+        !ctx.body ||
+        typeof ctx.body !== "object" ||
+        !Array.isArray((ctx.body as Record<string, unknown>).ids)
+      ) {
+        return errorResult(400, "Request body must contain an ids array");
+      }
+      const ids = (ctx.body as Record<string, unknown>).ids as string[];
+      if (ids.length === 0) {
+        return errorResult(400, "ids array must not be empty");
+      }
+      const tableName = collectionTableName(collection.slug);
+      for (const id of ids) {
+        await adapter.update(tableName, id, {
+          _publishedAt: null,
+          _publishedBy: null,
+          _status: "draft",
+        } as Record<string, unknown>);
+      }
+      return { body: { unpublished: ids.length }, statusCode: 200 };
+    } catch {
+      return errorResult(500, "Internal server error");
+    }
+  };
+}
+
 export function createDeleteHandler(
   collection: CollectionDefinition,
   adapter: DatabaseAdapter,

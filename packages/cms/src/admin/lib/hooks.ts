@@ -243,6 +243,36 @@ export function useBulkDelete(slug: string) {
   });
 }
 
+export function useBulkPublish(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      await apiFetch(`/api/${slug}/bulk-publish`, {
+        body: JSON.stringify({ ids }),
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+    },
+  });
+}
+
+export function useBulkUnpublish(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      await apiFetch(`/api/${slug}/bulk-unpublish`, {
+        body: JSON.stringify({ ids }),
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+    },
+  });
+}
+
 export function useRestoreEntry(slug: string) {
   const queryClient = useQueryClient();
   return useMutation({

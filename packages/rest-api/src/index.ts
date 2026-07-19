@@ -27,6 +27,8 @@ export {
   createUpdateHandler,
   createDeleteHandler,
   createBulkDeleteHandler,
+  createBulkPublishHandler,
+  createBulkUnpublishHandler,
   createGlobalGetHandler,
   createGlobalUpsertHandler,
 } from "./handlers.js";
