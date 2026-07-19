@@ -520,3 +520,29 @@ export type PluginMeta = {
 export async function fetchPlugins(): Promise<{ data: PluginMeta[]; total: number }> {
   return apiFetch("/api/plugins");
 }
+
+export type VersionMeta = {
+  id: string;
+  collection: string;
+  entryId: string;
+  version: number;
+  data: string;
+  createdAt: string;
+};
+
+export async function fetchVersions(
+  slug: string,
+  entryId: string,
+): Promise<{ data: VersionMeta[]; total: number }> {
+  return apiFetch(`/api/${slug}/${entryId}/versions`);
+}
+
+export async function restoreVersion(
+  slug: string,
+  entryId: string,
+  versionId: string,
+): Promise<Record<string, unknown>> {
+  return apiFetch(`/api/${slug}/${entryId}/versions/${versionId}/restore`, {
+    method: "POST",
+  });
+}

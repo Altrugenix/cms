@@ -1,11 +1,12 @@
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, History } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { FieldInput } from "@/components/field-input";
 import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { VersionHistoryPanel } from "@/components/version-history-panel";
 import { ApiError } from "@/lib/api";
 import {
   useCollection,
@@ -37,6 +38,7 @@ function EditEntry() {
   const [formError, setFormError] = useState<string | null>(null);
   const [entryStatus, setEntryStatus] = useState<string>("");
   const [initialized, setInitialized] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
 
   if (collection && entry && !initialized) {
     const initial: Record<string, unknown> = {};
@@ -230,6 +232,25 @@ function EditEntry() {
           </Link>
         </div>
       </form>
+
+      {collection.versions?.drafts && (
+        <div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowVersions(!showVersions)}
+          >
+            <History className="h-4 w-4 mr-1" />
+            {showVersions ? "Hide" : "Show"} Version History
+          </Button>
+          {showVersions && (
+            <div className="mt-3">
+              <VersionHistoryPanel slug={slug} entryId={id} />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

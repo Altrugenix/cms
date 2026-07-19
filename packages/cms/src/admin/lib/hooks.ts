@@ -10,6 +10,8 @@ import {
   fetchPlugins,
   fetchUsers,
   fetchRoles,
+  fetchVersions,
+  restoreVersion,
   saveSchema,
   createApiToken,
   deleteApiToken,
@@ -398,6 +400,28 @@ export function useUnpublishEntry(slug: string) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
+    },
+  });
+}
+
+export function useVersions(slug: string, entryId: string) {
+  return useQuery({
+    enabled: !!slug && !!entryId,
+    queryFn: () => fetchVersions(slug, entryId),
+    queryKey: ["versions", slug, entryId],
+    staleTime: 30_000,
+  });
+}
+
+export function useRestoreVersion(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entryId, versionId }: { entryId: string; versionId: string }) => {
+      return restoreVersion(slug, entryId, versionId);
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["entry", slug, variables.entryId] });
+      void queryClient.invalidateQueries({ queryKey: ["versions", slug, variables.entryId] });
     },
   });
 }
