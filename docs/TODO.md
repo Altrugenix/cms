@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: M27 complete — 475 tests across 40 files, CMS 94.97% line coverage, all 17 packages pass lint/typecheck/test. M28 complete — CI quality gates (knip, build check, bundle size, fallow, gitleaks, npm audit). Next: M28 — docs site update.
+> Project status: M27 complete — 475 tests across 40 files, CMS 94.97% line coverage. M28 complete — CI quality gates (knip, build check, bundle size, fallow, gitleaks, npm audit). M28b complete — Docs site update (VitePress). M29 complete — Docs files update (root-level). 1,354 tests passing across all 17 packages. Next: M30 — v0.3.0 Release.
 
 ---
 
@@ -1697,3 +1697,50 @@ Update the root-level documentation files to reflect all changes from M23–M27:
 - [x] Verify no references to removed packages (admin-ui, builder)
 - [x] Verify package counts are consistent (17 packages)
 - [x] Verify port numbers are consistent (3000 for production, 5173 for dev)
+
+---
+
+## M30: v0.3.0 Release
+
+- [ ] Final review — ensure all M28–M29 docs changes are accurate
+- [ ] Update `CHANGELOG.md` with v0.3.0 section (M28, M29, docs overhaul)
+- [ ] Bump version to `0.3.0` in `packages/cms/package.json`
+- [ ] Tag release `v0.3.0`
+- [ ] Verify build, lint, typecheck, and tests pass before tagging
+
+---
+
+## M31: Test Coverage Push (94.97% → 100%)
+
+- [ ] Investigate `dev.ts:245` — find alternative testing approach for the infinite-hang guard (mock `fastify.listen` or split the function)
+- [ ] Add missing tests for `dev.ts` to cover the remaining 7.06% gap
+- [ ] Target 100% line coverage on CMS package (`packages/cms`)
+- [ ] Ensure total test count remains stable (1,354+)
+- [ ] Update vitest thresholds in `packages/cms/vitest.config.ts` to `lines: 100`, `functions: 100`, `branches: 100`, `statements: 100`
+
+---
+
+## M32: Admin UI Enhancements
+
+- [ ] **Version history UI** — page to browse document revisions, diff view, restore previous version
+- [ ] **Localization UI** — language switcher in editor, side-by-side locale comparison, translation status indicators
+- [ ] **Media folder management** — create/rename/delete folders in media library, drag-and-drop organization
+- [ ] **Dashboard widgets** — customizable admin dashboard with recent activity, drafts, scheduled content
+- [ ] **Bulk actions** — select multiple documents, bulk publish/unpublish/delete
+
+---
+
+## M33: SDK Code Generation Integration
+
+- [ ] Integrate typed SDK generation into `cms generate` command
+- [ ] Generate TypeScript client from collection/globals schemas
+- [ ] Generate typed hooks (`useCollection`, `useDocument`) for React frontend
+- [ ] Generate Zod validation schemas alongside SDK types
+- [ ] Output to configurable directory (default: `src/sdk/`)
+- [ ] Add `cms generate:types`, `cms generate:sdk`, `cms generate:validation` sub-commands
+
+---
+
+## M34: New Feature Work
+
+> _TBD — to be defined by the team. Possible candidates:_
