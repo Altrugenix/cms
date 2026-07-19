@@ -1,10 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches: [main, "milestone/*"]
   pull_request:
-    branches: [main, "milestone/*"]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
