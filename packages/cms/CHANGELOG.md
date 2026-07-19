@@ -1,5 +1,25 @@
 # @arche-cms/cms
 
+## 0.3.0
+
+### Minor Changes
+
+- feat(cms): add version history UI panel to entry edit page (browse revisions, restore)
+- feat(cms): add bulk publish/unpublish actions with confirmation dialog
+- feat(media): add inline folder rename in media library
+- feat(sdk): rewrite SDK generator to produce typed imports from @arche-cms/sdk with CollectionTypeMap and GlobalTypeMap
+- feat(cms): wire GenerationPipeline into `cms generate` command with `--generators` flag
+- feat(cms): add sub-commands `cms generate:types`, `cms generate:sdk`, `cms generate:validation`
+- feat(rest-api): add bulk-publish and bulk-unpublish route handlers
+
+### Patch Changes
+
+- test(cms): add 15 coverage gap tests targeting uncovered lines in handlers, routes, and auth
+- test(rest-api): add bulk-publish and bulk-unpublish route tests
+- docs: overhaul documentation site with VitePress, update root-level docs files
+- chore: add CI quality gates (knip, build check, bundle size, fallow, gitleaks, npm audit)
+- Updated dependencies
+
 ## 0.1.4
 
 ### Patch Changes

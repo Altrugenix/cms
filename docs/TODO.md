@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: M27 complete — 475 tests across 40 files, CMS 94.97% line coverage. M28 complete — CI quality gates (knip, build check, bundle size, fallow, gitleaks, npm audit). M28b complete — Docs site update (VitePress). M29 complete — Docs files update (root-level). 1,354 tests passing across all 17 packages. Next: M30 — v0.3.0 Release.
+> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. Next: M34 — TBD.
 
 ---
 
@@ -1702,42 +1702,42 @@ Update the root-level documentation files to reflect all changes from M23–M27:
 
 ## M30: v0.3.0 Release
 
-- [ ] Final review — ensure all M28–M29 docs changes are accurate
-- [ ] Update `CHANGELOG.md` with v0.3.0 section (M28, M29, docs overhaul)
-- [ ] Bump version to `0.3.0` in `packages/cms/package.json`
-- [ ] Tag release `v0.3.0`
-- [ ] Verify build, lint, typecheck, and tests pass before tagging
+- [x] Final review — ensure all M28–M29 docs changes are accurate
+- [x] Update `CHANGELOG.md` with v0.3.0 section (M28, M29, docs overhaul)
+- [x] Bump version to `0.3.0` in `packages/cms/package.json`
+- [x] Tag release `v0.3.0`
+- [x] Verify build, lint, typecheck, and tests pass before tagging
 
 ---
 
 ## M31: Test Coverage Push (94.97% → 100%)
 
-- [ ] Investigate `dev.ts:245` — find alternative testing approach for the infinite-hang guard (mock `fastify.listen` or split the function)
-- [ ] Add missing tests for `dev.ts` to cover the remaining 7.06% gap
-- [ ] Target 100% line coverage on CMS package (`packages/cms`)
-- [ ] Ensure total test count remains stable (1,354+)
-- [ ] Update vitest thresholds in `packages/cms/vitest.config.ts` to `lines: 100`, `functions: 100`, `branches: 100`, `statements: 100`
+- [x] Investigate `dev.ts:245` — find alternative testing approach for the infinite-hang guard (mock `fastify.listen` or split the function)
+- [x] Add missing tests for `dev.ts` to cover the remaining 7.06% gap
+- [x] Target 100% line coverage on CMS package (`packages/cms`)
+- [x] Ensure total test count remains stable (1,354+)
+- [x] Update vitest thresholds in `packages/cms/vitest.config.ts` to `lines: 100`, `functions: 100`, `branches: 100`, `statements: 100`
 
 ---
 
 ## M32: Admin UI Enhancements
 
-- [ ] **Version history UI** — page to browse document revisions, diff view, restore previous version
+- [x] **Version history UI** — page to browse document revisions, diff view, restore previous version
 - [ ] **Localization UI** — language switcher in editor, side-by-side locale comparison, translation status indicators
-- [ ] **Media folder management** — create/rename/delete folders in media library, drag-and-drop organization
+- [x] **Media folder management** — create/rename/delete folders in media library, drag-and-drop organization
 - [ ] **Dashboard widgets** — customizable admin dashboard with recent activity, drafts, scheduled content
-- [ ] **Bulk actions** — select multiple documents, bulk publish/unpublish/delete
+- [x] **Bulk actions** — select multiple documents, bulk publish/unpublish/delete
 
 ---
 
 ## M33: SDK Code Generation Integration
 
-- [ ] Integrate typed SDK generation into `cms generate` command
-- [ ] Generate TypeScript client from collection/globals schemas
+- [x] Integrate typed SDK generation into `cms generate` command
+- [x] Generate TypeScript client from collection/globals schemas
 - [ ] Generate typed hooks (`useCollection`, `useDocument`) for React frontend
-- [ ] Generate Zod validation schemas alongside SDK types
-- [ ] Output to configurable directory (default: `src/sdk/`)
-- [ ] Add `cms generate:types`, `cms generate:sdk`, `cms generate:validation` sub-commands
+- [x] Generate Zod validation schemas alongside SDK types
+- [x] Output to configurable directory (default: `src/sdk/`)
+- [x] Add `cms generate:types`, `cms generate:sdk`, `cms generate:validation` sub-commands
 
 ---
 
