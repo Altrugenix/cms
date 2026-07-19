@@ -257,8 +257,10 @@ describe("generate command", () => {
       );
       const { generate } = await import("../src/commands/generate.js");
       await generate({ dir: tmpDir, out: join(tmpDir, "gen") });
-      expect(lines.some((l) => l.includes("Generating TypeScript types"))).toBe(true);
+      expect(lines.some((l) => l.includes("Running generators"))).toBe(true);
       expect(existsSync(join(tmpDir, "gen", "types.ts"))).toBe(true);
+      expect(existsSync(join(tmpDir, "gen", "sdk", "index.ts"))).toBe(true);
+      expect(existsSync(join(tmpDir, "gen", "validation", "index.ts"))).toBe(true);
     }),
   );
 });

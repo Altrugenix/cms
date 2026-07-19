@@ -130,22 +130,20 @@ describe("openApiGenerator", () => {
 });
 
 describe("sdkGenerator", () => {
-  it("generates SDK client class", async () => {
+  it("generates typed SDK client with collection type maps", async () => {
     const files = await sdkGenerator.generate({
       collections: sampleCollections,
       outputDir: "/tmp",
     });
     expect(files).toHaveLength(1);
     expect(files[0]?.path).toBe("sdk/index.ts");
-    expect(files[0]?.content).toContain("class ArcheCMSClient");
-    expect(files[0]?.content).toContain("getPosts");
-    expect(files[0]?.content).toContain("listPosts");
-    expect(files[0]?.content).toContain("createPosts");
-    expect(files[0]?.content).toContain("updatePosts");
-    expect(files[0]?.content).toContain("deletePosts");
-    expect(files[0]?.content).toContain("getUsers");
+    expect(files[0]?.content).toContain("import { createClient");
+    expect(files[0]?.content).toContain("CollectionTypeMap");
+    expect(files[0]?.content).toContain('"posts": Posts;');
+    expect(files[0]?.content).toContain('"users": Users;');
     expect(files[0]?.content).toContain("interface Posts");
     expect(files[0]?.content).toContain("interface Users");
+    expect(files[0]?.content).toContain("createTypedClient");
   });
 });
 

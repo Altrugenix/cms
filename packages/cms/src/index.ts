@@ -49,8 +49,11 @@ Commands:
   start                Start the CMS production server (no file watching)
   build                Build CMS for production
   migrate              Run database migrations
-  generate             Run code generation pipeline
-  typegen              Generate TypeScript types from schemas
+  generate             Run code generation pipelines
+  generate:types       Generate TypeScript types only
+  generate:sdk         Generate typed SDK client only
+  generate:validation  Generate Zod validation schemas only
+  typegen              Generate TypeScript types from schemas (alias for generate:types)
   lint                 Lint schema definitions
   doctor               Check project health
   collection create    Scaffold a new collection
@@ -58,8 +61,6 @@ Commands:
 
 Options:
   --help               Show help for any command
-
-Run "cms <command> --help" for command-specific help.
 `);
 }
 
@@ -151,8 +152,57 @@ function parseArgs(): void {
     }
     const dirIdx = args.indexOf("--dir");
     const outIdx = args.indexOf("--out");
+    const gensIdx = args.indexOf("--generators");
+    const genList: string[] | undefined =
+      gensIdx !== -1 ? args[gensIdx + 1]?.split(",").filter(Boolean) : undefined;
     generate({
       dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+      generators: genList,
+      out: outIdx !== -1 ? args[outIdx + 1] : undefined,
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    });
+  } else if (cmd === "generate:types") {
+    if (hasHelp) {
+      printGenerateHelp();
+      return;
+    }
+    const dirIdx = args.indexOf("--dir");
+    const outIdx = args.indexOf("--out");
+    generate({
+      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+      generators: ["types"],
+      out: outIdx !== -1 ? args[outIdx + 1] : undefined,
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    });
+  } else if (cmd === "generate:sdk") {
+    if (hasHelp) {
+      printGenerateHelp();
+      return;
+    }
+    const dirIdx = args.indexOf("--dir");
+    const outIdx = args.indexOf("--out");
+    generate({
+      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+      generators: ["sdk"],
+      out: outIdx !== -1 ? args[outIdx + 1] : undefined,
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    });
+  } else if (cmd === "generate:validation") {
+    if (hasHelp) {
+      printGenerateHelp();
+      return;
+    }
+    const dirIdx = args.indexOf("--dir");
+    const outIdx = args.indexOf("--out");
+    generate({
+      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+      generators: ["validation"],
       out: outIdx !== -1 ? args[outIdx + 1] : undefined,
     }).catch((err: unknown) => {
       console.error("Error:", err instanceof Error ? err.message : String(err));

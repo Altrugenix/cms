@@ -235,12 +235,13 @@ describe("sdkGenerator - field type coverage", () => {
     });
     expect(files).toHaveLength(1);
     const content = files[0]?.content ?? "";
-    expect(content).toContain("class ArcheCMSClient");
+    expect(content).toContain("CollectionTypeMap");
+    expect(content).toContain("createClient");
     expect(content).toContain("interface Items");
     expect(content).toContain("count?: number;");
     expect(content).toContain("active?: boolean;");
     expect(content).toContain("meta?: Record<string, unknown>;");
-    expect(content).toContain("body?: string;");
+    expect(content).toContain("body?: unknown;");
     expect(content).toContain("tags?: string[];");
     expect(content).toContain("author?: string;");
     expect(content).toContain("publishedAt?: string;");
@@ -274,6 +275,30 @@ describe("sdkGenerator - field type coverage", () => {
     const content = files[0]?.content ?? "";
     expect(content).toContain("title: string;");
     expect(content).toContain("slug: string;");
+  });
+
+  it("generates GlobalTypeMap when globals provided", async () => {
+    const files = await sdkGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      globals: [
+        {
+          fields: [{ name: "logo", type: "text" }],
+          label: "Site Settings",
+          slug: "siteSettings",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const content = files[0]?.content ?? "";
+    expect(content).toContain("GlobalTypeMap");
+    expect(content).toContain('"siteSettings": SiteSettingsGlobals;');
+    expect(content).toContain("interface SiteSettingsGlobals");
   });
 });
 

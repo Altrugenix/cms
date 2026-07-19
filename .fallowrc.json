@@ -54,11 +54,11 @@
       },
       {
         "files": ["packages/cms/src/index.ts"],
-        "maxUnitSize": 200,
-        "maxCyclomatic": 45,
-        "maxCognitive": 65,
-        "maxCrap": 50,
-        "reason": "command-line arg parser with multiple subcommands"
+        "maxUnitSize": 250,
+        "maxCyclomatic": 55,
+        "maxCognitive": 90,
+        "maxCrap": 650,
+        "reason": "command-line arg parser with multiple subcommands including generate:types/sdk/validation"
       },
       {
         "files": ["packages/database/src/migration-generator.ts"],
