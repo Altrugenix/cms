@@ -105,6 +105,9 @@ importers:
       '@arche-cms/cms':
         specifier: workspace:*
         version: link:../../packages/cms
+      '@arche-cms/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
 
   packages/auth:
     dependencies:
