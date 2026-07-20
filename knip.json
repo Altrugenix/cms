@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "exclude": ["files", "duplicates"],
-  "ignoreDependencies": ["@arche-cms/*", "@libsql/client", "drizzle-orm", "pg", "zod"],
+  "ignoreDependencies": ["@arche-cms/*", "@libsql/client", "drizzle-orm", "pg", "vue", "zod"],
   "ignoreFiles": [
     "**/test/**",
     "**/__generated__/**",
