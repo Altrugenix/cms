@@ -1,5 +1,23 @@
 # @arche-cms/cms
 
+## 0.1.7
+
+### Patch Changes
+
+- 14d6c25: v0.1.7
+- Updated dependencies [14d6c25]
+  - @arche-cms/auth@0.1.7
+  - @arche-cms/core@0.1.7
+  - @arche-cms/database@0.1.7
+  - @arche-cms/generators@0.1.7
+  - @arche-cms/graphql@0.1.7
+  - @arche-cms/permissions@0.1.7
+  - @arche-cms/plugins@0.1.7
+  - @arche-cms/rest-api@0.1.7
+  - @arche-cms/schema@0.1.7
+  - @arche-cms/storage@0.1.7
+  - @arche-cms/types@0.1.7
+
 ## 0.3.0
 
 ### Minor Changes

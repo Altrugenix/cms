@@ -1,5 +1,13 @@
 # @arche-cms/core
 
+## 0.1.7
+
+### Patch Changes
+
+- 14d6c25: v0.1.7
+- Updated dependencies [14d6c25]
+  - @arche-cms/types@0.1.7
+
 ## 0.1.2
 
 ### Patch Changes
