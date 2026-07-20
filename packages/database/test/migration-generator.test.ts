@@ -34,9 +34,9 @@ describe("MigrationGenerator", () => {
     expect(m.name).toBe("create_posts");
     expect(m.up).toContain("CREATE TABLE IF NOT EXISTS");
     expect(m.up).toContain('"__cms_posts"');
-    expect(m.up).toContain("title TEXT NOT NULL");
-    expect(m.up).toContain("body TEXT");
-    expect(m.up).toContain("published INTEGER");
+    expect(m.up).toContain('"title" TEXT NOT NULL');
+    expect(m.up).toContain('"body" TEXT');
+    expect(m.up).toContain('"published" INTEGER');
     expect(m.down).toContain("DROP TABLE IF EXISTS");
   });
 
@@ -66,7 +66,7 @@ describe("MigrationGenerator", () => {
     const [m] = migrations;
     expect(m.name).toBe("add_fields_posts");
     expect(m.up).toContain("ALTER TABLE");
-    expect(m.up).toContain("ADD COLUMN excerpt TEXT");
+    expect(m.up).toContain('ADD COLUMN "excerpt" TEXT');
   });
 
   it("skips collections that already exist with all fields", () => {
@@ -132,15 +132,15 @@ describe("MigrationGenerator", () => {
     ];
 
     const [m] = generator.generate(collections, emptySchema);
-    expect(m.up).toContain("f_text TEXT");
-    expect(m.up).toContain("f_number REAL");
-    expect(m.up).toContain("f_boolean INTEGER");
-    expect(m.up).toContain("f_date TEXT");
-    expect(m.up).toContain("f_email TEXT");
-    expect(m.up).toContain("f_json TEXT");
-    expect(m.up).toContain("f_relation TEXT");
-    expect(m.up).toContain("f_slug TEXT");
-    expect(m.up).toContain("f_component JSONB");
+    expect(m.up).toContain('"f_text" TEXT');
+    expect(m.up).toContain('"f_number" REAL');
+    expect(m.up).toContain('"f_boolean" INTEGER');
+    expect(m.up).toContain('"f_date" TEXT');
+    expect(m.up).toContain('"f_email" TEXT');
+    expect(m.up).toContain('"f_json" TEXT');
+    expect(m.up).toContain('"f_relation" TEXT');
+    expect(m.up).toContain('"f_slug" TEXT');
+    expect(m.up).toContain('"f_component" JSONB');
   });
 
   it("generates integer primary key id column", () => {
@@ -169,9 +169,9 @@ describe("MigrationGenerator", () => {
     ];
 
     const [m] = generator.generate(collections, emptySchema);
-    expect(m.up).toContain("_status TEXT DEFAULT 'draft'");
-    expect(m.up).toContain("_publishedAt TEXT");
-    expect(m.up).toContain("_publishedBy TEXT");
+    expect(m.up).toContain("\"_status\" TEXT DEFAULT 'draft'");
+    expect(m.up).toContain('"_publishedAt" TEXT');
+    expect(m.up).toContain('"_publishedBy" TEXT');
   });
 
   it("uses TEXT for unknown field types", () => {
@@ -187,7 +187,7 @@ describe("MigrationGenerator", () => {
     ];
 
     const [m] = generator.generate(collections, emptySchema);
-    expect(m.up).toContain("custom TEXT");
+    expect(m.up).toContain('"custom" TEXT');
   });
 
   it("uses TEXT for localized fields", () => {
@@ -204,8 +204,8 @@ describe("MigrationGenerator", () => {
     ];
 
     const [m] = generator.generate(collections, emptySchema);
-    expect(m.up).toContain("title TEXT");
-    expect(m.up).toContain("count TEXT");
+    expect(m.up).toContain('"title" TEXT');
+    expect(m.up).toContain('"count" TEXT');
   });
 
   it("creates table with no fields and no version features", () => {
@@ -236,8 +236,8 @@ describe("MigrationGenerator", () => {
     ];
 
     const [m] = generator.generate(collections, emptySchema);
-    expect(m.up).toContain("_deletedAt TEXT");
-    expect(m.up).toContain("_deletedBy TEXT");
+    expect(m.up).toContain('"_deletedAt" TEXT');
+    expect(m.up).toContain('"_deletedBy" TEXT');
   });
 
   it("adds soft delete columns when enabling on existing table", () => {
@@ -260,8 +260,8 @@ describe("MigrationGenerator", () => {
 
     const [m] = generator.generate(collections, existing);
     expect(m.name).toBe("add_fields_posts");
-    expect(m.up).toContain("ADD COLUMN _deletedAt");
-    expect(m.up).toContain("ADD COLUMN _deletedBy");
+    expect(m.up).toContain('ADD COLUMN "_deletedAt"');
+    expect(m.up).toContain('ADD COLUMN "_deletedBy"');
   });
 
   it("adds both draft and soft delete columns together", () => {
@@ -276,10 +276,10 @@ describe("MigrationGenerator", () => {
     ];
 
     const [m] = generator.generate(collections, emptySchema);
-    expect(m.up).toContain("_status TEXT DEFAULT 'draft'");
-    expect(m.up).toContain("_publishedAt TEXT");
-    expect(m.up).toContain("_deletedAt TEXT");
-    expect(m.up).toContain("_deletedBy TEXT");
+    expect(m.up).toContain("\"_status\" TEXT DEFAULT 'draft'");
+    expect(m.up).toContain('"_publishedAt" TEXT');
+    expect(m.up).toContain('"_deletedAt" TEXT');
+    expect(m.up).toContain('"_deletedBy" TEXT');
   });
 
   it("adds _publishAt column when scheduledPublishing is true", () => {
@@ -294,7 +294,7 @@ describe("MigrationGenerator", () => {
     ];
 
     const [m] = generator.generate(collections, emptySchema);
-    expect(m.up).toContain("_publishAt TEXT");
+    expect(m.up).toContain('"_publishAt" TEXT');
   });
 
   it("adds _publishAt column when enabling scheduled publishing on existing table", () => {
@@ -317,7 +317,7 @@ describe("MigrationGenerator", () => {
 
     const [m] = generator.generate(collections, existing);
     expect(m.name).toBe("add_fields_posts");
-    expect(m.up).toContain("ADD COLUMN _publishAt");
+    expect(m.up).toContain('ADD COLUMN "_publishAt"');
   });
 
   it("adds draft columns when enabling drafts on existing table", () => {
@@ -340,9 +340,9 @@ describe("MigrationGenerator", () => {
 
     const [m] = generator.generate(collections, existing);
     expect(m.name).toBe("add_fields_posts");
-    expect(m.up).toContain("ADD COLUMN _status");
-    expect(m.up).toContain("ADD COLUMN _publishedAt");
-    expect(m.up).toContain("ADD COLUMN _publishedBy");
+    expect(m.up).toContain('ADD COLUMN "_status"');
+    expect(m.up).toContain('ADD COLUMN "_publishedAt"');
+    expect(m.up).toContain('ADD COLUMN "_publishedBy"');
   });
 
   it("generates versions table migration when __cms_versions does not exist", () => {
@@ -359,10 +359,10 @@ describe("MigrationGenerator", () => {
     const migrations = generator.generate(collections, existing);
     expect(migrations[0].name).toBe("create_versions");
     expect(migrations[0].up).toContain("__cms_versions");
-    expect(migrations[0].up).toContain("collection TEXT");
-    expect(migrations[0].up).toContain("entryId TEXT");
-    expect(migrations[0].up).toContain("version INTEGER");
-    expect(migrations[0].up).toContain("data TEXT");
+    expect(migrations[0].up).toContain("collection TEXT NOT NULL");
+    expect(migrations[0].up).toContain("entryId TEXT NOT NULL");
+    expect(migrations[0].up).toContain("version INTEGER NOT NULL");
+    expect(migrations[0].up).toContain("data TEXT NOT NULL");
   });
 
   it("adds columns to existing global table", () => {
@@ -388,6 +388,6 @@ describe("MigrationGenerator", () => {
     const migrations = generator.generate([], existing, globals);
     expect(migrations).toHaveLength(1);
     expect(migrations[0].name).toBe("add_global_fields___cms_settings");
-    expect(migrations[0].up).toContain("ADD COLUMN description TEXT");
+    expect(migrations[0].up).toContain('ADD COLUMN "description" TEXT');
   });
 });

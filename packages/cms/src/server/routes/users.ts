@@ -7,6 +7,7 @@ import { AuthService } from "@arche-cms/auth";
 import { recordActivity } from "../lib/activity.js";
 import { dispatchWebhooks } from "../lib/webhooks.js";
 import {
+  authUserResponseSchema,
   createUserBodySchema,
   errorSchema,
   idParamSchema,
@@ -59,7 +60,7 @@ export function registerUserRoutes(
         body: createUserBodySchema,
         description: "Create a new user account (requires create:users permission)",
         response: {
-          "201": userObjectSchema,
+          "201": authUserResponseSchema,
           "400": errorSchema,
         },
         summary: "Create user",

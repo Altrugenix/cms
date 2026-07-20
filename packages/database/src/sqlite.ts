@@ -10,8 +10,27 @@ function toArgs(values: unknown[]): InValue[] {
   return values.map((v) => {
     if (v === null || v === undefined) return null;
     if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return v;
-    return String(v);
+    return JSON.stringify(v);
   });
+}
+
+function parseJsonFields(row: Record<string, unknown>): Record<string, unknown> {
+  const parsed: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (typeof value === "string" && value.length > 1) {
+      const first = value[0];
+      if (first === "[" || first === "{") {
+        try {
+          parsed[key] = JSON.parse(value);
+          continue;
+        } catch {
+          // not valid JSON, keep as string
+        }
+      }
+    }
+    parsed[key] = value;
+  }
+  return parsed;
 }
 
 export class SQLiteAdapter implements DatabaseAdapter {
@@ -46,7 +65,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
       args: [id],
       sql: `SELECT * FROM "${collection}" WHERE id = ?`,
     });
-    return (result.rows[0] as Record<string, unknown> | undefined) ?? null;
+    const raw = (result.rows[0] as Record<string, unknown> | undefined) ?? null;
+    return raw ? parseJsonFields(raw) : null;
   }
 
   async findMany(
@@ -91,7 +111,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
       sql: `SELECT * FROM "${collection}" ${whereClause} ${sortClause} ${limitClause} ${offsetClause}`,
     });
 
-    return { data: dataResult.rows as Record<string, unknown>[], total };
+    return { data: dataResult.rows.map(parseJsonFields), total };
   }
 
   async create(
@@ -108,7 +128,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
       sql: `INSERT INTO "${collection}" (${columns}) VALUES (${placeholders}) RETURNING *`,
     });
 
-    return result.rows[0] as Record<string, unknown>;
+    return parseJsonFields(result.rows[0] as Record<string, unknown>);
   }
 
   async update(
@@ -125,7 +145,8 @@ export class SQLiteAdapter implements DatabaseAdapter {
       sql: `UPDATE "${collection}" SET ${setClause} WHERE id = ? RETURNING *`,
     });
 
-    return (result.rows[0] as Record<string, unknown> | undefined) ?? null;
+    const raw = (result.rows[0] as Record<string, unknown> | undefined) ?? null;
+    return raw ? parseJsonFields(raw) : null;
   }
 
   async delete(collection: string, id: string): Promise<boolean> {

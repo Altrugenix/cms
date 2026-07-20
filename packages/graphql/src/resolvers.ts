@@ -8,7 +8,7 @@ import type {
 
 import { createMutationPayloadSchema, updateMutationPayloadSchema } from "@arche-cms/validation";
 
-import { pascalCase } from "./types.js";
+import { pascalCase, camelCase } from "./types.js";
 
 function collectionTableName(slug: string): string {
   return `__cms_${slug.replace(/-/g, "_")}`;
@@ -167,7 +167,10 @@ export function generateResolvers(
       return { data, limit, offset, total: result.total };
     };
 
-    queryFields[collection.slug] = async (_parent: unknown, args: Record<string, unknown>) => {
+    queryFields[camelCase(collection.slug)] = async (
+      _parent: unknown,
+      args: Record<string, unknown>,
+    ) => {
       const row = await adapter.findOne(table, args.id as string);
       if (!row) return null;
       const r = { ...row, id: String(row.id) };
@@ -220,7 +223,7 @@ export function generateResolvers(
       const name = pascalCase(global.slug);
       const table = collectionTableName(global.slug);
 
-      queryFields[global.slug] = async () => {
+      queryFields[camelCase(global.slug)] = async () => {
         const record = await adapter.findOne(table, "1");
         return record ?? {};
       };

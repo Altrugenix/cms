@@ -9,7 +9,9 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./src/server/app.js": "./src/server/app.js",
+    "./src/server/config.js": "./src/server/config.js"
   },
   "files": [
     "bin",

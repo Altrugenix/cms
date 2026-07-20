@@ -17,6 +17,11 @@ export function pascalCase(slug: string): string {
     .join("");
 }
 
+export function camelCase(slug: string): string {
+  const p = pascalCase(slug);
+  return p.charAt(0).toLowerCase() + p.slice(1);
+}
+
 const SCALAR_MAP: Record<string, string> = {
   boolean: "Boolean",
   checkbox: "Boolean",

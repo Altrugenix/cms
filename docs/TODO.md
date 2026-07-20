@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. Next: M34 — TBD.
+> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 defined — Comprehensive playground E2E tests (~70+ tests covering all API endpoints).
 
 ---
 
@@ -1741,6 +1741,153 @@ Update the root-level documentation files to reflect all changes from M23–M27:
 
 ---
 
-## M34: New Feature Work
+## M34: Comprehensive Playground E2E Tests
+
+### Objective
+
+Expand `apps/playground/test/playground-e2e.test.ts` from 27 tests covering basic happy paths to ~70+ tests covering all API endpoints, error cases, edge cases, and cross-cutting concerns. The playground is the project's integration test surface — it exercises the full server stack (Fastify + REST API + GraphQL + Auth + Permissions + Database) against a mock adapter with real schema definitions.
+
+### Current Coverage (27 tests)
+
+- Collections: basic CRUD on `posts` and `all-fields` collections
+- Globals: upsert + get on 4 globals, 404 for unknown
+- Schemas: read-only list + get
+- Auth: register, login, me, unauthenticated rejection
+- Health/Docs: health check, Swagger UI, OpenAPI spec
+
+### Gap Analysis — Untested Endpoints
+
+| Area              | Endpoints                                           | Current Tests |
+| ----------------- | --------------------------------------------------- | ------------- |
+| Media             | 6 CRUD + 5 folder routes                            | 0             |
+| Bulk Operations   | bulk-delete, bulk-publish, bulk-unpublish           | 0             |
+| Draft/Publish     | publish, unpublish, restore                         | 0             |
+| Users             | 5 CRUD routes                                       | 0             |
+| Roles             | 5 CRUD routes                                       | 0             |
+| Activity          | list with filters                                   | 0             |
+| API Tokens        | list, create, revoke                                | 0             |
+| Webhooks          | list, get, create, update, delete                   | 0             |
+| Schemas           | create, update, delete (write)                      | 0             |
+| GraphQL           | queries + mutations                                 | 0             |
+| Validation        | invalid bodies, missing required fields, bad emails | 0             |
+| Password Security | password excluded from responses                    | 0             |
+| Pagination        | limit, offset params                                | 0             |
+| Search/Sort       | filter, sort, select params                         | 0             |
+| 404/Errors        | non-existent entries, collections                   | 0             |
+
+---
+
+### Phase 1: Media Routes (~10 tests)
+
+- [ ] **POST /api/media creates a media record** — upload base64 data with fileName + mimeType, verify response
+- [ ] **GET /api/media lists uploaded media** — verify paginated response with `data` array and `total`
+- [ ] **GET /api/media/:id returns a single media record** — verify all fields present
+- [ ] **PATCH /api/media/:id updates metadata** — change `originalName` and `alt`, verify update
+- [ ] **DELETE /api/media/:id deletes a media record** — verify 200 and subsequent GET returns 404/null
+- [ ] **POST /api/media/folders creates a folder** — provide `name`, verify response
+- [ ] **GET /api/media/folders lists folders** — verify response structure
+- [ ] **PATCH /api/media/folders/:id renames a folder** — update `name`, verify
+- [ ] **DELETE /api/media/folders/:id deletes a folder** — verify 200
+- [ ] **POST /api/media rejects oversized files** — send >10MB base64 data, expect 413 or 400
+
+### Phase 2: Bulk Operations & Draft Workflow (~10 tests)
+
+- [ ] **POST /api/posts/bulk-delete deletes multiple entries** — create 3 posts, bulk-delete 2, verify count
+- [ ] **POST /api/posts/:id/publish publishes a draft** — create post with `versions: { drafts: true }`, publish, verify `_status` changes
+- [ ] **POST /api/posts/:id/unpublish unpublishes a post** — publish then unpublish, verify status reverts
+- [ ] **POST /api/posts/bulk-publish publishes multiple drafts** — create 3 drafts, bulk-publish all
+- [ ] **POST /api/posts/bulk-unpublish unpublishes multiple posts** — publish 3, bulk-unpublish all
+- [ ] **POST /api/posts/:id/restore restores a soft-deleted entry** — create, delete (soft), restore, verify entry exists
+- [ ] **GET /api/posts/:id/versions lists version history** — create entry, update it twice, verify version list length >= 2
+- [ ] **POST /api/posts/:id/versions/:versionId/restore restores a previous version** — update entry, restore to v1, verify old data
+- [ ] **Soft-deleted entries excluded from list** — create with softDelete enabled, soft-delete, verify not in list
+- [ ] **Draft entries filtered correctly** — create with drafts enabled, verify `_status` field in list response
+
+### Phase 3: Users & Roles (~10 tests)
+
+- [ ] **GET /api/users lists all users** — verify admin user present
+- [ ] **POST /api/users creates a new user** — provide email + password, verify 201
+- [ ] **GET /api/users/:id returns a user** — fetch admin user by ID
+- [ ] **PATCH /api/users/:id updates user email** — change email, verify update
+- [ ] **DELETE /api/users/:id deletes a user** — create user, delete, verify gone
+- [ ] **POST /api/roles creates a role** — provide name + permissions, verify 201
+- [ ] **GET /api/roles lists roles** — verify default admin role present
+- [ ] **GET /api/roles/:id returns a role** — fetch role by ID
+- [ ] **PATCH /api/roles/:id updates a role** — change name, verify
+- [ ] **DELETE /api/roles/:id deletes a role** — create role, delete, verify gone
+
+### Phase 4: Activity, API Tokens & Webhooks (~10 tests)
+
+- [ ] **GET /api/activity lists activity** — perform a create, then verify activity recorded
+- [ ] **GET /api/activity filters by action** — create + delete entries, filter by `action=create`
+- [ ] **GET /api/activity filters by collection** — filter by `collection=posts`
+- [ ] **POST /api/settings/api-tokens creates a token** — verify raw token returned once, `last_four` stored
+- [ ] **GET /api/settings/api-tokens lists tokens** — verify token metadata without raw value
+- [ ] **DELETE /api/settings/api-tokens/:id revokes a token** — verify removed from list
+- [ ] **POST /api/settings/webhooks creates a webhook** — provide name, url, events, verify 201
+- [ ] **GET /api/settings/webhooks lists webhooks** — verify response
+- [ ] **PUT /api/settings/webhooks/:id updates a webhook** — change URL, verify
+- [ ] **DELETE /api/settings/webhooks/:id deletes a webhook** — verify removed
+
+### Phase 5: Schema Write Operations (~5 tests)
+
+- [ ] **POST /api/schemas/collection creates a collection schema** — provide slug + fields, verify 201
+- [ ] **PUT /api/schemas/collection/:slug updates a collection schema** — add a field, verify
+- [ ] **POST /api/schemas/global creates a global schema** — provide slug + fields
+- [ ] **DELETE /api/schemas/collection/:slug deletes a collection schema** — verify removed from list
+- [ ] **POST /api/schemas rejects invalid slug** — provide numeric-starting slug, expect 400
+
+### Phase 6: GraphQL (~8 tests)
+
+- [ ] **POST /graphql executes listPosts query** — verify data array returned
+- [ ] **POST /graphql executes getPost query** — create post via REST, query via GraphQL
+- [ ] **POST /graphql executes createPost mutation** — verify created post returned
+- [ ] **POST /graphql executes updatePost mutation** — create then update, verify
+- [ ] **POST /graphql executes deletePost mutation** — create then delete, verify
+- [ ] **POST /graphql returns validation errors for invalid input** — send missing required fields
+- [ ] **GET /graphiql returns the GraphiQL IDE** — verify 200 and HTML response
+- [ ] **POST /graphql rejects unauthenticated requests** — no token, expect 401
+
+### Phase 7: Validation & Error Cases (~10 tests)
+
+- [ ] **POST /api/posts rejects missing required fields** — omit `title`, expect 400
+- [ ] **POST /api/posts rejects invalid body** — send malformed JSON or wrong types
+- [ ] **GET /api/posts/:id returns 404 for non-existent ID** — use fake UUID
+- [ ] **PATCH /api/posts/:id returns 404 for non-existent ID** — use fake UUID
+- [ ] **DELETE /api/posts/:id returns 404 for non-existent ID** — use fake UUID
+- [ ] **POST /api/auth/register rejects short password** — send password < 8 chars, expect 400
+- [ ] **POST /api/auth/register rejects invalid email** — send "not-an-email", expect 400
+- [ ] **POST /api/auth/login rejects wrong password** — expect 401
+- [ ] **POST /api/auth/login rejects non-existent user** — expect 401
+- [ ] **Password field excluded from user responses** — register user, verify no `password` or `passwordHash` in response
+
+### Phase 8: Query Parameters (~7 tests)
+
+- [ ] **GET /api/posts?limit=2 returns paginated results** — create 5 posts, request limit=2, verify data length
+- [ ] **GET /api/posts?offset=2 skips entries** — create 5 posts, offset=2, verify first item
+- [ ] **GET /api/posts?sort=title:asc sorts ascending** — create posts with different titles, verify order
+- [ ] **GET /api/posts?sort=title:desc sorts descending** — verify reverse order
+- [ ] **GET /api/posts?select=title,slug selects specific fields** — verify only requested fields returned
+- [ ] **GET /api/posts?where[status]=draft filters by field** — create draft + published, filter
+- [ ] **GET /api/settings/api-tokens?limit=1 paginates tokens** — create 3 tokens, verify limit
+
+### Phase 9: Metadata Endpoints (~3 tests)
+
+- [ ] **GET /api/collections returns collection metadata** — verify slug, fields, labels for each
+- [ ] **GET /api/globals returns global metadata** — verify slug, fields, label for each
+- [ ] **GET /api/plugins returns plugin list** — verify array response
+
+---
+
+### Verification
+
+- [ ] Run `pnpm --filter @arche-cms/playground test` — all ~70+ tests pass
+- [ ] Run `pnpm typecheck` — no type errors
+- [ ] Run `pnpm lint` — no lint errors
+- [ ] Verify test count is stable / increased from baseline (27 → ~70+)
+
+---
+
+## M35: New Feature Work
 
 > _TBD — to be defined by the team. Possible candidates:_

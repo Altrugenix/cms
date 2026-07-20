@@ -154,7 +154,7 @@ export class MigrationGenerator {
     tableName: string,
     timestamp: string,
   ): Migration {
-    const columns = fields.map((f) => `  ${fieldColumnName(f.name)} ${sqlTypeForField(f)}`);
+    const columns = fields.map((f) => `  "${fieldColumnName(f.name)}" ${sqlTypeForField(f)}`);
     const columnsStr = columns.length > 0 ? `,\n${columns.join(",\n")}` : "";
     const up = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT${columnsStr}\n);`;
     const down = `DROP TABLE IF EXISTS "${tableName}";`;
@@ -174,7 +174,7 @@ export class MigrationGenerator {
   ): Migration {
     const upLines = newFields.map(
       (f) =>
-        `ALTER TABLE "${tableName}" ADD COLUMN ${fieldColumnName(f.name)} ${sqlTypeForField(f)};`,
+        `ALTER TABLE "${tableName}" ADD COLUMN "${fieldColumnName(f.name)}" ${sqlTypeForField(f)};`,
     );
     const downLines = newFields.map(
       (f) => `-- WARNING: Cannot automatically revert ADD COLUMN for ${fieldColumnName(f.name)}`,
@@ -194,18 +194,18 @@ export class MigrationGenerator {
     tableName: string,
     timestamp: string,
   ): Migration {
-    const columns = fields.map((f) => `  ${fieldColumnName(f.name)} ${sqlTypeForField(f)}`);
+    const columns = fields.map((f) => `  "${fieldColumnName(f.name)}" ${sqlTypeForField(f)}`);
     if (hasDrafts(collection)) {
-      columns.push("  _status TEXT DEFAULT 'draft'");
-      columns.push("  _publishedAt TEXT");
-      columns.push("  _publishedBy TEXT");
+      columns.push("  \"_status\" TEXT DEFAULT 'draft'");
+      columns.push('  "_publishedAt" TEXT');
+      columns.push('  "_publishedBy" TEXT');
     }
     if (hasScheduledPublishing(collection)) {
-      columns.push("  _publishAt TEXT");
+      columns.push('  "_publishAt" TEXT');
     }
     if (hasSoftDelete(collection)) {
-      columns.push("  _deletedAt TEXT");
-      columns.push("  _deletedBy TEXT");
+      columns.push('  "_deletedAt" TEXT');
+      columns.push('  "_deletedBy" TEXT');
     }
     const columnsStr = columns.length > 0 ? `,\n${columns.join(",\n")}` : "";
     const up = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n  id INTEGER PRIMARY KEY AUTOINCREMENT${columnsStr}\n);`;
@@ -239,17 +239,17 @@ export class MigrationGenerator {
   ): Migration {
     const upLines = newFields.map(
       (f) =>
-        `ALTER TABLE "${tableName}" ADD COLUMN ${fieldColumnName(f.name)} ${sqlTypeForField(f)};`,
+        `ALTER TABLE "${tableName}" ADD COLUMN "${fieldColumnName(f.name)}" ${sqlTypeForField(f)};`,
     );
     for (const col of draftCols) {
       const def = col === "_status" ? "TEXT DEFAULT 'draft'" : "TEXT";
-      upLines.push(`ALTER TABLE "${tableName}" ADD COLUMN ${col} ${def};`);
+      upLines.push(`ALTER TABLE "${tableName}" ADD COLUMN "${col}" ${def};`);
     }
     for (const col of softDeleteCols) {
-      upLines.push(`ALTER TABLE "${tableName}" ADD COLUMN ${col} TEXT;`);
+      upLines.push(`ALTER TABLE "${tableName}" ADD COLUMN "${col}" TEXT;`);
     }
     for (const col of scheduledPublishCols) {
-      upLines.push(`ALTER TABLE "${tableName}" ADD COLUMN ${col} TEXT;`);
+      upLines.push(`ALTER TABLE "${tableName}" ADD COLUMN "${col}" TEXT;`);
     }
     const downLines = [
       ...newFields.map(

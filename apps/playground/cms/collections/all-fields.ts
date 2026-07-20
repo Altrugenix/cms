@@ -1,0 +1,140 @@
+import {
+  defineCollection,
+  text,
+  textarea,
+  number,
+  boolean,
+  date,
+  datetime,
+  email,
+  password,
+  url,
+  json,
+  richText,
+  markdown,
+  code,
+  color,
+  media,
+  upload,
+  select,
+  multiSelect,
+  radio,
+  checkbox,
+  relation,
+  componentField,
+  dynamicZone,
+  arrayField,
+  objectField,
+  tabsField,
+  groupField,
+  repeater,
+  slug,
+} from "@arche-cms/schema";
+
+export default defineCollection({
+  fields: [
+    text("title", { label: "Title", validation: { required: true } }),
+    textarea("excerpt", { label: "Excerpt" }),
+    number("order", { label: "Order" }),
+    boolean("featured", { label: "Featured" }),
+    date("publishDate", { label: "Publish Date" }),
+    datetime("scheduledAt", { label: "Scheduled At" }),
+    email("contactEmail", { label: "Contact Email" }),
+    password("secretKey", { label: "Secret Key" }),
+    url("website", { label: "Website URL" }),
+    json("metadata", { label: "Metadata" }),
+    richText("content", { label: "Content" }),
+    markdown("notes", { label: "Notes (Markdown)" }),
+    code("snippet", { label: "Code Snippet" }),
+    color("brandColor", { label: "Brand Color" }),
+    media("featuredImage", { label: "Featured Image" }),
+    media("gallery", { allowedTypes: ["image", "video"], label: "Gallery", multiple: true }),
+    upload("attachment", { label: "Attachment" }),
+    select("status", {
+      label: "Status",
+      options: [
+        { label: "Draft", value: "draft" },
+        { label: "Published", value: "published" },
+        { label: "Archived", value: "archived" },
+      ],
+    }),
+    multiSelect("tags", {
+      label: "Tags",
+      options: [
+        { label: "Technology", value: "technology" },
+        { label: "Design", value: "design" },
+        { label: "Business", value: "business" },
+      ],
+    }),
+    radio("priority", {
+      label: "Priority",
+      options: [
+        { label: "Low", value: "low" },
+        { label: "Medium", value: "medium" },
+        { label: "High", value: "high" },
+      ],
+    }),
+    checkbox("published", { label: "Published" }),
+    relation("author", { label: "Author", to: "users" }),
+    relation("relatedPosts", { kind: "manyToMany", label: "Related Posts", to: "posts" }),
+    componentField("seo", { component: "seo", label: "SEO" }),
+    componentField("mediaCard", { component: "media-card", label: "Media Card" }),
+    dynamicZone("contentBlocks", {
+      components: ["seo", "media-card"],
+      label: "Content Blocks",
+    }),
+    arrayField("galleryItems", {
+      fields: [text("caption", { label: "Caption" }), media("image", { label: "Image" })],
+      label: "Gallery Items",
+    }),
+    objectField("address", {
+      fields: [
+        text("street", { label: "Street" }),
+        text("city", { label: "City" }),
+        text("state", { label: "State" }),
+        text("zip", { label: "ZIP Code" }),
+      ],
+      label: "Address",
+    }),
+    tabsField("tabbedContent", {
+      label: "Tabbed Content",
+      tabs: [
+        {
+          fields: [
+            text("tabTitle", { label: "Tab Title" }),
+            richText("tabContent", { label: "Tab Content" }),
+          ],
+          label: "General",
+        },
+        {
+          fields: [
+            text("metaTitle", { label: "Meta Title" }),
+            text("metaDescription", { label: "Meta Description" }),
+          ],
+          label: "SEO",
+        },
+      ],
+    }),
+    groupField("advancedSettings", {
+      fields: [
+        boolean("enableComments", { label: "Enable Comments" }),
+        select("template", {
+          label: "Template",
+          options: [
+            { label: "Default", value: "default" },
+            { label: "Full Width", value: "full-width" },
+            { label: "Sidebar", value: "sidebar" },
+          ],
+        }),
+      ],
+      label: "Advanced Settings",
+    }),
+    repeater("faqs", {
+      fields: [text("question", { label: "Question" }), text("answer", { label: "Answer" })],
+      label: "FAQs",
+    }),
+    slug("slug", { label: "Slug", source: "title", validation: { required: true } }),
+  ],
+  labels: { plural: "All Fields", singular: "All Field" },
+  slug: "all-fields",
+});

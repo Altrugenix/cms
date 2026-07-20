@@ -1,6 +1,6 @@
 import type { CollectionDefinition, FieldDefinition, GlobalDefinition } from "@arche-cms/types";
 
-import { pascalCase, fieldToGraphQLType } from "./types.js";
+import { pascalCase, camelCase, fieldToGraphQLType } from "./types.js";
 
 function fieldToSDL(field: FieldDefinition, collections: CollectionDefinition[]): string {
   const gqlType = fieldToGraphQLType(field, collections);
@@ -92,6 +92,9 @@ function generateCreateInput(
     .map((f) => {
       const gqlType = fieldToGraphQLType(f, collections);
       const required = f.validation?.required ? "!" : "";
+      if (f.type === "component") {
+        return `  ${f.name}: JSON${required}`;
+      }
       return `  ${f.name}: ${gqlType}${required}`;
     })
     .join("\n");
@@ -109,6 +112,9 @@ function generateUpdateInput(
     .filter((f) => f.type !== "relation")
     .map((f) => {
       const gqlType = fieldToGraphQLType(f, collections);
+      if (f.type === "component") {
+        return `  ${f.name}: JSON`;
+      }
       return `  ${f.name}: ${gqlType}`;
     })
     .join("\n");
@@ -180,12 +186,12 @@ export function generateTypeDefs(
       const name = pascalCase(c.slug);
       const localeArg = c.localization ? ", locale: String" : "";
       return `  list${name}(filter: ${name}Filter, sort: ${name}Sort, limit: Int, offset: Int${localeArg}): ${name}Connection!
-  ${c.slug}(id: ID!${localeArg}): ${name}`;
+  ${camelCase(c.slug)}(id: ID!${localeArg}): ${name}`;
     })
     .join("\n");
 
   const globalQueryFields =
-    globals?.map((g) => `  ${g.slug}: ${pascalCase(g.slug)}`).join("\n") ?? "";
+    globals?.map((g) => `  ${camelCase(g.slug)}: ${pascalCase(g.slug)}`).join("\n") ?? "";
 
   const mutationFields = collections
     .map((c) => {

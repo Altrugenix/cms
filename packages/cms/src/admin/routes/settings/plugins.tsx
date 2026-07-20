@@ -14,7 +14,9 @@ export const Route = createRoute({
 
 function PluginsPage() {
   const { data: pluginsData, error, isLoading: loading } = usePluginsList();
-  const plugins: PluginMeta[] = pluginsData?.data ?? [];
+  const plugins: PluginMeta[] = (pluginsData?.data ?? []).filter(
+    (p): p is PluginMeta => p != null && p.plugin != null,
+  );
   const total = pluginsData?.total ?? 0;
 
   if (loading) {

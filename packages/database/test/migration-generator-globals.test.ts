@@ -31,8 +31,8 @@ describe("MigrationGenerator - globals", () => {
     expect(m.name).toBe("create_global_site-settings");
     expect(m.up).toContain("CREATE TABLE IF NOT EXISTS");
     expect(m.up).toContain('"__cms_site_settings"');
-    expect(m.up).toContain("siteName TEXT NOT NULL");
-    expect(m.up).toContain("logo TEXT");
+    expect(m.up).toContain('"siteName" TEXT NOT NULL');
+    expect(m.up).toContain('"logo" TEXT');
     expect(m.down).toContain("DROP TABLE IF EXISTS");
   });
 
@@ -61,7 +61,7 @@ describe("MigrationGenerator - globals", () => {
     const [m] = migrations;
     expect(m.name).toBe("add_global_fields___cms_site_settings");
     expect(m.up).toContain("ALTER TABLE");
-    expect(m.up).toContain("ADD COLUMN newField TEXT");
+    expect(m.up).toContain('ADD COLUMN "newField" TEXT');
   });
 
   it("skips globals that already exist with all fields", () => {

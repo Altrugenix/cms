@@ -219,7 +219,7 @@ function buildCollectionRouteSchema(
         type: "object",
       },
       response: {
-        "2xx": messageResponseSchema,
+        "2xx": genericDocumentSchema,
         "400": errorSchema,
       },
     };

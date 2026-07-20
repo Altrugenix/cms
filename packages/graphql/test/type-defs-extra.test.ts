@@ -31,7 +31,7 @@ describe("type-defs branch coverage", () => {
     const sdl = generateTypeDefs([localizedCollection]);
     expect(sdl).toContain("locale: String");
     expect(sdl).toContain("listLocalizedPosts(");
-    expect(sdl).toContain("localized-posts(id: ID!");
+    expect(sdl).toContain("localizedPosts(id: ID!");
   });
 
   it("does not include locale arg for non-localized collections", () => {

@@ -64,8 +64,17 @@ export class AccessControl {
   }
 
   async seedDefaultRoles(): Promise<void> {
-    const existing = await this.db.findMany(ROLES_TABLE, { limit: 1 });
-    if (existing.total > 0) return;
+    const existing = await this.db.findMany(ROLES_TABLE, { limit: 10 });
+    if (existing.total > 0) {
+      const corrupted = existing.data.some((row) => {
+        const perms = (row as unknown as RoleRecord).permissions;
+        return !Array.isArray(perms);
+      });
+      if (!corrupted) return;
+      for (const row of existing.data) {
+        await this.db.delete(ROLES_TABLE, String((row as Record<string, unknown>).id));
+      }
+    }
 
     for (const role of DEFAULT_ROLES) {
       await this.db.create(ROLES_TABLE, role as unknown as Record<string, unknown>);
