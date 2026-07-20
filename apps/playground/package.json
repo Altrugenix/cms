@@ -12,6 +12,9 @@
     "@arche-cms/schema": "workspace:*"
   },
   "devDependencies": {
+    "@arche-cms/database": "workspace:*",
+    "@arche-cms/storage": "workspace:*",
+    "@arche-cms/types": "workspace:*",
     "fastify": "^5.3.2",
     "vitest": "^3.2.7"
   }
