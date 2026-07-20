@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 defined — Comprehensive playground E2E tests (~70+ tests covering all API endpoints).
+> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 complete — 90 playground E2E tests covering all API endpoints. M35 defined — Firebase-backed CMS MVP variant.
 
 ---
 
@@ -1741,150 +1741,129 @@ Update the root-level documentation files to reflect all changes from M23–M27:
 
 ---
 
-## M34: Comprehensive Playground E2E Tests
+## M34: Comprehensive Playground E2E Tests (Complete)
 
-### Objective
+### Status
 
-Expand `apps/playground/test/playground-e2e.test.ts` from 27 tests covering basic happy paths to ~70+ tests covering all API endpoints, error cases, edge cases, and cross-cutting concerns. The playground is the project's integration test surface — it exercises the full server stack (Fastify + REST API + GraphQL + Auth + Permissions + Database) against a mock adapter with real schema definitions.
-
-### Current Coverage (27 tests)
-
-- Collections: basic CRUD on `posts` and `all-fields` collections
-- Globals: upsert + get on 4 globals, 404 for unknown
-- Schemas: read-only list + get
-- Auth: register, login, me, unauthenticated rejection
-- Health/Docs: health check, Swagger UI, OpenAPI spec
-
-### Gap Analysis — Untested Endpoints
-
-| Area              | Endpoints                                           | Current Tests |
-| ----------------- | --------------------------------------------------- | ------------- |
-| Media             | 6 CRUD + 5 folder routes                            | 0             |
-| Bulk Operations   | bulk-delete, bulk-publish, bulk-unpublish           | 0             |
-| Draft/Publish     | publish, unpublish, restore                         | 0             |
-| Users             | 5 CRUD routes                                       | 0             |
-| Roles             | 5 CRUD routes                                       | 0             |
-| Activity          | list with filters                                   | 0             |
-| API Tokens        | list, create, revoke                                | 0             |
-| Webhooks          | list, get, create, update, delete                   | 0             |
-| Schemas           | create, update, delete (write)                      | 0             |
-| GraphQL           | queries + mutations                                 | 0             |
-| Validation        | invalid bodies, missing required fields, bad emails | 0             |
-| Password Security | password excluded from responses                    | 0             |
-| Pagination        | limit, offset params                                | 0             |
-| Search/Sort       | filter, sort, select params                         | 0             |
-| 404/Errors        | non-existent entries, collections                   | 0             |
+Complete — 90 tests across 14 phases covering all API endpoints, error cases, edge cases, and cross-cutting concerns.
+| Schemas | create, update, delete (write) | 0 |
+| GraphQL | queries + mutations | 0 |
+| Validation | invalid bodies, missing required fields, bad emails | 0 |
+| Password Security | password excluded from responses | 0 |
+| Pagination | limit, offset params | 0 |
+| Search/Sort | filter, sort, select params | 0 |
+| 404/Errors | non-existent entries, collections | 0 |
 
 ---
 
 ### Phase 1: Media Routes (~10 tests)
 
-- [ ] **POST /api/media creates a media record** — upload base64 data with fileName + mimeType, verify response
-- [ ] **GET /api/media lists uploaded media** — verify paginated response with `data` array and `total`
-- [ ] **GET /api/media/:id returns a single media record** — verify all fields present
-- [ ] **PATCH /api/media/:id updates metadata** — change `originalName` and `alt`, verify update
-- [ ] **DELETE /api/media/:id deletes a media record** — verify 200 and subsequent GET returns 404/null
-- [ ] **POST /api/media/folders creates a folder** — provide `name`, verify response
-- [ ] **GET /api/media/folders lists folders** — verify response structure
-- [ ] **PATCH /api/media/folders/:id renames a folder** — update `name`, verify
-- [ ] **DELETE /api/media/folders/:id deletes a folder** — verify 200
-- [ ] **POST /api/media rejects oversized files** — send >10MB base64 data, expect 413 or 400
+- [x] **POST /api/media creates a media record** — upload base64 data with fileName + mimeType, verify response
+- [x] **GET /api/media lists uploaded media** — verify paginated response with `data` array and `total`
+- [x] **GET /api/media/:id returns a single media record** — verify all fields present
+- [x] **PATCH /api/media/:id updates metadata** — change `originalName` and `alt`, verify update
+- [x] **DELETE /api/media/:id deletes a media record** — verify 200 and subsequent GET returns 404/null
+- [x] **POST /api/media/folders creates a folder** — provide `name`, verify response
+- [x] **GET /api/media/folders lists folders** — verify response structure
+- [x] **PATCH /api/media/folders/:id renames a folder** — update `name`, verify
+- [x] **DELETE /api/media/folders/:id deletes a folder** — verify 200
+- [x] **POST /api/media rejects oversized files** — send >10MB base64 data, expect 413 or 400
 
 ### Phase 2: Bulk Operations & Draft Workflow (~10 tests)
 
-- [ ] **POST /api/posts/bulk-delete deletes multiple entries** — create 3 posts, bulk-delete 2, verify count
-- [ ] **POST /api/posts/:id/publish publishes a draft** — create post with `versions: { drafts: true }`, publish, verify `_status` changes
-- [ ] **POST /api/posts/:id/unpublish unpublishes a post** — publish then unpublish, verify status reverts
-- [ ] **POST /api/posts/bulk-publish publishes multiple drafts** — create 3 drafts, bulk-publish all
-- [ ] **POST /api/posts/bulk-unpublish unpublishes multiple posts** — publish 3, bulk-unpublish all
-- [ ] **POST /api/posts/:id/restore restores a soft-deleted entry** — create, delete (soft), restore, verify entry exists
-- [ ] **GET /api/posts/:id/versions lists version history** — create entry, update it twice, verify version list length >= 2
-- [ ] **POST /api/posts/:id/versions/:versionId/restore restores a previous version** — update entry, restore to v1, verify old data
-- [ ] **Soft-deleted entries excluded from list** — create with softDelete enabled, soft-delete, verify not in list
-- [ ] **Draft entries filtered correctly** — create with drafts enabled, verify `_status` field in list response
+- [x] **POST /api/posts/bulk-delete deletes multiple entries** — create 3 posts, bulk-delete 2, verify count
+- [x] **POST /api/posts/:id/publish publishes a draft** — create post with `versions: { drafts: true }`, publish, verify `_status` changes
+- [x] **POST /api/posts/:id/unpublish unpublishes a post** — publish then unpublish, verify status reverts
+- [x] **POST /api/posts/bulk-publish publishes multiple drafts** — create 3 drafts, bulk-publish all
+- [x] **POST /api/posts/bulk-unpublish unpublishes multiple posts** — publish 3, bulk-unpublish all
+- [x] **POST /api/posts/:id/restore restores a soft-deleted entry** — create, delete (soft), restore, verify entry exists
+- [x] **GET /api/posts/:id/versions lists version history** — create entry, update it twice, verify version list length >= 2
+- [x] **POST /api/posts/:id/versions/:versionId/restore restores a previous version** — update entry, restore to v1, verify old data
+- [x] **Soft-deleted entries excluded from list** — create with softDelete enabled, soft-delete, verify not in list
+- [x] **Draft entries filtered correctly** — create with drafts enabled, verify `_status` field in list response
 
 ### Phase 3: Users & Roles (~10 tests)
 
-- [ ] **GET /api/users lists all users** — verify admin user present
-- [ ] **POST /api/users creates a new user** — provide email + password, verify 201
-- [ ] **GET /api/users/:id returns a user** — fetch admin user by ID
-- [ ] **PATCH /api/users/:id updates user email** — change email, verify update
-- [ ] **DELETE /api/users/:id deletes a user** — create user, delete, verify gone
-- [ ] **POST /api/roles creates a role** — provide name + permissions, verify 201
-- [ ] **GET /api/roles lists roles** — verify default admin role present
-- [ ] **GET /api/roles/:id returns a role** — fetch role by ID
-- [ ] **PATCH /api/roles/:id updates a role** — change name, verify
-- [ ] **DELETE /api/roles/:id deletes a role** — create role, delete, verify gone
+- [x] **GET /api/users lists all users** — verify admin user present
+- [x] **POST /api/users creates a new user** — provide email + password, verify 201
+- [x] **GET /api/users/:id returns a user** — fetch admin user by ID
+- [x] **PATCH /api/users/:id updates user email** — change email, verify update
+- [x] **DELETE /api/users/:id deletes a user** — create user, delete, verify gone
+- [x] **POST /api/roles creates a role** — provide name + permissions, verify 201
+- [x] **GET /api/roles lists roles** — verify default admin role present
+- [x] **GET /api/roles/:id returns a role** — fetch role by ID
+- [x] **PATCH /api/roles/:id updates a role** — change name, verify
+- [x] **DELETE /api/roles/:id deletes a role** — create role, delete, verify gone
 
 ### Phase 4: Activity, API Tokens & Webhooks (~10 tests)
 
-- [ ] **GET /api/activity lists activity** — perform a create, then verify activity recorded
-- [ ] **GET /api/activity filters by action** — create + delete entries, filter by `action=create`
-- [ ] **GET /api/activity filters by collection** — filter by `collection=posts`
-- [ ] **POST /api/settings/api-tokens creates a token** — verify raw token returned once, `last_four` stored
-- [ ] **GET /api/settings/api-tokens lists tokens** — verify token metadata without raw value
-- [ ] **DELETE /api/settings/api-tokens/:id revokes a token** — verify removed from list
-- [ ] **POST /api/settings/webhooks creates a webhook** — provide name, url, events, verify 201
-- [ ] **GET /api/settings/webhooks lists webhooks** — verify response
-- [ ] **PUT /api/settings/webhooks/:id updates a webhook** — change URL, verify
-- [ ] **DELETE /api/settings/webhooks/:id deletes a webhook** — verify removed
+- [x] **GET /api/activity lists activity** — perform a create, then verify activity recorded
+- [x] **GET /api/activity filters by action** — create + delete entries, filter by `action=create`
+- [x] **GET /api/activity filters by collection** — filter by `collection=posts`
+- [x] **POST /api/settings/api-tokens creates a token** — verify raw token returned once, `last_four` stored
+- [x] **GET /api/settings/api-tokens lists tokens** — verify token metadata without raw value
+- [x] **DELETE /api/settings/api-tokens/:id revokes a token** — verify removed from list
+- [x] **POST /api/settings/webhooks creates a webhook** — provide name, url, events, verify 201
+- [x] **GET /api/settings/webhooks lists webhooks** — verify response
+- [x] **PUT /api/settings/webhooks/:id updates a webhook** — change URL, verify
+- [x] **DELETE /api/settings/webhooks/:id deletes a webhook** — verify removed
 
 ### Phase 5: Schema Write Operations (~5 tests)
 
-- [ ] **POST /api/schemas/collection creates a collection schema** — provide slug + fields, verify 201
-- [ ] **PUT /api/schemas/collection/:slug updates a collection schema** — add a field, verify
-- [ ] **POST /api/schemas/global creates a global schema** — provide slug + fields
-- [ ] **DELETE /api/schemas/collection/:slug deletes a collection schema** — verify removed from list
-- [ ] **POST /api/schemas rejects invalid slug** — provide numeric-starting slug, expect 400
+- [x] **POST /api/schemas/collection creates a collection schema** — provide slug + fields, verify 201
+- [x] **PUT /api/schemas/collection/:slug updates a collection schema** — add a field, verify
+- [x] **POST /api/schemas/global creates a global schema** — provide slug + fields
+- [x] **DELETE /api/schemas/collection/:slug deletes a collection schema** — verify removed from list
+- [x] **POST /api/schemas rejects invalid slug** — provide numeric-starting slug, expect 400
 
 ### Phase 6: GraphQL (~8 tests)
 
-- [ ] **POST /graphql executes listPosts query** — verify data array returned
-- [ ] **POST /graphql executes getPost query** — create post via REST, query via GraphQL
-- [ ] **POST /graphql executes createPost mutation** — verify created post returned
-- [ ] **POST /graphql executes updatePost mutation** — create then update, verify
-- [ ] **POST /graphql executes deletePost mutation** — create then delete, verify
-- [ ] **POST /graphql returns validation errors for invalid input** — send missing required fields
-- [ ] **GET /graphiql returns the GraphiQL IDE** — verify 200 and HTML response
-- [ ] **POST /graphql rejects unauthenticated requests** — no token, expect 401
+- [x] **POST /graphql executes listPosts query** — verify data array returned
+- [x] **POST /graphql executes getPost query** — create post via REST, query via GraphQL
+- [x] **POST /graphql executes createPost mutation** — verify created post returned
+- [x] **POST /graphql executes updatePost mutation** — create then update, verify
+- [x] **POST /graphql executes deletePost mutation** — create then delete, verify
+- [x] **POST /graphql returns validation errors for invalid input** — send missing required fields
+- [x] **GET /graphiql returns the GraphiQL IDE** — verify 200 and HTML response
+- [x] **POST /graphql rejects unauthenticated requests** — no token, expect 401
 
 ### Phase 7: Validation & Error Cases (~10 tests)
 
-- [ ] **POST /api/posts rejects missing required fields** — omit `title`, expect 400
-- [ ] **POST /api/posts rejects invalid body** — send malformed JSON or wrong types
-- [ ] **GET /api/posts/:id returns 404 for non-existent ID** — use fake UUID
-- [ ] **PATCH /api/posts/:id returns 404 for non-existent ID** — use fake UUID
-- [ ] **DELETE /api/posts/:id returns 404 for non-existent ID** — use fake UUID
-- [ ] **POST /api/auth/register rejects short password** — send password < 8 chars, expect 400
-- [ ] **POST /api/auth/register rejects invalid email** — send "not-an-email", expect 400
-- [ ] **POST /api/auth/login rejects wrong password** — expect 401
-- [ ] **POST /api/auth/login rejects non-existent user** — expect 401
-- [ ] **Password field excluded from user responses** — register user, verify no `password` or `passwordHash` in response
+- [x] **POST /api/posts rejects missing required fields** — omit `title`, expect 400
+- [x] **POST /api/posts rejects invalid body** — send malformed JSON or wrong types
+- [x] **GET /api/posts/:id returns 404 for non-existent ID** — use fake UUID
+- [x] **PATCH /api/posts/:id returns 404 for non-existent ID** — use fake UUID
+- [x] **DELETE /api/posts/:id returns 404 for non-existent ID** — use fake UUID
+- [x] **POST /api/auth/register rejects short password** — send password < 8 chars, expect 400
+- [x] **POST /api/auth/register rejects invalid email** — send "not-an-email", expect 400
+- [x] **POST /api/auth/login rejects wrong password** — expect 401
+- [x] **POST /api/auth/login rejects non-existent user** — expect 401
+- [x] **Password field excluded from user responses** — register user, verify no `password` or `passwordHash` in response
 
 ### Phase 8: Query Parameters (~7 tests)
 
-- [ ] **GET /api/posts?limit=2 returns paginated results** — create 5 posts, request limit=2, verify data length
-- [ ] **GET /api/posts?offset=2 skips entries** — create 5 posts, offset=2, verify first item
-- [ ] **GET /api/posts?sort=title:asc sorts ascending** — create posts with different titles, verify order
-- [ ] **GET /api/posts?sort=title:desc sorts descending** — verify reverse order
-- [ ] **GET /api/posts?select=title,slug selects specific fields** — verify only requested fields returned
-- [ ] **GET /api/posts?where[status]=draft filters by field** — create draft + published, filter
-- [ ] **GET /api/settings/api-tokens?limit=1 paginates tokens** — create 3 tokens, verify limit
+- [x] **GET /api/posts?limit=2 returns paginated results** — create 5 posts, request limit=2, verify data length
+- [x] **GET /api/posts?offset=2 skips entries** — create 5 posts, offset=2, verify first item
+- [x] **GET /api/posts?sort=title:asc sorts ascending** — create posts with different titles, verify order
+- [x] **GET /api/posts?sort=title:desc sorts descending** — verify reverse order
+- [x] **GET /api/posts?select=title,slug selects specific fields** — verify only requested fields returned
+- [x] **GET /api/posts?where[status]=draft filters by field** — create draft + published, filter
+- [x] **GET /api/settings/api-tokens?limit=1 paginates tokens** — create 3 tokens, verify limit
 
 ### Phase 9: Metadata Endpoints (~3 tests)
 
-- [ ] **GET /api/collections returns collection metadata** — verify slug, fields, labels for each
-- [ ] **GET /api/globals returns global metadata** — verify slug, fields, label for each
-- [ ] **GET /api/plugins returns plugin list** — verify array response
+- [x] **GET /api/collections returns collection metadata** — verify slug, fields, labels for each
+- [x] **GET /api/globals returns global metadata** — verify slug, fields, label for each
+- [x] **GET /api/plugins returns plugin list** — verify array response
 
 ---
 
 ### Verification
 
-- [ ] Run `pnpm --filter @arche-cms/playground test` — all ~70+ tests pass
-- [ ] Run `pnpm typecheck` — no type errors
-- [ ] Run `pnpm lint` — no lint errors
-- [ ] Verify test count is stable / increased from baseline (27 → ~70+)
+- [x] Run `pnpm --filter @arche-cms/playground test` — all 90 tests pass
+- [x] Run `pnpm typecheck` — no type errors
+- [x] Run `pnpm lint` — no lint errors
+- [x] Verify test count increased from baseline (27 → 90)
 
 ---
 
@@ -2067,6 +2046,281 @@ Improve perceived performance and provide helpful guidance when content is empty
 
 ---
 
-## M36: New Feature Work
+## M36: Firebase-Backed CMS MVP Variant
+### Objective
 
-> _TBD — to be defined by the team. Possible candidates:_
+Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firestore + Storage) without depending on the current Fastify REST/GraphQL API. Introduce a provider abstraction in the admin layer, keep current REST behavior as one provider, and add a Firebase provider for MVP scope. This minimizes UI churn and preserves future extensibility.
+
+### Scope
+
+**Include:** login/logout, current-user session, collection/global CRUD, media upload + listing, basic role gating, dashboard/read pages needed by admin navigation.
+
+**Exclude for MVP:** API tokens, runtime schema write/edit in browser, server webhooks dispatch/retries, scheduled publishing workers, GraphQL endpoint.
+
+---
+
+### Phase 1: MVP Scope & Configuration
+
+- [ ] **Define `BackendMode` type** — add `"rest" | "firebase"` union type in `packages/types/src/index.ts`
+- [ ] **Add backend mode config** — `CMS_BACKEND_MODE` env var (default `"rest"`), typed in `packages/cms/src/index.ts` public API
+- [ ] **Add feature flag system** — `packages/cms/src/admin/lib/feature-flags.ts` with `isEnabled(flag)` helper and mode-aware defaults
+- [ ] **Update admin app entry** — read `VITE_BACKEND_MODE` env var, pass to provider factory
+- [ ] **Update Vite config** — conditionally set API proxy based on backend mode (skip proxy for Firebase mode)
+- [ ] **Add mode indicator** — show backend mode badge in admin sidebar header
+
+### Phase 2: Admin Backend Provider Boundary (Extraction)
+
+#### Provider Contract
+
+- [ ] **Define `AdminProvider` interface** — `packages/cms/src/admin/lib/providers/types.ts` with methods:
+  - Auth: `login(email, password)`, `register(email, password, name)`, `logout()`, `refreshToken()`, `getCurrentUser()`, `forgotPassword(email)`, `resetPassword(token, password)`
+  - Collections: `listEntries(slug, params)`, `getEntry(slug, id, locale?)`, `createEntry(slug, data)`, `updateEntry(slug, id, data)`, `deleteEntry(slug, id)`, `bulkDelete(slug, ids)`, `publishEntry(slug, id)`, `unpublishEntry(slug, id)`, `restoreEntry(slug, id)`
+  - Globals: `getGlobal(slug)`, `upsertGlobal(slug, data)`
+  - Media: `listMedia(params)`, `getMedia(id)`, `uploadMedia(file)`, `deleteMedia(id)`, `getMediaFile(id)`, `listFolders()`, `createFolder(name)`, `renameFolder(id, name)`, `deleteFolder(id)`
+  - Users: `listUsers(params)`, `getUser(id)`, `createUser(data)`, `updateUser(id, data)`, `deleteUser(id)`
+  - Roles: `listRoles(params)`, `getRole(id)`, `createRole(data)`, `updateRole(id, data)`, `deleteRole(id)`
+  - Settings: `listApiTokens()`, `createApiToken(data)`, `deleteApiToken(id)`, `listWebhooks()`, `getWebhook(id)`, `createWebhook(data)`, `updateWebhook(id, data)`, `deleteWebhook(id)`
+  - Metadata: `listCollections()`, `listGlobals()`, `listPlugins()`, `getDashboardData(colSlugs)`
+  - Activity: `listActivity(params)`
+
+- [ ] **Create `ProviderContext`** — React Context (`packages/cms/src/admin/lib/providers/context.tsx`) that provides the active provider to all components
+- [ ] **Create provider factory** — `packages/cms/src/admin/lib/providers/index.ts` that returns the correct provider based on `VITE_BACKEND_MODE`
+
+#### REST Provider (Existing Behavior)
+
+- [ ] **Create `RestProvider`** — `packages/cms/src/admin/lib/providers/rest.ts` implementing `AdminProvider`
+- [ ] **Move existing `apiFetch` calls** — refactor `lib/api.ts` functions into `RestProvider` methods
+- [ ] **Keep `lib/api.ts` as thin wrapper** — delegate to provider, maintain backward compatibility during migration
+- [ ] **Verify REST mode regression** — all existing tests pass, no behavior changes
+
+#### Route Component Migration
+
+- [ ] **Migrate `routes/collections/$slug.tsx`** — replace direct `apiFetch` with provider methods via hooks
+- [ ] **Migrate `routes/collections/new.$slug.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/collections/$id_.$slug.edit.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/globals/$slug.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/index.tsx`** (Dashboard) — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/settings/index.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/settings/api-tokens.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/settings/webhooks/*`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/settings/users/*`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/settings/roles/*`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/settings/plugins.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/media/index.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/login.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/register.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/forgot-password.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `routes/reset-password.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `components/sidebar.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `components/command-palette.tsx`** — replace direct `apiFetch` with provider methods
+- [ ] **Migrate `components/field-input.tsx`** — replace RelationPicker and media upload `apiFetch` with provider methods
+
+### Phase 3: Firebase Provider Implementation
+
+#### Firebase Auth
+
+- [ ] **Install Firebase SDK** — `firebase` package in `packages/cms/` (dev dependency)
+- [ ] **Create Firebase config** — `packages/cms/src/admin/lib/providers/firebase/config.ts` reading `VITE_FIREBASE_*` env vars
+- [ ] **Implement `FirebaseAuthProvider`** — `packages/cms/src/admin/lib/providers/firebase/auth.ts`
+  - Replace JWT refresh-cycle with Firebase Auth session listener (`onAuthStateChanged`)
+  - `login(email, password)` → `signInWithEmailAndPassword`
+  - `register(email, password, name)` → `createUserWithEmailAndPassword` + `updateProfile`
+  - `logout()` → `signOut`
+  - `getCurrentUser()` → Firebase Auth user with custom claims
+  - `forgotPassword(email)` → `sendPasswordResetEmail`
+  - `resetPassword(token, password)` → `confirmPasswordReset`
+  - Token retrieval via `getIdToken()` for any Firestore/Storage operations
+- [ ] **Add Firebase Auth state to provider** — expose `user`, `loading`, `error` via React Context
+- [ ] **Update auth route guards** — check Firebase Auth state instead of JWT for protected routes
+
+#### Firebase Firestore — Content
+
+- [ ] **Design Firestore data model** — Option A: one Firestore collection per CMS collection slug (recommended for MVP)
+  - Document ID: entry ID (UUID)
+  - Fields: all schema fields + `_status`, `_deletedAt`, `_version`, `createdAt`, `updatedAt`
+  - Globals: single document per global slug in a `__cms_globals` collection
+- [ ] **Create Firestore content provider** — `packages/cms/src/admin/lib/providers/firebase/content.ts`
+  - `listEntries(slug, params)` → Firestore query with `where`, `orderBy`, `limit`, `offset`
+  - `getEntry(slug, id)` → `getDoc(doc(db, slug, id))`
+  - `createEntry(slug, data)` → `addDoc(collection(db, slug), data)`
+  - `updateEntry(slug, id, data)` → `updateDoc(doc(db, slug, id), data)`
+  - `deleteEntry(slug, id)` → soft delete (set `_deletedAt`) or hard delete based on collection config
+  - `bulkDelete(slug, ids)` → batch write
+  - `publishEntry(slug, id)` → update `_status` to `"published"`
+  - `unpublishEntry(slug, id)` → update `_status` to `"draft"`
+  - `restoreEntry(slug, id)` → clear `_deletedAt`
+- [ ] **Implement Firestore query builder** — `packages/cms/src/admin/lib/providers/firebase/query-builder.ts`
+  - Map Arche filter syntax to Firestore `where` clauses
+  - Handle pagination via `startAfter` cursor (not offset, for performance)
+  - Handle sorting via `orderBy`
+  - Handle field selection via `select` (limited in Firestore)
+- [ ] **Define Firestore indexes** — `firestore.indexes.json` for common query patterns:
+  - `{collection}: _status + createdAt`
+  - `{collection}: _status + _deletedAt + createdAt`
+  - `{collection}: _status + updatedAt`
+- [ ] **Handle Firestore limitations** — document array-contains-any limits, compound query constraints, 1MB document limit
+
+#### Firebase Firestore — Globals
+
+- [ ] **Implement global provider** — `packages/cms/src/admin/lib/providers/firebase/globals.ts`
+  - `getGlobal(slug)` → `getDoc(doc(db, "__cms_globals", slug))`
+  - `upsertGlobal(slug, data)` → `setDoc(doc(db, "__cms_globals", slug), data, { merge: true })`
+
+#### Firebase Storage — Media
+
+- [ ] **Create Firebase Storage provider** — `packages/cms/src/admin/lib/providers/firebase/media.ts`
+  - `uploadMedia(file)` → `uploadBytes(ref(storage, path), file)` + Firestore metadata record
+  - `listMedia(params)` → Firestore query on `__cms_media` collection
+  - `getMedia(id)` → Firestore doc + `getDownloadURL` for preview
+  - `deleteMedia(id)` → `deleteObject(ref(storage, path))` + Firestore doc delete
+  - `getMediaFile(id)` → `getDownloadURL(ref(storage, path))`
+  - `listFolders()` → Firestore query on `__cms_media_folders`
+  - `createFolder(name)` → `addDoc(collection(db, "__cms_media_folders"), { name })`
+  - `renameFolder(id, name)` → `updateDoc`
+  - `deleteFolder(id)` → `deleteDoc`
+- [ ] **Design storage path structure** — `media/{collection}/{entryId}/{filename}`
+- [ ] **Handle Firebase Storage security** — ensure uploads respect auth state
+
+#### Firebase Firestore — Users & Roles
+
+- [ ] **Implement users provider** — `packages/cms/src/admin/lib/providers/firebase/users.ts`
+  - Map to Firestore `__cms_users` collection
+  - Use Firebase Auth `customClaims` for role assignment
+- [ ] **Implement roles provider** — `packages/cms/src/admin/lib/providers/firebase/roles.ts`
+  - Map to Firestore `__cms_roles` collection
+  - Store permissions as JSON document
+
+#### Firebase — Settings (API Tokens, Webhooks)
+
+- [ ] **API Tokens** — defer to Firestore `__cms_api_tokens` collection (MVP: basic CRUD, no token verification since no server)
+- [ ] **Webhooks** — defer entirely (no server-side dispatch in Firebase mode)
+
+#### Firebase — Activity
+
+- [ ] **Implement activity provider** — `packages/cms/src/admin/lib/providers/firebase/activity.ts`
+  - Write audit events to Firestore `__cms_activity` collection on mutations
+  - List activity with filters (collection, action)
+
+### Phase 4: RBAC & Security Rules
+
+- [ ] **Define role model** — custom claims on Firebase Auth users (`role` field) + optional Firestore role documents
+- [ ] **Encode permission matrix** — Firestore Security Rules equivalent to `requirePermission` checks
+- [ ] **Write Firestore Security Rules** — `firestore.rules` file:
+  - Allow reads only if authenticated and role matches permission
+  - Allow writes only if authenticated and role matches permission
+  - Deny unauthenticated access to all collections except public reads
+- [ ] **Write Storage Security Rules** — `storage.rules` file:
+  - Allow uploads only if authenticated
+  - Allow reads for authenticated users
+  - Allow deletes only for admin/editor roles
+- [ ] **Add audit event writes** — Firestore writes for critical mutations (create/update/delete/publish) in `__cms_activity`
+
+### Phase 5: Mode-Aware Admin UX
+
+- [ ] **Hide unsupported pages in Firebase mode** — API Tokens, Webhooks, Schema Builder (write), Settings → Plugins
+- [ ] **Update sidebar navigation** — conditionally show/hide items based on `VITE_BACKEND_MODE`
+- [ ] **Update route guards** — prevent navigation to unsupported routes with redirect
+- [ ] **Update empty/error states** — explain Firebase-mode limitations (e.g., "Schema editing is not supported in Firebase mode")
+- [ ] **Add mode switcher** — settings page or env-based toggle to switch between REST and Firebase mode
+- [ ] **Update command palette** — filter actions based on mode
+- [ ] **Handle offline behavior** — Firebase supports offline persistence; show offline indicator
+
+### Phase 6: Validation & Test Strategy
+
+- [ ] **Provider contract tests** — `packages/cms/test/providers/contract.test.ts`
+  - Test that both REST and Firebase providers implement the same `AdminProvider` interface
+  - Verify UI-facing behavior matches expectations for each provider
+- [ ] **Firebase Emulator integration tests** — `packages/cms/test/providers/firebase/`
+  - Auth tests: login, register, logout, token refresh, password reset
+  - Firestore tests: CRUD operations, queries, security rules
+  - Storage tests: upload, download, delete, security rules
+  - RBAC tests: permission enforcement via security rules
+- [ ] **Keep existing REST tests** — all 490+ tests pass unchanged for REST mode
+- [ ] **Add mode-specific test suites** — separate Firebase test suite, only run when `FIREBASE_EMULATOR=true`
+- [ ] **Provider switching tests** — verify admin works correctly when switching modes
+
+### Phase 7: Packaging & Rollout
+
+- [ ] **Ship as experimental backend mode** — `packages/cms` with explicit MVP capability matrix in README
+- [ ] **Add Firebase config docs** — required env vars, emulator/prod setup, index deployment
+- [ ] **Add `cms firebase:setup` CLI command** — interactive Firebase project setup wizard
+- [ ] **Add `cms firebase:deploy-rules` CLI command** — deploy Firestore/Storage security rules
+- [ ] **Add `cms firebase:deploy-indexes` CLI command** — deploy Firestore indexes
+- [ ] **Add Firebase mode to create-app** — `@arche-cms/create-app` scaffold with Firebase option
+- [ ] **Write migration guide** — from REST mode to Firebase mode
+- [ ] **Document capability matrix** — what works in Firebase mode vs REST mode
+
+### Firebase Data Model Summary
+
+```
+Firestore Collections:
+  {collection-slug}         → One doc per entry (fields match schema + metadata)
+  __cms_globals             → One doc per global slug
+  __cms_users               → One doc per user (email, role, createdAt)
+  __cms_roles               → One doc per role (name, permissions JSON)
+  __cms_activity            → One doc per activity event
+  __cms_media               → One doc per media file (metadata)
+  __cms_media_folders       → One doc per folder
+  __cms_api_tokens          → One doc per API token (hash, lastFour)
+
+Firebase Auth:
+  Custom Claims: { role: "admin" | "editor" | "viewer" }
+
+Firebase Storage:
+  media/{collection}/{entryId}/{filename}
+
+Security Rules:
+  firestore.rules           → Firestore access rules
+  storage.rules             → Storage access rules
+  firestore.indexes.json    → Composite index definitions
+```
+
+### Verification
+
+#### Provider Wiring Verification
+
+- [ ] Run admin in REST mode — verify no behavior regressions on login, list/create/edit entries, media upload
+- [ ] Switch to Firebase mode — verify same core UI flows complete without `/api` network usage
+- [ ] Verify both providers pass the same contract tests
+
+#### Security Verification (Firebase Emulator)
+
+- [ ] Validate each action (read/create/update/delete/publish/media upload) against role permutations
+- [ ] Confirm unauthenticated users are denied all actions
+- [ ] Confirm forbidden writes are blocked by rules, not only hidden in UI
+
+#### Data Behavior Verification
+
+- [ ] Validate filtering/sorting/pagination behavior in Firebase mode for representative collection sizes
+- [ ] Validate soft-delete and publish state transitions are reflected consistently in list/detail views
+- [ ] Validate offline persistence works correctly
+
+#### Test Execution
+
+- [ ] Run existing REST test suite — no regressions
+- [ ] Run new Firebase emulator integration tests — all pass
+- [ ] Run provider contract tests — both providers implement interface correctly
+
+#### Documentation Verification
+
+- [ ] Confirm README/backend mode docs accurately describe supported vs unsupported features for Firebase MVP
+- [ ] Confirm Firebase setup guide covers env vars, emulator setup, index deployment, security rules
+
+---
+
+### Decisions
+
+- **Chosen scope:** MVP — minimal viable Firebase integration
+- **Provider abstraction:** Keep "no CMS API needed" by using direct Firebase client SDK from admin
+- **Data model:** Option A — one Firestore collection per CMS collection slug (simpler queries, easier indexes)
+- **Versioning:** Option A — minimal `updatedAt/version` only (Option B: full revision subcollections deferred to parity phase)
+- **Schema management:** Option A — read-only schema UI in Firebase mode with CLI-managed schema source of truth
+
+### Out of Scope for MVP
+
+- API tokens verification (no server to verify)
+- Runtime schema write/edit in browser
+- Server-side webhook dispatch
+- Scheduled publishing workers
+- GraphQL endpoint
+- Full revision history (subcollections)
