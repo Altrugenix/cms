@@ -494,10 +494,10 @@ export const activityObjectSchema = {
   properties: {
     action: { type: "string" },
     collection: { type: "string" },
+    createdAt: { type: "string" },
     documentId: { type: "string" },
     id: { type: "string" },
     label: { type: "string" },
-    createdAt: { type: "string" },
   },
   type: "object",
 } as const;
@@ -519,7 +519,7 @@ export const activityListResponseSchema = {
 
 export const schemaInfoObjectSchema = {
   properties: {
-    fields: { items: { type: "object" }, type: "array" },
+    fields: { items: { additionalProperties: true, type: "object" }, type: "array" },
     label: { type: "string" },
     meta: { type: "object" },
     slug: { type: "string" },

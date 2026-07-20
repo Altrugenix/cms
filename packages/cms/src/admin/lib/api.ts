@@ -197,6 +197,10 @@ export async function fetchGlobal(slug: string): Promise<Record<string, unknown>
   return apiFetch(`/api/globals/${slug}`);
 }
 
+export async function fetchGlobalSchema(slug: string): Promise<SchemaInfo> {
+  return fetchSchema("global", slug);
+}
+
 export async function saveGlobal(
   slug: string,
   data: Record<string, unknown>,
