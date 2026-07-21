@@ -1,5 +1,13 @@
 # @arche-cms/schema
 
+## 0.1.8
+
+### Patch Changes
+
+- 441acfc: fix(schema): export field helpers without aliases for backwards compatibility
+- Updated dependencies [441acfc]
+  - @arche-cms/types@0.1.8
+
 ## 0.1.7
 
 ### Patch Changes

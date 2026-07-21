@@ -1,5 +1,11 @@
 # @arche-cms/storage
 
+## 0.1.8
+
+### Patch Changes
+
+- 441acfc: fix(schema): export field helpers without aliases for backwards compatibility
+
 ## 0.1.7
 
 ### Patch Changes
