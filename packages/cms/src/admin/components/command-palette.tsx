@@ -228,7 +228,7 @@ export function CommandPalette({ onClose, open }: CommandPaletteProps) {
       }}
     >
       {/* backdrop */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-overlay" />
 
       {/* dialog */}
       <div className="relative w-full max-w-lg rounded-lg border bg-background shadow-2xl">

@@ -40,12 +40,14 @@ function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Create Account</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Create Account</h1>
           <p className="text-sm text-muted-foreground">Register to start using the CMS</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </div>
           )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -74,7 +76,7 @@ function RegisterPage() {
         </form>
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link to="/login" className="text-primary hover:underline">
+          <Link to="/login" className="text-primary hover:underline transition-colors">
             Sign In
           </Link>
         </p>

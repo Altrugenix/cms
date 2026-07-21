@@ -43,17 +43,24 @@ function CreateUser() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/settings/users" className="text-muted-foreground hover:text-foreground">
+        <Link
+          to="/settings/users"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create User</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Create User</h1>
           <p className="text-muted-foreground">Add a new user to the CMS</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
-        {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+        {error && (
+          <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+            {error}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>

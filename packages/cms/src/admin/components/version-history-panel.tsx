@@ -2,9 +2,9 @@ import { Clock, History, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useVersions, useRestoreVersion } from "@/lib/hooks";
 
 type VersionHistoryPanelProps = {
@@ -85,7 +85,7 @@ export function VersionHistoryPanel({ entryId, slug }: VersionHistoryPanelProps)
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   disabled={restoreVersion.isPending}
                   onClick={() => setConfirmVersionId(String(version.id))}
                 >

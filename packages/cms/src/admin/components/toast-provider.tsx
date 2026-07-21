@@ -46,7 +46,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ dismiss, toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+      <div
+        role="region"
+        aria-label="Notifications"
+        aria-live="polite"
+        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
@@ -56,6 +61,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <p className="flex-1">{t.message}</p>
             <button
               type="button"
+              aria-label="Dismiss notification"
               onClick={() => dismiss(t.id)}
               className="shrink-0 opacity-70 hover:opacity-100 transition-opacity"
             >

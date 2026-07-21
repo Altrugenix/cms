@@ -3,9 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { FieldInput } from "@/components/field-input";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
 import { useGlobalSchema, useGlobalData, useSaveGlobal } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
@@ -99,11 +99,13 @@ function EditGlobal() {
     );
   if (gError)
     return (
-      <div className="rounded-md bg-destructive/10 p-4 text-destructive">{gError.message}</div>
+      <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+        {gError.message}
+      </div>
     );
   if (!globalDef)
     return (
-      <div className="rounded-md bg-destructive/10 p-4 text-destructive">
+      <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
         Global "{slug}" not found
       </div>
     );
@@ -111,11 +113,14 @@ function EditGlobal() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/globals" className="text-muted-foreground hover:text-foreground">
+        <Link
+          to="/globals"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{globalDef.label}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{globalDef.label}</h1>
           <p className="text-muted-foreground">Edit global settings</p>
         </div>
       </div>

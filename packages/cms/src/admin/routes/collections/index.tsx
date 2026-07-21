@@ -1,8 +1,8 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { FileText, Plus } from "lucide-react";
 
-import { Skeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCollections, useCollectionEntryCounts } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
@@ -20,7 +20,7 @@ function CollectionsList() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Skeleton className="h-9 w-48" />
             <Skeleton className="mt-1 h-5 w-32" />
@@ -55,7 +55,7 @@ function CollectionsList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Collections</h1>
           <p className="text-muted-foreground">Manage your content types</p>
         </div>
         <Link to="/schemas/new">

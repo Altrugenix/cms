@@ -2,11 +2,11 @@ import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-route
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUsers, updateUser, fetchRoles, type UserMeta, type RoleMeta } from "@/lib/api";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
@@ -100,17 +100,24 @@ function EditUser() {
     );
   }
   if (error)
-    return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
+    return (
+      <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+        {error}
+      </div>
+    );
   if (!user) return null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/settings/users" className="text-muted-foreground hover:text-foreground">
+        <Link
+          to="/settings/users"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit User</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Edit User</h1>
           <p className="text-muted-foreground">{user.email}</p>
         </div>
       </div>

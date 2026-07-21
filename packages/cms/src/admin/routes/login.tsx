@@ -40,12 +40,14 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Sign In</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Sign In</h1>
           <p className="text-sm text-muted-foreground">Enter your credentials to access the CMS</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </div>
           )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -75,12 +77,12 @@ function LoginPage() {
         <div className="flex flex-col gap-2 text-center text-sm text-muted-foreground">
           <p>
             Don&apos;t have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline">
+            <Link to="/register" className="text-primary hover:underline transition-colors">
               Sign Up
             </Link>
           </p>
           <p>
-            <Link to="/forgot-password" className="text-primary hover:underline">
+            <Link to="/forgot-password" className="text-primary hover:underline transition-colors">
               Forgot your password?
             </Link>
           </p>

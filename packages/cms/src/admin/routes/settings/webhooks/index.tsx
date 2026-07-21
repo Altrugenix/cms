@@ -4,9 +4,9 @@ import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Pagination } from "@/components/pagination";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { type WebhookMeta } from "@/lib/api";
 import { useWebhooksList, useDeleteWebhook, useUpdateWebhook } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
@@ -95,7 +95,7 @@ function WebhooksList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Webhooks</h1>
           <p className="text-muted-foreground">
@@ -179,13 +179,13 @@ function WebhooksList() {
                         onClick={() => handleToggle(wh)}
                         className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                           wh.enabled
-                            ? "bg-green-100 text-green-700 hover:bg-green-200"
+                            ? "bg-success/10 text-success hover:bg-success/20"
                             : "bg-muted text-muted-foreground hover:bg-muted/80"
                         }`}
                       >
                         <span
                           className={`h-1.5 w-1.5 rounded-full ${
-                            wh.enabled ? "bg-green-500" : "bg-muted-foreground"
+                            wh.enabled ? "bg-success" : "bg-muted-foreground"
                           }`}
                         />
                         {wh.enabled ? "Enabled" : "Disabled"}

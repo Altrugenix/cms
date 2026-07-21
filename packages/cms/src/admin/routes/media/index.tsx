@@ -14,10 +14,10 @@ import { useEffect, useState, useRef, useCallback } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Pagination } from "@/components/pagination";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchMedia,
   fetchFolders,
@@ -604,7 +604,7 @@ function MediaLibrary() {
                 ) : (
                   <>
                     <p
-                      className="truncate text-xs font-medium cursor-pointer hover:text-primary"
+                      className="truncate text-xs font-medium cursor-pointer hover:text-primary transition-colors"
                       title={item.originalName}
                       onClick={() => startEditing(item)}
                     >

@@ -3,9 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { FieldInput } from "@/components/field-input";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
 import { useCollection, useCreateEntry } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
@@ -111,7 +111,11 @@ function CreateEntry() {
     );
   }
   if (error)
-    return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
+    return (
+      <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+        {error}
+      </div>
+    );
   if (!collection) return null;
 
   return (
@@ -120,19 +124,19 @@ function CreateEntry() {
         <Link
           to="/collections/$slug"
           params={{ slug }}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">New {collection.label}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">New {collection.label}</h1>
           <p className="text-muted-foreground">Create a new entry</p>
         </div>
         <div className="ml-auto">
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
           >
             {(collection.localization?.locales ?? ["en"]).map((l) => (
               <option key={l} value={l}>

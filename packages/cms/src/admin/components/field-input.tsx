@@ -139,7 +139,7 @@ function mapInputType(fieldType: string): string {
 
 function FieldLabel({ field }: { field: FieldDefinition }) {
   return (
-    <Label>
+    <Label htmlFor={field.name} aria-required={field.required || undefined}>
       {field.label ?? field.name}
       {field.required && <span className="ml-1 text-destructive">*</span>}
     </Label>
@@ -147,7 +147,11 @@ function FieldLabel({ field }: { field: FieldDefinition }) {
 }
 
 function FieldError({ error }: { error?: string }) {
-  return error ? <p className="text-xs text-destructive">{error}</p> : null;
+  return error ? (
+    <p role="alert" className="text-xs text-destructive">
+      {error}
+    </p>
+  ) : null;
 }
 
 /* ─── Boolean ─── */
@@ -171,7 +175,7 @@ function BooleanInput({
           type="checkbox"
           checked={strVal === "true" || strVal === "on"}
           onChange={(e) => onChange(e.target.checked ? "true" : "false")}
-          className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+          className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
         <Label htmlFor={field.name}>
           {field.label}
@@ -204,7 +208,7 @@ function CheckboxInput({
           type="checkbox"
           checked={strVal === "true" || strVal === "on"}
           onChange={(e) => onChange(e.target.checked ? "true" : "false")}
-          className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+          className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
         <Label htmlFor={field.name}>
           {field.label}
@@ -277,7 +281,7 @@ function RadioInput({
               value={opt}
               checked={strVal === opt}
               onChange={(e) => onChange(e.target.value)}
-              className="h-4 w-4 border-input text-primary focus:ring-primary"
+              className="h-4 w-4 border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             {opt}
           </label>
@@ -546,7 +550,7 @@ function RichTextInput({
                     }
                   }}
                   placeholder="https://example.com"
-                  className="w-full rounded border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-full rounded border border-input bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <div className="mt-1.5 flex justify-end gap-1">
                   <button
@@ -555,14 +559,14 @@ function RichTextInput({
                       setShowLinkPopover(false);
                       setLinkUrl("");
                     }}
-                    className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted"
+                    className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={insertLink}
-                    className="rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground hover:bg-primary/90"
+                    className="rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     Insert
                   </button>
@@ -641,7 +645,7 @@ function MarkdownInput({
   return (
     <div className="space-y-2">
       <FieldLabel field={field} />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <textarea
           id={field.name}
           value={strVal}

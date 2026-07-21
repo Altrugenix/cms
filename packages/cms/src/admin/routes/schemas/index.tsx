@@ -3,9 +3,9 @@ import { Plus, Pencil, Trash2, FileText, Globe, Puzzle, Layers } from "lucide-re
 import { useEffect, useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { fetchSchemas, deleteSchema, type SchemaInfo } from "@/lib/api";
 import { Route as rootRoute } from "@/routes/__root";
 
@@ -22,9 +22,9 @@ const typeIcons: Record<string, typeof FileText> = {
 };
 
 const typeColors: Record<string, string> = {
-  collection: "text-blue-500",
-  component: "text-purple-500",
-  global: "text-emerald-500",
+  collection: "text-info",
+  component: "text-primary",
+  global: "text-success",
 };
 
 function SchemasList() {

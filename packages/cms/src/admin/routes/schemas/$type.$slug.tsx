@@ -39,11 +39,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useRef, useCallback } from "react";
 
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { fetchSchema, type FieldDefinition } from "@/lib/api";
 import { useSaveSchema } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
@@ -316,7 +316,7 @@ function FieldEditorList({
                   validation: v.required !== undefined ? v : undefined,
                 });
               }}
-              className="h-3.5 w-3.5 rounded border-gray-300"
+              className="h-3.5 w-3.5 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <Label htmlFor={`nested-required-${selectedIdx}`} className="text-xs">
               Required
@@ -392,7 +392,7 @@ function FieldEditorList({
               <select
                 value={(selectedField as { kind?: string }).kind ?? "oneToOne"}
                 onChange={(e) => updateField(selectedIdx as number, { kind: e.target.value })}
-                className="w-full rounded-md border bg-background px-2 py-1 text-xs"
+                className="w-full rounded-md border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
               >
                 <option value="oneToOne">One to One</option>
                 <option value="oneToMany">One to Many</option>
@@ -421,7 +421,7 @@ function FieldEditorList({
                       repeatable: e.target.checked || undefined,
                     })
                   }
-                  className="h-3.5 w-3.5 rounded border-gray-300"
+                  className="h-3.5 w-3.5 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <Label htmlFor={`nested-repeatable-${selectedIdx}`} className="text-xs">
                   Repeatable
@@ -451,7 +451,7 @@ function FieldEditorList({
                       unique: e.target.checked || undefined,
                     })
                   }
-                  className="h-3.5 w-3.5 rounded border-gray-300"
+                  className="h-3.5 w-3.5 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <Label htmlFor={`nested-unique-${selectedIdx}`} className="text-xs">
                   Unique
@@ -486,7 +486,7 @@ function FieldEditorList({
                     format: e.target.value as "hex" | "rgb" | "rgba" | "hsl",
                   })
                 }
-                className="w-full rounded-md border bg-background px-2 py-1 text-xs"
+                className="w-full rounded-md border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
               >
                 <option value="hex">Hex</option>
                 <option value="rgb">RGB</option>
@@ -892,7 +892,7 @@ function SchemaEditor() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight md:text-2xl">{label}</h1>
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{label}</h1>
               <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground capitalize">
                 {type}
               </span>
@@ -1121,7 +1121,7 @@ function SchemaEditor() {
                         validation: v.required !== undefined ? v : undefined,
                       });
                     }}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                   <Label htmlFor="field-required" className="text-sm">
                     Required
@@ -1229,7 +1229,7 @@ function SchemaEditor() {
                         onChange={(e) =>
                           updateField(selectedIdx as number, { kind: e.target.value })
                         }
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                       >
                         <option value="oneToOne">One to One</option>
                         <option value="oneToMany">One to Many</option>
@@ -1262,7 +1262,7 @@ function SchemaEditor() {
                             repeatable: e.target.checked || undefined,
                           })
                         }
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                       <Label htmlFor="field-repeatable" className="text-sm">
                         Repeatable
@@ -1295,7 +1295,7 @@ function SchemaEditor() {
                             unique: e.target.checked || undefined,
                           })
                         }
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                       <Label htmlFor="field-unique" className="text-sm">
                         Unique
@@ -1351,7 +1351,7 @@ function SchemaEditor() {
                             multiple: e.target.checked || undefined,
                           })
                         }
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                       <Label htmlFor="field-multiple" className="text-sm">
                         Allow Multiple

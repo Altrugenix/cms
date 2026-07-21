@@ -13,9 +13,9 @@ import {
 import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useCollection,
   useEntries,
@@ -147,7 +147,7 @@ function CollectionEntries() {
           </div>
           <Skeleton className="h-10 w-36 rounded-md" />
         </div>
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
@@ -200,7 +200,7 @@ function CollectionEntries() {
           </div>
           <Skeleton className="h-10 w-36 rounded-md" />
         </div>
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
@@ -263,7 +263,10 @@ function CollectionEntries() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Link to="/collections" className="text-muted-foreground hover:text-foreground">
+          <Link
+            to="/collections"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
@@ -277,7 +280,7 @@ function CollectionEntries() {
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
           >
             {(collection.localization?.locales ?? ["en"]).map((l) => (
               <option key={l} value={l}>
@@ -315,7 +318,7 @@ function CollectionEntries() {
       ) : (
         <div className="space-y-3">
           {selected.size > 0 && (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm text-muted-foreground">{selected.size} selected</p>
               {hasDrafts && (
                 <>
@@ -352,7 +355,7 @@ function CollectionEntries() {
                       type="checkbox"
                       checked={selected.size === entries.length && entries.length > 0}
                       onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                      className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </th>
                   {displayFields.map((f) => (
@@ -381,7 +384,7 @@ function CollectionEntries() {
                         type="checkbox"
                         checked={selected.has(entry.id)}
                         onChange={() => toggleSelect(entry.id)}
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                        className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </td>
                     {displayFields.map((f) => (
@@ -461,7 +464,7 @@ function renderActions(
     return (
       <div className="flex items-center justify-end gap-1">
         <Button variant="ghost" size="icon" onClick={() => handleRestore(entry.id)} title="Restore">
-          <RefreshCw className="h-4 w-4 text-blue-500" />
+          <RefreshCw className="h-4 w-4 text-info" />
         </Button>
       </div>
     );
@@ -470,7 +473,7 @@ function renderActions(
     <div className="flex items-center justify-end gap-1">
       {hasDrafts && entry._status !== "published" && (
         <Button variant="ghost" size="icon" onClick={() => handlePublish(entry.id)} title="Publish">
-          <CheckCircle className="h-4 w-4 text-green-500" />
+          <CheckCircle className="h-4 w-4 text-success" />
         </Button>
       )}
       {hasDrafts && entry._status === "published" && (
@@ -480,7 +483,7 @@ function renderActions(
           onClick={() => handleUnpublish(entry.id)}
           title="Unpublish"
         >
-          <XCircle className="h-4 w-4 text-amber-500" />
+          <XCircle className="h-4 w-4 text-warning" />
         </Button>
       )}
       <Link to="/collections/$slug/$id" params={{ id: entry.id, slug }}>
@@ -506,27 +509,27 @@ function renderStatus(status: string | undefined, publishAt?: string) {
   if (!status) return <span className="text-muted-foreground">—</span>;
   if (status === "published") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
         <CheckCircle className="h-3 w-3" /> Published
       </span>
     );
   }
   if (status === "draft" && publishAt) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-info/10 px-2 py-0.5 text-xs font-medium text-info">
         Scheduled
       </span>
     );
   }
   if (status === "draft") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
         Draft
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:dark:bg-gray-800 dark:text-gray-400">
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
       {status}
     </span>
   );

@@ -4,9 +4,9 @@ import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Pagination } from "@/components/pagination";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRolesList, useDeleteRole } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
@@ -54,7 +54,7 @@ function RolesList() {
           </div>
           <Skeleton className="h-10 w-28 rounded-md" />
         </div>
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">

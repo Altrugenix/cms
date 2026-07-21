@@ -66,17 +66,24 @@ function CreateRole() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/settings/roles" className="text-muted-foreground hover:text-foreground">
+        <Link
+          to="/settings/roles"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create Role</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Create Role</h1>
           <p className="text-muted-foreground">Define a new role with permissions</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
-        {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+        {error && (
+          <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+            {error}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
@@ -113,7 +120,7 @@ function CreateRole() {
               <select
                 value={perm.action}
                 onChange={(e) => updatePermission(i, "action", e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
               >
                 {DEFAULT_ACTIONS.map((a) => (
                   <option key={a} value={a}>

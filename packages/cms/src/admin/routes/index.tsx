@@ -1,8 +1,8 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { Plus, Users, FileText, Database, Image, Clock, Trash2, Pencil, Check } from "lucide-react";
 
-import { Skeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { type ActivityEntry } from "@/lib/api";
 import { useCollections, useDashboardData } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";

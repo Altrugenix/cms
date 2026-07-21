@@ -1,7 +1,7 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { Settings, ArrowRight } from "lucide-react";
 
-import { Skeleton } from "@/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useGlobals } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
@@ -57,7 +57,7 @@ function GlobalsList() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Globals</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Globals</h1>
         <p className="text-muted-foreground">Singleton content settings</p>
       </div>
 

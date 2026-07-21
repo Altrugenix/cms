@@ -12,7 +12,7 @@ export const Route = createRootRoute({
   component: RootLayout,
 });
 
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password"];
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
 
 function RootLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -69,6 +69,12 @@ function RootLayout() {
   return (
     <ToastProvider>
       <div className="flex h-screen overflow-hidden">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg"
+        >
+          Skip to content
+        </a>
         <Sidebar
           collapsed={sidebarCollapsed}
           mobileOpen={sidebarMobile}
@@ -80,7 +86,7 @@ function RootLayout() {
             onOpenPalette={palette.openPalette}
             onToggleSidebar={() => setSidebarMobile((prev) => !prev)}
           />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <main id="main-content" className="flex-1 overflow-y-auto p-4 md:p-6">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

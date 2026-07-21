@@ -3,9 +3,9 @@ import { ArrowLeft, CheckCircle, History } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { FieldInput } from "@/components/field-input";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { VersionHistoryPanel } from "@/components/version-history-panel";
 import { ApiError } from "@/lib/api";
 import {
@@ -141,7 +141,9 @@ function EditEntry() {
     );
   if (entryError)
     return (
-      <div className="rounded-md bg-destructive/10 p-4 text-destructive">{entryError.message}</div>
+      <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+        {entryError.message}
+      </div>
     );
   if (!collection || !entry) return null;
   return (
@@ -150,19 +152,19 @@ function EditEntry() {
         <Link
           to="/collections/$slug"
           params={{ slug }}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit {collection.label}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Edit {collection.label}</h1>
           <p className="text-muted-foreground">Editing entry {id}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
           >
             {(collection.localization?.locales ?? ["en"]).map((l) => (
               <option key={l} value={l}>
@@ -173,11 +175,11 @@ function EditEntry() {
           {collection.versions?.drafts &&
             entryStatus &&
             (entryStatus === "published" ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">
                 <CheckCircle className="h-4 w-4" /> Published
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-3 py-1 text-sm font-medium text-warning">
                 Draft
               </span>
             ))}
@@ -185,7 +187,9 @@ function EditEntry() {
       </div>
 
       {formError && (
-        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{formError}</div>
+        <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+          {formError}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-6">

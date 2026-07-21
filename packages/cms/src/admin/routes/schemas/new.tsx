@@ -78,7 +78,7 @@ function NewSchema() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">New Schema</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">New Schema</h1>
           <p className="text-muted-foreground">Create a new collection, global, or component</p>
         </div>
       </div>
