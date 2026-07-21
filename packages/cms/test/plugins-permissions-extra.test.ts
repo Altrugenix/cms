@@ -135,12 +135,13 @@ describe("Permissions — extra (403 path)", () => {
     });
     adminToken = JSON.parse(loginRes.body).accessToken;
 
-    const registerRes = await app.inject({
+    const createRes = await app.inject({
       body: { email: "viewer@test.com", password: "password123" },
+      headers: { authorization: `Bearer ${adminToken}` },
       method: "POST",
-      url: "/api/auth/register",
+      url: "/api/users",
     });
-    const viewerUser = JSON.parse(registerRes.body).user;
+    const viewerUser = JSON.parse(createRes.body).user;
     const viewerUserId = viewerUser.id;
 
     await app.inject({

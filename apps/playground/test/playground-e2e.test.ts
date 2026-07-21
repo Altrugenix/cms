@@ -931,6 +931,7 @@ describe("Playground E2E — Schemas", () => {
 
 describe("Playground E2E — Auth Flow", () => {
   let app: FastifyInstance;
+  let authToken: string;
 
   beforeAll(async () => {
     const adapter = createMockAdapter();
@@ -940,17 +941,24 @@ describe("Playground E2E — Auth Flow", () => {
       config: testConfig,
       globals: [],
     });
+    const loginRes = await app.inject({
+      body: { email: "admin@arche-cms.com", password: "admin123" },
+      method: "POST",
+      url: "/api/auth/login",
+    });
+    authToken = JSON.parse(loginRes.body).accessToken;
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it("POST /api/auth/register creates a user", async () => {
+  it("POST /api/users creates a user", async () => {
     const res = await app.inject({
       body: { email: "user@test.com", name: "Test User", password: "password123" },
+      headers: { authorization: `Bearer ${authToken}` },
       method: "POST",
-      url: "/api/auth/register",
+      url: "/api/users",
     });
     expect(res.statusCode).toBe(201);
     const body = JSON.parse(res.body);
@@ -1952,24 +1960,6 @@ describe("Playground E2E — Validation & Error Cases", () => {
     expect(res.statusCode).toBe(404);
   });
 
-  it("POST /api/auth/register rejects short password", async () => {
-    const res = await app.inject({
-      body: { email: "short@test.com", password: "short" },
-      method: "POST",
-      url: "/api/auth/register",
-    });
-    expect(res.statusCode).toBe(400);
-  });
-
-  it("POST /api/auth/register rejects invalid email", async () => {
-    const res = await app.inject({
-      body: { email: "not-an-email", password: "password123" },
-      method: "POST",
-      url: "/api/auth/register",
-    });
-    expect(res.statusCode).toBe(400);
-  });
-
   it("POST /api/auth/login rejects wrong password", async () => {
     const res = await app.inject({
       body: { email: "admin@arche-cms.com", password: "wrongpassword" },
@@ -1989,12 +1979,13 @@ describe("Playground E2E — Validation & Error Cases", () => {
   });
 
   it("Password field excluded from user responses", async () => {
-    const registerRes = await app.inject({
+    const createRes = await app.inject({
       body: { email: "nopass@test.com", password: "password123" },
+      headers: { authorization: `Bearer ${authToken}` },
       method: "POST",
-      url: "/api/auth/register",
+      url: "/api/users",
     });
-    const body = JSON.parse(registerRes.body);
+    const body = JSON.parse(createRes.body);
     expect(body.user.password).toBeUndefined();
     expect(body.user.passwordHash).toBeUndefined();
   });

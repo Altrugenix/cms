@@ -173,12 +173,13 @@ describe("Users Routes", () => {
   });
 
   it("DELETE /api/users/:id deletes a user", async () => {
-    const regRes = await app.inject({
+    const createRes = await app.inject({
       body: { email: "delete-me@test.com", password: "password123" },
+      headers: { authorization: `Bearer ${authToken}` },
       method: "POST",
-      url: "/api/auth/register",
+      url: "/api/users",
     });
-    const newUserId = JSON.parse(regRes.body).user.id;
+    const newUserId = JSON.parse(createRes.body).user.id;
 
     const res = await app.inject({
       headers: { authorization: `Bearer ${authToken}` },

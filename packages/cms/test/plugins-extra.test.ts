@@ -158,28 +158,6 @@ describe("Plugins — extra", () => {
   });
 
   describe("Auth routes — extra", () => {
-    it("POST /api/auth/register with invalid email returns 400", async () => {
-      const res = await app.inject({
-        body: { email: "not-an-email", password: "password123" },
-        method: "POST",
-        url: "/api/auth/register",
-      });
-      expect(res.statusCode).toBe(400);
-      const body = JSON.parse(res.body);
-      expect(body.error).toContain("Invalid email");
-    });
-
-    it("POST /api/auth/register with short password returns 400", async () => {
-      const res = await app.inject({
-        body: { email: "valid@test.com", password: "short" },
-        method: "POST",
-        url: "/api/auth/register",
-      });
-      expect(res.statusCode).toBe(400);
-      const body = JSON.parse(res.body);
-      expect(body.error).toContain("at least 8 characters");
-    });
-
     it("POST /api/auth/forgot-password with invalid email returns 400", async () => {
       const res = await app.inject({
         body: { email: "invalid-email" },
@@ -267,11 +245,12 @@ describe("Plugins — extra", () => {
       expect(res.statusCode).toBe(401);
     });
 
-    it("POST /api/auth/register with missing body fields returns 400", async () => {
+    it("POST /api/users with missing body fields returns 400", async () => {
       const res = await app.inject({
         body: {},
+        headers: { authorization: `Bearer ${authToken}` },
         method: "POST",
-        url: "/api/auth/register",
+        url: "/api/users",
       });
       expect(res.statusCode).toBe(400);
     });

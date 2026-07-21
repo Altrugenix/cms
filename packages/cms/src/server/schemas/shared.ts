@@ -137,25 +137,6 @@ export const authUserResponseSchema = {
   type: "object",
 } as const;
 
-export const registerBodySchema = {
-  properties: {
-    email: {
-      examples: ["admin@example.com"],
-      type: "string",
-    },
-    name: {
-      examples: ["Admin User"],
-      type: "string",
-    },
-    password: {
-      examples: ["admin123456"],
-      type: "string",
-    },
-  },
-  required: ["email", "password"],
-  type: "object",
-} as const;
-
 export const loginBodySchema = {
   properties: {
     email: {
