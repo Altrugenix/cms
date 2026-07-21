@@ -13,7 +13,6 @@ type AuthState = {
   token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 };
@@ -141,40 +140,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${getApiUrl()}/api/auth/register`, {
-        body: JSON.stringify({ email, password }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      if (!res.ok) {
-        const err = (await res.json()) as { error?: string };
-        throw new Error(err.error ?? "Registration failed");
-      }
-      const data = (await res.json()) as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
-      setUser(data.user);
-      setToken(data.accessToken);
-      storageSet("cms_user", JSON.stringify(data.user), true);
-      storageSet("cms_token", data.accessToken, true);
-      storageSet("cms_refresh", data.refreshToken, true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   const logout = useCallback(() => {
     logoutCleanup();
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated: !!user, isLoading, login, logout, register, token, user }}
+      value={{ isAuthenticated: !!user, isLoading, login, logout, token, user }}
     >
       {children}
     </AuthContext.Provider>

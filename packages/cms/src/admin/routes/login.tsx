@@ -88,12 +88,6 @@ function LoginPage() {
         </form>
         <div className="flex flex-col gap-2 text-center text-sm text-muted-foreground">
           <p>
-            Don&apos;t have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline transition-colors">
-              Sign Up
-            </Link>
-          </p>
-          <p>
             <Link to="/forgot-password" className="text-primary hover:underline transition-colors">
               Forgot your password?
             </Link>
