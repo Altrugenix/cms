@@ -1923,18 +1923,18 @@ Fix all accessibility violations that would fail a WCAG audit. These are legal c
 
 - [x] **Add `aria-label` to all icon-only buttons** — `header.tsx` (hamburger, logout, search), `sidebar.tsx` (collapse toggle), `field-input.tsx` (toolbar buttons), `media/index.tsx` (edit/delete on thumbnails), `pagination.tsx` (prev/next). Affects 20+ locations
 - [x] **Add focus trap to `ConfirmDialog`** — trap Tab key inside modal, restore focus on close, add `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, Escape key handler, backdrop click to close
-- [ ] **Add focus trap to `CommandPalette`** — same treatment as ConfirmDialog. Currently focus escapes to background content behind overlay
+- [x] **Add focus trap to `CommandPalette`** — same treatment as ConfirmDialog. Currently focus escapes to background content behind overlay
 - [x] **Add `aria-current="page"` to active sidebar nav items** — `sidebar.tsx` active state currently uses visual-only `bg-sidebar-accent`; add ARIA attribute for screen readers
 - [x] **Add `aria-label` to pagination buttons** — "Page 1", "Page 2", etc. for page number buttons; "Previous page" / "Next page" for nav buttons
-- [ ] **Link error messages to inputs via `aria-describedby`** — all form fields in `field-input.tsx`, `login.tsx`, `register.tsx`, `reset-password.tsx`, settings forms. Error `<p>` tags need `id` and inputs need `aria-describedby={errorId}`
+- [x] **Link error messages to inputs via `aria-describedby`** — all form fields in `field-input.tsx`, `login.tsx`, `register.tsx`, `reset-password.tsx`, settings forms. Error `<p>` tags need `id` and inputs need `aria-describedby={errorId}`
 - [x] **Add `aria-live="polite"` to toast container** — `toast-provider.tsx` container should announce new toasts to screen readers
-- [ ] **Add `role="status"` or `aria-live` to status badges** — published/draft status indicators should announce state
-- [ ] **Add `autocomplete` attributes to auth forms** — `autocomplete="email"` on email inputs, `autocomplete="current-password"` on login, `autocomplete="new-password"` on register/reset
+- [x] **Add `role="status"` or `aria-live` to status badges** — published/draft status indicators should announce state
+- [x] **Add `autocomplete` attributes to auth forms** — `autocomplete="email"` on email inputs, `autocomplete="current-password"` on login, `autocomplete="new-password"` on register/reset
 - [x] **Fix `/reset-password` missing from `PUBLIC_PATHS`** — `__root.tsx:15` — unauthenticated users clicking reset links are redirected to login before the form loads. Bug
-- [ ] **Add `aria-label` to locale selector** — `collections/$slug.tsx` and `new.$slug.tsx` raw `<select>` elements have no label
-- [ ] **Add `role="switch"` and `aria-pressed` to webhook/plugin toggles** — `settings/webhooks/index.tsx` and `settings/plugins.tsx` toggle buttons visually look like badges but behave as toggles
+- [x] **Add `aria-label` to locale selector** — `collections/$slug.tsx` and `new.$slug.tsx` raw `<select>` elements have no label
+- [x] **Add `role="switch"` and `aria-pressed` to webhook/plugin toggles** — `settings/webhooks/index.tsx` and `settings/plugins.tsx` toggle buttons visually look like badges but behave as toggles
 - [x] **Add skip-to-content link** — `__root.tsx` should render a visually-hidden "Skip to main content" link that becomes visible on focus, linking to the main content area
-- [ ] **Add `aria-label` to settings sidebar nav** — `settings/index.tsx` `<nav>` element lacks `aria-label="Settings"`
+- [x] **Add `aria-label` to settings sidebar nav** — `settings/index.tsx` `<nav>` element lacks `aria-label="Settings"`
 
 ---
 
@@ -1948,10 +1948,10 @@ Replace all hardcoded Tailwind color classes with semantic design tokens. Unify 
 - [x] **Unify error banner styling** — currently `p-3 text-sm` (login), `p-4` (dashboard), `p-3 text-sm` (auth pages). Standardize to `Alert` component with consistent padding
 - [x] **Unify card styling** — dashboard stat cards, collection cards, globals cards, auth form cards all use slightly different `rounded-lg border` patterns. Replace with `<Card>` component
 - [x] **Standardize heading typography** — some pages use `text-3xl` (collections index), others `text-2xl md:text-3xl` (dashboard, settings). Pick one pattern and apply consistently: `text-2xl font-bold tracking-tight md:text-3xl`
-- [ ] **Standardize page spacing** — most pages use `space-y-6` but some use `space-y-4` or `space-y-8`. Standardize to `space-y-6` for page-level spacing, `space-y-4` for form sections
-- [ ] **Standardize form card padding** — `rounded-lg border p-6` in create/edit forms vs `rounded-lg border p-4` in list items. Keep both but make them consistent within their category
-- [ ] **Add consistent `shadow-sm` or `shadow-md` to elevated elements** — modals, dropdowns, and toast notifications should use the same shadow scale
-- [ ] **Standardize border radius** — ensure all cards, badges, inputs, and buttons use the design system `--radius` variable (currently `0.5rem`). Remove any hardcoded `rounded-lg` vs `rounded-md` inconsistencies
+- [x] **Standardize page spacing** — most pages use `space-y-6` but some use `space-y-4` or `space-y-8`. Standardize to `space-y-6` for page-level spacing, `space-y-4` for form sections
+- [x] **Standardize form card padding** — `rounded-lg border p-6` in create/edit forms vs `rounded-lg border p-4` in list items. Keep both but make them consistent within their category
+- [x] **Add consistent `shadow-sm` or `shadow-md` to elevated elements** — modals, dropdowns, and toast notifications should use the same shadow scale
+- [x] **Standardize border radius** — ensure all cards, badges, inputs, and buttons use the design system `--radius` variable (currently `0.5rem`). Remove any hardcoded `rounded-lg` vs `rounded-md` inconsistencies
 
 ---
 
@@ -1960,14 +1960,14 @@ Replace all hardcoded Tailwind color classes with semantic design tokens. Unify 
 Improve hover, focus, active, and disabled states across all interactive elements. Add subtle animations for state transitions.
 
 - [x] **Add `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` to all interactive elements** — buttons, inputs, selects, links. Currently only `Button` and `Input` components have focus rings; raw `<select>`, `<a>`, checkbox, toggle buttons do not
-- [ ] **Add hover effects to dashboard stat cards** — currently static divs. Add `hover:bg-accent/50 hover:shadow-sm transition-all cursor-pointer` and wrap in `<Link>` to navigate to the respective list view
+- [x] **Add hover effects to dashboard stat cards** — currently static divs. Add `hover:bg-accent/50 hover:shadow-sm transition-all cursor-pointer` and wrap in `<Link>` to navigate to the respective list view
 - [x] **Add hover effects to collection/globals list cards** — globals already have `hover:bg-accent` and arrow slide animation; ensure collections match
 - [x] **Add loading spinner to form submit buttons** — when saving, show a small spinner inside the button instead of just disabling it. Affects: all create/edit forms (12+ locations)
 - [x] **Improve confirm dialog animation** — add `animate-in fade-in-0 zoom-in-95` enter animation and `animate-out fade-out-0 zoom-out-95` exit animation (matching shadcn Dialog pattern)
 - [x] **Improve toast exit animation** — `toast-provider.tsx` currently removes toasts abruptly after 4s. Add `animate-out slide-in-from-right` exit animation before removal
 - [x] **Extend toast timeout for errors** — error toasts should persist for 8 seconds (vs 4s for success/info) to give users time to read them
 - [x] **Add `transition-colors` to all clickable elements** — ensure smooth color transitions on hover/active for nav items, buttons, links, list items
-- [ ] **Improve sidebar collapse animation** — current `transition-all duration-200` is fine; add smooth width transition for child content fade-out when collapsing
+- [x] **Improve sidebar collapse animation** — current `transition-all duration-200` is fine; add smooth width transition for child content fade-out when collapsing
 - [x] **Add `active:scale-[0.98]` to primary action buttons** — subtle press effect on "Save", "Create", "Delete" buttons for tactile feedback
 
 ---
@@ -2032,7 +2032,7 @@ Make forms easier to scan and complete without changing form structure or valida
 - [x] **Add "show/hide password" toggle to auth forms** — `login.tsx`, `register.tsx`, `reset-password.tsx`, `settings/users/new.tsx`, `settings/users/$id.tsx`. Add eye/eye-off icon button inside password input
 - [ ] **Add password confirmation to register form** — `register.tsx` does not ask users to confirm their password. Add a "Confirm Password" field (frontend match validation only, no API change)
 - [x] **Add form-level error summary** — when a form submission fails with validation errors, show a summary banner at the top listing all errors with links to the relevant fields (in addition to inline errors)
-- [ ] **Add unsaved changes warning** — `collections/new.$slug.tsx`, `collections/$id_.$slug.edit.tsx`, `globals/$slug.tsx`, settings edit forms. Use `beforeunload` event and TanStack Router `beforeRouteLeave` to warn when navigating away with dirty form state
+- [x] **Add unsaved changes warning** — `collections/new.$slug.tsx`, `collections/$id_.$slug.edit.tsx`, `globals/$slug.tsx`, settings edit forms. Use `beforeunload` event and TanStack Router `beforeRouteLeave` to warn when navigating away with dirty form state
 - [x] **Add `placeholder` text to all form inputs** — audit all `<Input>` usages and ensure meaningful placeholder text where helpful (e.g., "Enter email address", "Search...")
 - [x] **Improve select input styling** — all raw `<select>` elements should match the `Input` component's height (`h-9`), border, and focus ring. After Phase 1 adds the `Select` component, migrate all raw selects
 
@@ -2062,7 +2062,7 @@ Improve perceived performance and provide helpful guidance when content is empty
 - [ ] Manual: verify screen reader announces all interactive elements correctly (VoiceOver on macOS)
 - [ ] Manual: verify responsive layout at 375px, 768px, 1024px, 1440px viewport widths
 - [ ] Manual: verify all form submissions show loading states and success/error feedback
-- [ ] Manual: verify confirm dialogs trap focus and close on Escape
+- [x] Manual: verify confirm dialogs trap focus and close on Escape
 - [ ] Run axe DevTools or Lighthouse accessibility audit — target score > 90
 
 ---
