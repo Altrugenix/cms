@@ -92,6 +92,7 @@ function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
+                autoComplete="new-password"
               />
             </div>
             <div className="space-y-2">
@@ -103,6 +104,7 @@ function ResetPasswordPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
+                autoComplete="new-password"
               />
             </div>
             <Button type="submit" className="w-full" loading={loading}>

@@ -112,8 +112,9 @@ export function FieldInput({ error, field, onChange, value }: FieldInputProps) {
         required={field.required}
         placeholder={`Enter ${field.label?.toLowerCase() ?? field.name}`}
         className={error ? "border-destructive" : ""}
+        aria-describedby={error ? `${field.name}-error` : undefined}
       />
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -146,12 +147,14 @@ function FieldLabel({ field }: { field: FieldDefinition }) {
   );
 }
 
-function FieldError({ error }: { error?: string }) {
-  return error ? (
-    <p role="alert" className="text-xs text-destructive">
+function FieldError({ error, inputId }: { error?: string; inputId?: string }) {
+  if (!error) return null;
+  const errorId = inputId ? `${inputId}-error` : undefined;
+  return (
+    <p id={errorId} role="alert" className="text-xs text-destructive">
       {error}
     </p>
-  ) : null;
+  );
 }
 
 /* ─── Boolean ─── */
@@ -176,13 +179,14 @@ function BooleanInput({
           checked={strVal === "true" || strVal === "on"}
           onChange={(e) => onChange(e.target.checked ? "true" : "false")}
           className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-describedby={error ? `${field.name}-error` : undefined}
         />
         <Label htmlFor={field.name}>
           {field.label}
           {field.required && <span className="ml-1 text-destructive">*</span>}
         </Label>
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -209,13 +213,14 @@ function CheckboxInput({
           checked={strVal === "true" || strVal === "on"}
           onChange={(e) => onChange(e.target.checked ? "true" : "false")}
           className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-describedby={error ? `${field.name}-error` : undefined}
         />
         <Label htmlFor={field.name}>
           {field.label}
           {field.required && <span className="ml-1 text-destructive">*</span>}
         </Label>
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -242,6 +247,7 @@ function SelectInput({
         value={strVal}
         onChange={(e) => onChange(e.target.value)}
         className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${error ? "border-destructive" : "border-input"}`}
+        aria-describedby={error ? `${field.name}-error` : undefined}
       >
         <option value="">Select...</option>
         {options.map((opt) => (
@@ -250,7 +256,7 @@ function SelectInput({
           </option>
         ))}
       </select>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -287,7 +293,7 @@ function RadioInput({
           </label>
         ))}
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -341,7 +347,7 @@ function MultiSelectInput({
           );
         })}
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -376,9 +382,10 @@ function ColorInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder="#000000"
           className={error ? "border-destructive" : ""}
+          aria-describedby={error ? `${field.name}-error` : undefined}
         />
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -407,8 +414,9 @@ function TextareaInput({
         placeholder={`Enter ${field.label?.toLowerCase() ?? field.name}`}
         rows={4}
         className={`flex w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${error ? "border-destructive" : "border-input"}`}
+        aria-describedby={error ? `${field.name}-error` : undefined}
       />
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -480,7 +488,7 @@ function RichTextInput({
           rows={12}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         />
-        <FieldError error={error} />
+        <FieldError error={error} inputId={field.name} />
       </div>
     );
   }
@@ -591,7 +599,7 @@ function RichTextInput({
           className="min-h-[200px] w-full bg-background px-3 py-2 text-sm focus-visible:outline-none [&_h1]:text-xl [&_h1]:font-bold [&_h2]:text-lg [&_h2]:font-bold [&_h3]:text-base [&_h3]:font-semibold [&_h4]:text-sm [&_h4]:font-semibold [&_blockquote]:border-l-4 [&_blockquote]:border-muted [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-primary [&_a]:underline [&_hr]:my-4 [&_hr]:border-muted"
         />
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -660,7 +668,7 @@ function MarkdownInput({
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -699,7 +707,7 @@ function CodeInput({
           className={`w-full rounded-md border bg-background px-3 py-2 font-mono text-sm leading-relaxed ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${error ? "border-destructive" : "border-input"}`}
         />
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -850,7 +858,7 @@ function MediaUploadInput({
           </div>
         )}
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -951,7 +959,7 @@ function RelationPicker({
           )}
         </div>
       )}
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -1039,7 +1047,7 @@ function ComponentInput({
             />
           </div>
         ))}
-        <FieldError error={error} />
+        <FieldError error={error} inputId={field.name} />
       </div>
     );
   }
@@ -1049,7 +1057,7 @@ function ComponentInput({
     <div className="space-y-2 rounded-md border p-3">
       <FieldLabel field={field} />
       <NestedFields fields={compFields} values={objVal} onChange={(v) => onChange(v)} />
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -1167,7 +1175,7 @@ function DynamicZoneInput({
           </div>
         );
       })}
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -1219,7 +1227,7 @@ function ArrayInput({
           />
         </div>
       ))}
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -1244,7 +1252,7 @@ function ObjectInput({
     <div className="space-y-2 rounded-md border p-3">
       <FieldLabel field={field} />
       <NestedFields fields={subFields} values={objVal} onChange={(v) => onChange(v)} />
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -1299,7 +1307,7 @@ function RepeaterInput({
           />
         </div>
       ))}
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }
@@ -1358,7 +1366,7 @@ function TabsInput({
       <div className="pt-2">
         <NestedFields fields={currentTab.fields} values={objVal} onChange={(v) => onChange(v)} />
       </div>
-      <FieldError error={error} />
+      <FieldError error={error} inputId={field.name} />
     </div>
   );
 }

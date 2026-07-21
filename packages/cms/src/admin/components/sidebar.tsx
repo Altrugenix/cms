@@ -43,7 +43,7 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose, onToggle }: Side
 
       <aside
         className={cn(
-          "flex flex-col border-r bg-sidebar-background text-sidebar-foreground transition-all duration-200",
+          "flex flex-col border-r bg-sidebar-background text-sidebar-foreground transition-all duration-200 overflow-hidden",
           "fixed inset-y-0 left-0 z-50 lg:static lg:z-auto",
           collapsed ? "w-16" : "w-60",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",

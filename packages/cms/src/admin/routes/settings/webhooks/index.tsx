@@ -177,6 +177,9 @@ function WebhooksList() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleToggle(wh)}
+                        role="switch"
+                        aria-checked={wh.enabled}
+                        aria-label={`Toggle webhook ${wh.name}`}
                         className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                           wh.enabled
                             ? "bg-success/10 text-success hover:bg-success/20"

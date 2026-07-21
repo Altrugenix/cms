@@ -111,12 +111,19 @@ export function CommandPalette({ onClose, open }: CommandPaletteProps) {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    previousFocusRef.current = document.activeElement as HTMLElement;
     setSearch("");
     setSelectedIndex(0);
     setTimeout(() => inputRef.current?.focus(), 0);
+
+    return () => {
+      previousFocusRef.current?.focus();
+    };
   }, [open]);
 
   const navigateTo = useCallback(
@@ -215,6 +222,19 @@ export function CommandPalette({ onClose, open }: CommandPaletteProps) {
       flatItems[selectedIndex].onSelect();
     } else if (e.key === "Escape") {
       onClose();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'input, button, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        (document.activeElement === first ? last : first).focus();
+      } else {
+        (document.activeElement === last ? first : last).focus();
+      }
     }
   };
 
@@ -231,7 +251,13 @@ export function CommandPalette({ onClose, open }: CommandPaletteProps) {
       <div className="absolute inset-0 bg-overlay" />
 
       {/* dialog */}
-      <div className="relative w-full max-w-lg rounded-lg border bg-background shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        className="relative w-full max-w-lg rounded-lg border bg-background shadow-2xl"
+      >
         <div className="flex items-center border-b px-4">
           <svg
             className="mr-2 h-4 w-4 shrink-0 text-muted-foreground"

@@ -83,7 +83,7 @@ function EditUser() {
             <Skeleton className="mt-1 h-5 w-40" />
           </div>
         </div>
-        <div className="space-y-4 rounded-lg border p-6">
+        <div className="space-y-6 rounded-lg border p-6">
           <div className="space-y-2">
             <Skeleton className="h-4 w-12" />
             <Skeleton className="h-10 w-full rounded-md" />
@@ -123,7 +123,7 @@ function EditUser() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -132,6 +132,7 @@ function EditUser() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoComplete="email"
           />
         </div>
         <div className="space-y-2">
@@ -157,6 +158,7 @@ function EditUser() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Leave blank to keep current password"
+            autoComplete="new-password"
           />
         </div>
         <div className="flex items-center gap-2 pt-4">

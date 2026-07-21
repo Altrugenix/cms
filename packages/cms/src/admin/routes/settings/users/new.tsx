@@ -72,6 +72,7 @@ function CreateUser() {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="user@example.com"
+            autoComplete="email"
           />
         </div>
 
@@ -83,6 +84,7 @@ function CreateUser() {
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="Minimum 8 characters"
+            autoComplete="new-password"
           />
         </div>
 

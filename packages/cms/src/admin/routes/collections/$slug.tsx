@@ -175,7 +175,7 @@ function CollectionEntries() {
     ) : null;
   if (error)
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <Link
           to="/collections"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -281,6 +281,7 @@ function CollectionEntries() {
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
             className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+            aria-label="Locale"
           >
             {(collection.localization?.locales ?? ["en"]).map((l) => (
               <option key={l} value={l}>
@@ -509,27 +510,39 @@ function renderStatus(status: string | undefined, publishAt?: string) {
   if (!status) return <span className="text-muted-foreground">—</span>;
   if (status === "published") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+      <span
+        role="status"
+        className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success"
+      >
         <CheckCircle className="h-3 w-3" /> Published
       </span>
     );
   }
   if (status === "draft" && publishAt) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-info/10 px-2 py-0.5 text-xs font-medium text-info">
+      <span
+        role="status"
+        className="inline-flex items-center gap-1 rounded-full bg-info/10 px-2 py-0.5 text-xs font-medium text-info"
+      >
         Scheduled
       </span>
     );
   }
   if (status === "draft") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
+      <span
+        role="status"
+        className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning"
+      >
         Draft
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+    <span
+      role="status"
+      className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+    >
       {status}
     </span>
   );

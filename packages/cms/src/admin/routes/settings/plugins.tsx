@@ -97,6 +97,7 @@ function PluginsPage() {
                 </div>
               </div>
               <span
+                role="status"
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
                   p.enabled ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                 }`}

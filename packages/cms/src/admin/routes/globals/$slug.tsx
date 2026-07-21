@@ -1,13 +1,13 @@
 import { createRoute, Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { FieldInput } from "@/components/field-input";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
-import { useGlobalSchema, useGlobalData, useSaveGlobal } from "@/lib/hooks";
+import { useGlobalSchema, useGlobalData, useSaveGlobal, useUnsavedChanges } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
@@ -25,6 +25,10 @@ function EditGlobal() {
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const saveGlobal = useSaveGlobal(slug);
+  const initialValuesRef = useRef<Record<string, unknown>>({});
+  const isDirty =
+    initialized && JSON.stringify(values) !== JSON.stringify(initialValuesRef.current);
+  const { cancelLeave, confirmLeave, isBlocking } = useUnsavedChanges(isDirty);
 
   const loading = gLoading || dataLoading;
 
@@ -37,6 +41,7 @@ function EditGlobal() {
         initial[f.name] = "";
       }
     }
+    initialValuesRef.current = initial;
     setValues(initial);
     setInitialized(true);
   }
@@ -83,7 +88,7 @@ function EditGlobal() {
             <Skeleton className="mt-1 h-5 w-32" />
           </div>
         </div>
-        <div className="space-y-4 rounded-lg border p-6">
+        <div className="space-y-6 rounded-lg border p-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-2">
               <Skeleton className="h-4 w-20" />
@@ -125,7 +130,7 @@ function EditGlobal() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
         {globalDef.fields.map((f) => (
           <FieldInput
             key={f.name}
@@ -146,6 +151,25 @@ function EditGlobal() {
           </Link>
         </div>
       </form>
+
+      {isBlocking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay">
+          <div className="rounded-lg border bg-card p-6 shadow-lg max-w-md">
+            <h3 className="text-lg font-semibold">Unsaved changes</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You have unsaved changes. Are you sure you want to leave?
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={cancelLeave}>
+                Stay
+              </Button>
+              <Button variant="destructive" onClick={confirmLeave}>
+                Leave
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

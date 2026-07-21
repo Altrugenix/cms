@@ -134,7 +134,7 @@ function Dashboard() {
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-lg border p-4">
+          <div key={s.label} className="rounded-lg border p-4 transition-colors hover:bg-muted/50">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">{s.label}</p>
               <s.icon className="h-4 w-4 text-muted-foreground" />
