@@ -107,7 +107,11 @@ export function fieldToZodSchema(field: FieldDefinition, localize = false): z.Zo
     case "select":
     case "radio":
       if ("options" in field && Array.isArray(field.options)) {
-        schema = z.enum(field.options.map((o) => o.value) as [string, ...string[]]);
+        const values = field.options.map((o) => (typeof o === "string" ? o : o.value)) as [
+          string,
+          ...string[],
+        ];
+        schema = values.length > 0 ? z.enum(values) : z.string();
       } else {
         schema = z.string();
       }
