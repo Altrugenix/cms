@@ -20,6 +20,7 @@ function CreateUser() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -29,7 +30,7 @@ function CreateUser() {
     if (!email || !password) return;
     setSaving(true);
     try {
-      await createUser(email, password);
+      await createUser(email, password, name || undefined);
       toast("User created", "success");
       navigate({ to: "/settings/users" });
     } catch (err) {
@@ -73,6 +74,18 @@ function CreateUser() {
             required
             placeholder="user@example.com"
             autoComplete="email"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Optional"
+            autoComplete="name"
           />
         </div>
 

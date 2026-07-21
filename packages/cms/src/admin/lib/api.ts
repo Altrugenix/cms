@@ -229,6 +229,7 @@ export async function saveGlobal(
 export type UserMeta = {
   id: string;
   email: string;
+  name?: string;
   role: string;
   createdAt: string;
   updatedAt: string;
@@ -288,16 +289,16 @@ export async function deleteRole(id: string): Promise<void> {
   await apiFetch(`/api/roles/${id}`, { method: "DELETE" });
 }
 
-export async function createUser(email: string, password: string): Promise<void> {
+export async function createUser(email: string, password: string, name?: string): Promise<void> {
   await apiFetch("/api/users", {
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, name, password }),
     method: "POST",
   });
 }
 
 export async function updateUser(
   id: string,
-  data: { email?: string; role?: string; password?: string },
+  data: { email?: string; name?: string; role?: string; password?: string },
 ): Promise<UserMeta> {
   return apiFetch(`/api/users/${id}`, { body: JSON.stringify(data), method: "PATCH" });
 }

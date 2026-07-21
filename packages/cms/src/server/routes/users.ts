@@ -68,7 +68,12 @@ export function registerUserRoutes(
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const body = request.body as { email: string; password: string; role?: string };
+      const body = request.body as {
+        email: string;
+        password: string;
+        name?: string;
+        role?: string;
+      };
       if (!body.email || !body.password) {
         return reply.status(400).send({ error: "Email and password are required" });
       }
@@ -131,6 +136,7 @@ export function registerUserRoutes(
         body: {
           properties: {
             email: { format: "email", type: "string" },
+            name: { type: "string" },
             password: { minLength: 8, type: "string" },
             role: { type: "string" },
           },
@@ -148,7 +154,12 @@ export function registerUserRoutes(
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
-      const body = request.body as { email?: string; role?: string; password?: string };
+      const body = request.body as {
+        email?: string;
+        name?: string;
+        role?: string;
+        password?: string;
+      };
 
       if (request.user?.sub === id && body.role !== undefined) {
         return reply.status(400).send({ error: "Cannot change your own role" });

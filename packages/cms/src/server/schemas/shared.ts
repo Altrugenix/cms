@@ -126,6 +126,7 @@ export const authUserResponseSchema = {
       properties: {
         email: { type: "string" },
         id: { type: "string" },
+        name: { type: "string" },
         role: { type: "string" },
       },
       required: ["email", "id", "role"],
@@ -140,6 +141,10 @@ export const registerBodySchema = {
   properties: {
     email: {
       examples: ["admin@example.com"],
+      type: "string",
+    },
+    name: {
+      examples: ["Admin User"],
       type: "string",
     },
     password: {
@@ -218,6 +223,7 @@ export const userObjectSchema = {
     createdAt: { type: "string" },
     email: { type: "string" },
     id: { type: "string" },
+    name: { type: "string" },
     role: { type: "string" },
     updatedAt: { type: "string" },
   },
@@ -239,6 +245,10 @@ export const createUserBodySchema = {
   properties: {
     email: {
       examples: ["user@example.com"],
+      type: "string",
+    },
+    name: {
+      examples: ["John Doe"],
       type: "string",
     },
     password: {
