@@ -4,6 +4,7 @@ import {
   fetchCollections,
   fetchGlobals,
   fetchGlobal,
+  fetchGlobalSchema,
   fetchApiTokens,
   fetchWebhooks,
   fetchWebhook,
@@ -56,6 +57,14 @@ export function useGlobal(slug: string) {
     global: globals.find((g: GlobalMeta) => g.slug === slug),
     isLoading,
   };
+}
+
+export function useGlobalSchema(slug: string) {
+  return useQuery({
+    queryFn: () => fetchGlobalSchema(slug),
+    queryKey: ["globalSchema", slug],
+    staleTime: 30_000,
+  });
 }
 
 export function useGlobalData(slug: string) {

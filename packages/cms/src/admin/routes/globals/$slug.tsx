@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
-import { useGlobal, useGlobalData, useSaveGlobal } from "@/lib/hooks";
+import { useGlobalSchema, useGlobalData, useSaveGlobal } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
@@ -19,7 +19,7 @@ export const Route = createRoute({
 function EditGlobal() {
   const { slug } = useParams({ from: Route.id });
   const { toast } = useToast();
-  const { global: globalDef, isLoading: gLoading } = useGlobal(slug);
+  const { data: globalDef, isLoading: gLoading } = useGlobalSchema(slug);
   const { data: existingData, error: gError, isLoading: dataLoading } = useGlobalData(slug);
   const [initialized, setInitialized] = useState(false);
   const [values, setValues] = useState<Record<string, unknown>>({});

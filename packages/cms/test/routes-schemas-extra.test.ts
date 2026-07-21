@@ -124,6 +124,18 @@ const BASE_COLLECTION_CONTENT = [
   "});",
 ].join("\n");
 
+const GLOBAL_CONTENT = [
+  'import { defineGlobal, text } from "@arche-cms/schema";',
+  "export default defineGlobal({",
+  '  slug: "settings",',
+  '  label: "Settings",',
+  "  fields: [",
+  '    text("siteName", { label: "Site Name" }),',
+  '    text("siteDescription", { label: "Site Description" }),',
+  "  ],",
+  "});",
+].join("\n");
+
 const testConfig: ServerConfig = {
   auth: {
     accessTokenExpiresIn: "15m",
@@ -151,6 +163,8 @@ describe("Schema Routes Extra", () => {
     tmpDir = await mkdtemp(join(tmpdir(), "cms-schema-routes-extra-"));
     await mkdir(join(tmpDir, "collections"), { recursive: true });
     await writeFile(join(tmpDir, "collections", "posts.ts"), BASE_COLLECTION_CONTENT);
+    await mkdir(join(tmpDir, "globals"), { recursive: true });
+    await writeFile(join(tmpDir, "globals", "settings.ts"), GLOBAL_CONTENT);
 
     const config: ServerConfig = {
       ...testConfig,
@@ -190,6 +204,23 @@ describe("Schema Routes Extra", () => {
       );
       expect(postsSchema).toBeDefined();
     });
+
+    it("returns fields with full properties, not empty objects", async () => {
+      const res = await app.inject({
+        headers: auth(),
+        method: "GET",
+        url: "/api/schemas",
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      const postsSchema = body.data.find((s: { slug: string }) => s.slug === "posts");
+      expect(postsSchema).toBeDefined();
+      expect(postsSchema.fields).toHaveLength(1);
+      const field = postsSchema.fields[0];
+      expect(field).toHaveProperty("name", "title");
+      expect(field).toHaveProperty("type", "text");
+      expect(Object.keys(field).length).toBeGreaterThanOrEqual(2);
+    });
   });
 
   describe("GET /api/schemas/:type/:slug", () => {
@@ -204,6 +235,40 @@ describe("Schema Routes Extra", () => {
       expect(body.slug).toBe("posts");
       expect(body.type).toBe("collection");
       expect(body.label).toBe("Post");
+    });
+
+    it("returns fields with full properties, not empty objects", async () => {
+      const res = await app.inject({
+        headers: auth(),
+        method: "GET",
+        url: "/api/schemas/collection/posts",
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.fields).toHaveLength(1);
+      const field = body.fields[0];
+      expect(field).toHaveProperty("name", "title");
+      expect(field).toHaveProperty("type", "text");
+      expect(Object.keys(field).length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("returns a global schema with full field properties", async () => {
+      const res = await app.inject({
+        headers: auth(),
+        method: "GET",
+        url: "/api/schemas/global/settings",
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.slug).toBe("settings");
+      expect(body.type).toBe("global");
+      expect(body.label).toBe("Settings");
+      expect(body.fields).toHaveLength(2);
+      const nameField = body.fields.find((f: { name: string }) => f.name === "siteName");
+      expect(nameField).toBeDefined();
+      expect(nameField.type).toBe("text");
+      expect(nameField.label).toBe("Site Name");
+      expect(Object.keys(nameField).length).toBeGreaterThan(2);
     });
 
     it("returns 404 for unknown schema", async () => {
@@ -324,17 +389,17 @@ describe("Schema Routes Extra", () => {
 
     it("creates a global schema", async () => {
       const res = await app.inject({
-        body: { label: "Settings", slug: "settings" },
+        body: { label: "Navigation", slug: "navigation" },
         headers: auth(),
         method: "POST",
         url: "/api/schemas/global",
       });
       expect(res.statusCode).toBe(201);
       const body = JSON.parse(res.body);
-      expect(body.slug).toBe("settings");
+      expect(body.slug).toBe("navigation");
       expect(body.type).toBe("global");
 
-      const filePath = join(tmpDir, "globals", "settings.ts");
+      const filePath = join(tmpDir, "globals", "navigation.ts");
       const content = await readFile(filePath, "utf-8");
       expect(content).toContain("defineGlobal");
     });
