@@ -125,6 +125,7 @@ export async function build(options: BuildOptions): Promise<void> {
   const outDir = resolve(options.outDir);
   log(`Assembling production bundle in ${outDir}...`);
 
+  /* v8 ignore next -- defensive guard; directory may already exist in CI */
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
   const cmsDist = resolve(cmsPackageRoot(), "dist");
@@ -132,6 +133,7 @@ export async function build(options: BuildOptions): Promise<void> {
 
   if (existsSync(adminDist)) {
     const adminOut = resolve(outDir, "admin");
+    /* v8 ignore next -- defensive guard; output dir may already exist */
     if (!existsSync(adminOut)) mkdirSync(adminOut, { recursive: true });
     execSync(`cp -r "${adminDist}/"* "${adminOut}/"`, { stdio: "inherit" });
     log(`  Copied admin panel → admin/`);

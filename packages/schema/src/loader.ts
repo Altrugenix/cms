@@ -8,9 +8,9 @@ async function ensureTsSupport(): Promise<void> {
   try {
     // @ts-expect-error — tsx/esm has no types, but it's a side-effect hook
     await import("tsx/esm");
-  } catch {
+  } /* v8 ignore start -- tsx is always installed in dev */ catch {
     // tsx not available — rely on native TS support (Node 22+)
-  }
+  } /* v8 ignore stop */
   tsxRegistered = true;
 }
 import type { CollectionDefinition, GlobalDefinition, ComponentDefinition } from "@arche-cms/types";

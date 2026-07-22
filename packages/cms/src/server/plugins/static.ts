@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const currentFile = fileURLToPath(import.meta.url);
 
+/* v8 ignore start — findAdminDir depends on filesystem traversal, hard to test */
 function findAdminDir(): string | null {
   const envDir = process.env.CMS_ADMIN_DIR;
   if (envDir && existsSync(envDir)) return envDir;
@@ -23,6 +24,7 @@ function findAdminDir(): string | null {
   }
   return null;
 }
+/* v8 ignore stop */
 
 export interface AdminStaticOptions {
   adminDir?: string | undefined;

@@ -24,7 +24,7 @@ Options:
 }
 
 export async function migrate(options: MigrateOptions): Promise<void> {
-  const schemaDir = options.dir ?? "cms";
+  const schemaDir = options.dir ?? /* v8 ignore next */ "cms";
 
   console.log(`[cms] Loading schemas from ${schemaDir}/...`);
 

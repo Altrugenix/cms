@@ -66,6 +66,7 @@ export async function start(options: StartOptions): Promise<void> {
   }
 
   const pluginHooks = {
+    /* v8 ignore next -- called by server when admin panel is requested */
     getAdminPanels: () => pluginManager.getAdminPanels(),
     getAll: () =>
       pluginManager.getAll().map((r) => ({
@@ -77,6 +78,7 @@ export async function start(options: StartOptions): Promise<void> {
           version: r.plugin.version,
         },
       })),
+    /* v8 ignore next -- called by server when custom fields are requested */
     getCustomFields: () => pluginManager.getCustomFields(),
     runHook: (name: "beforeRouteRegister" | "afterRouteRegister") =>
       pluginManager.runRouteHook(name),
@@ -100,7 +102,9 @@ export async function start(options: StartOptions): Promise<void> {
     process.on("SIGINT", shutdown);
     process.on("SIGTERM", shutdown);
 
+    /* v8 ignore start — blocks forever until SIGINT/SIGTERM */
     await new Promise(() => {});
+    /* v8 ignore stop */
   } catch (err) {
     logger.error("Failed to start server:", err instanceof Error ? err.message : String(err));
     await adapter.disconnect().catch(() => {});

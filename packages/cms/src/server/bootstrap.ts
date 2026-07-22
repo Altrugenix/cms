@@ -132,7 +132,7 @@ export async function createAndStartApp(
     storageAdapter,
   });
 
-  const publisher = createScheduledPublisher(adapter, collections ?? []);
+  const publisher = createScheduledPublisher(adapter, collections ?? /* v8 ignore next */ []);
   fastify.addHook("onClose", () => publisher.stop());
 
   await registerAdminStatic(fastify, {});

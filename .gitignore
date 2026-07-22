@@ -17,6 +17,9 @@ coverage/
 *.db
 *.sqlite
 
+# Generated types
+__generated__/
+
 # Yarn 4 — commit only releases/ and plugins/, ignore cache and editor SDKs
 .yarn/*
 !.yarn/patches/

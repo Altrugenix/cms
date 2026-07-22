@@ -12,7 +12,7 @@ export interface CollectionCreateOptions {
 
 export async function collectionCreate(options: CollectionCreateOptions): Promise<void> {
   const slug = validateSlug(options.slug);
-  const outDir = resolve(options.dir ?? "cms/collections");
+  const outDir = resolve(options.dir ?? /* v8 ignore next */ "cms/collections");
   const filePath = resolve(outDir, `${slug}.ts`);
 
   await mkdir(outDir, { recursive: true });

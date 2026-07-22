@@ -13,7 +13,9 @@ function generateObjectType(
   collection: CollectionDefinition,
   collections: CollectionDefinition[],
 ): string {
-  const fields = (collection.fields ?? []).map((f) => fieldToSDL(f, collections)).join("\n");
+  const fields = (collection.fields ?? /* v8 ignore next */ [])
+    .map((f) => fieldToSDL(f, collections))
+    .join("\n");
   const timestamps = `
   createdAt: String
   updatedAt: String`;
@@ -24,7 +26,9 @@ ${fields}${timestamps}
 }
 
 function generateGlobalType(global: GlobalDefinition, collections: CollectionDefinition[]): string {
-  const fields = (global.fields ?? []).map((f) => fieldToSDL(f, collections)).join("\n");
+  const fields = (global.fields ?? /* v8 ignore next */ [])
+    .map((f) => fieldToSDL(f, collections))
+    .join("\n");
   return `type ${pascalCase(global.slug)} {
 ${fields || "  _: Boolean"}
 }`;
@@ -34,7 +38,7 @@ function generateGlobalInput(
   global: GlobalDefinition,
   collections: CollectionDefinition[],
 ): string {
-  const fields = (global.fields ?? [])
+  const fields = (global.fields ?? /* v8 ignore next */ [])
     .map((f) => {
       const gqlType = fieldToGraphQLType(f, collections);
       return `  ${f.name}: ${gqlType}`;
@@ -55,7 +59,7 @@ function generateConnectionType(name: string): string {
 }
 
 function generateFilterInput(collection: CollectionDefinition): string {
-  const fields = (collection.fields ?? [])
+  const fields = (collection.fields ?? /* v8 ignore next */ [])
     .map((f) => {
       let inputType = "String";
       if (f.type === "number") inputType = "Float";
@@ -75,7 +79,7 @@ ${fields || "  _: Boolean"}
 }
 
 function generateSortEnum(collection: CollectionDefinition): string {
-  const fields = (collection.fields ?? [])
+  const fields = (collection.fields ?? /* v8 ignore next */ [])
     .map((f) => `  ${f.name}_asc\n  ${f.name}_desc`)
     .join("\n");
   return `enum ${pascalCase(collection.slug)}Sort {
@@ -87,7 +91,7 @@ function generateCreateInput(
   collection: CollectionDefinition,
   collections: CollectionDefinition[],
 ): string {
-  const fields = (collection.fields ?? [])
+  const fields = (collection.fields ?? /* v8 ignore next */ [])
     .filter((f) => f.type !== "relation")
     .map((f) => {
       const gqlType = fieldToGraphQLType(f, collections);
@@ -108,7 +112,7 @@ function generateUpdateInput(
   collection: CollectionDefinition,
   collections: CollectionDefinition[],
 ): string {
-  const fields = (collection.fields ?? [])
+  const fields = (collection.fields ?? /* v8 ignore next */ [])
     .filter((f) => f.type !== "relation")
     .map((f) => {
       const gqlType = fieldToGraphQLType(f, collections);

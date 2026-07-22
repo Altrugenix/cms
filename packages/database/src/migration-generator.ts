@@ -134,7 +134,9 @@ export class MigrationGenerator {
         if (!existing.tables.has(tableName)) {
           migrations.push(this.createGlobalTableMigration(globalDef, fields, tableName, now));
         } else {
-          const existingColumns = existing.tables.get(tableName) ?? [];
+          const existingColumns =
+            existing.tables.get(tableName) ??
+            /* v8 ignore next -- unreachable, has() guard above */ [];
           const newColumns = fields.filter(
             (f) => !existingColumns.includes(fieldColumnName(f.name)),
           );

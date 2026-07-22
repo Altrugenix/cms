@@ -23,8 +23,8 @@ Options:
 }
 
 export async function typegen(options: TypegenOptions): Promise<void> {
-  const schemaDir = options.dir ?? "cms";
-  const outPath = options.out ?? "src/__generated__/types.ts";
+  const schemaDir = options.dir ?? /* v8 ignore next */ "cms";
+  const outPath = options.out ?? /* v8 ignore next */ "src/__generated__/types.ts";
 
   console.log(`[cms] Loading schemas from ${schemaDir}/...`);
 

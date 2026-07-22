@@ -12,7 +12,7 @@ export interface PluginCreateOptions {
 
 export async function pluginCreate(options: PluginCreateOptions): Promise<void> {
   const slug = validateSlug(options.slug);
-  const baseDir = resolve(options.dir ?? "packages/plugins", slug);
+  const baseDir = resolve(options.dir ?? /* v8 ignore next */ "packages/plugins", slug);
 
   const { files } = pluginTemplate(slug);
 

@@ -37,7 +37,7 @@ export function scaffold(
         dependencies: {
           "@arche-cms/cms": "^0.1.0",
         },
-        name: projectDir.split("/").pop() ?? "my-cms-app",
+        name: projectDir.split("/").pop() ?? /* v8 ignore next -- unreachable */ "my-cms-app",
         private: true,
         scripts: {
           build: "cms build",

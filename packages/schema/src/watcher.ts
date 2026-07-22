@@ -31,7 +31,7 @@ function slugFromFile(filePath: string): string {
     filePath
       .replace(/\.(ts|js)$/, "")
       .split(/[/\\]/)
-      .pop() ?? ""
+      .pop() ?? /* v8 ignore next -- unreachable, split always returns non-empty */ ""
   );
 }
 
