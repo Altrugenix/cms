@@ -206,6 +206,26 @@ describe("AuthService extended", () => {
       const updated = await service.updateUser("nonexistent", { email: "x@example.com" });
       expect(updated).toBeNull();
     });
+
+    it("persists name field via register and updateUser", async () => {
+      const { user } = await service.register({
+        email: "named@example.com",
+        name: "John Doe",
+        password: "pass",
+      });
+      expect(user.name).toBe("John Doe");
+
+      const updated = await service.updateUser(user.id, { name: "Jane Doe" });
+      expect(updated?.name).toBe("Jane Doe");
+    });
+
+    it("updates password via updateUser", async () => {
+      const { user } = await service.register({ email: "pw@example.com", password: "oldpass" });
+      const updated = await service.updateUser(user.id, { password: "newpass" });
+      expect(updated).not.toBeNull();
+      const loginResult = await service.login({ email: "pw@example.com", password: "newpass" });
+      expect(loginResult.user.id).toBe(user.id);
+    });
   });
 
   describe("deleteUser", () => {

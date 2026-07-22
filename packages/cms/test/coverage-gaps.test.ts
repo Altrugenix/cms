@@ -91,12 +91,12 @@ function createMockAdapter(): DatabaseAdapter {
           created_at: params?.[5] ?? new Date().toISOString(),
           enabled: 1,
           events: params?.[2] ?? "[]",
+          id: Number(id),
           last_delivered_at: null,
           last_error: "",
           last_status: null,
           last_success: 0,
           name: params?.[0] ?? "",
-          rowid: Number(id),
           secret: params?.[4] ?? "",
           updated_at: params?.[6] ?? new Date().toISOString(),
           url: params?.[1] ?? "",
@@ -105,24 +105,24 @@ function createMockAdapter(): DatabaseAdapter {
         return [];
       }
       if (sql.includes("SELECT") && sql.includes("__cms_webhooks")) {
-        if (sql.includes("WHERE rowid")) {
+        if (sql.includes("WHERE id")) {
           const targetId = Number(params?.[0]);
-          return webhooks.filter((w) => Number(w.rowid) === targetId);
+          return webhooks.filter((w) => Number(w.id) === targetId);
         }
-        if (sql.includes("ORDER BY rowid DESC")) {
-          return [...webhooks].sort((a, b) => Number(b.rowid) - Number(a.rowid)).slice(0, 1);
+        if (sql.includes("ORDER BY id DESC")) {
+          return [...webhooks].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 1);
         }
         return webhooks;
       }
       if (sql.includes("UPDATE __cms_webhooks SET")) {
         const targetId = Number(params?.[params?.length ?? 0 - 1]);
-        const idx = webhooks.findIndex((w) => Number(w.rowid) === targetId);
+        const idx = webhooks.findIndex((w) => Number(w.id) === targetId);
         if (idx === -1) return [];
         const sets = sql.match(/(\w+)\s*=\s*\?/g) ?? [];
         let paramIdx = 0;
         for (const setClause of sets) {
           const col = setClause.split("=")[0].trim();
-          if (col !== "rowid" && params?.[paramIdx] !== undefined) {
+          if (col !== "id" && params?.[paramIdx] !== undefined) {
             webhooks[idx] = { ...webhooks[idx], [col]: params[paramIdx] };
           }
           paramIdx++;
@@ -131,7 +131,7 @@ function createMockAdapter(): DatabaseAdapter {
       }
       if (sql.includes("DELETE FROM __cms_webhooks")) {
         const targetId = Number(params?.[0]);
-        const idx = webhooks.findIndex((w) => Number(w.rowid) === targetId);
+        const idx = webhooks.findIndex((w) => Number(w.id) === targetId);
         if (idx !== -1) webhooks.splice(idx, 1);
         return [];
       }
@@ -140,11 +140,11 @@ function createMockAdapter(): DatabaseAdapter {
           created_at: params?.[5] ?? new Date().toISOString(),
           created_by: params?.[6] ?? "",
           description: params?.[3] ?? "",
+          id: String(apiTokens.length + 1),
           last_four: params?.[2] ?? "",
           last_used_at: null,
           name: params?.[0] ?? "",
           role: params?.[4] ?? "admin",
-          rowid: String(apiTokens.length + 1),
           token_hash: params?.[1] ?? "",
         };
         apiTokens.push(entry);
@@ -158,14 +158,14 @@ function createMockAdapter(): DatabaseAdapter {
         return apiTokens;
       }
       if (sql.includes("UPDATE __cms_api_tokens SET last_used_at")) {
-        const rowid = params?.[1];
-        const token = apiTokens.find((t) => t.rowid === rowid);
+        const id = params?.[1];
+        const token = apiTokens.find((t) => t.id === id);
         if (token) token.last_used_at = params?.[0];
         return [];
       }
       if (sql.includes("DELETE FROM __cms_api_tokens")) {
         const targetId = params?.[0];
-        const idx = apiTokens.findIndex((t) => t.rowid === targetId);
+        const idx = apiTokens.findIndex((t) => t.id === targetId);
         if (idx !== -1) apiTokens.splice(idx, 1);
         return [];
       }

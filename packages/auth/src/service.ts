@@ -53,6 +53,7 @@ export class AuthService {
     await this.db.createTable(USERS_TABLE, {
       createdAt: "TEXT NOT NULL",
       email: "TEXT NOT NULL UNIQUE",
+      name: "TEXT DEFAULT ''",
       password: "TEXT NOT NULL",
       role: "TEXT NOT NULL DEFAULT 'editor'",
       updatedAt: "TEXT NOT NULL",
@@ -228,7 +229,10 @@ export class AuthService {
   ): Promise<PublicUser | null> {
     const user = await this.findById(id);
     if (!user) return null;
-    const updateData: Record<string, unknown> = { ...data, updatedAt: new Date().toISOString() };
+    const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.role !== undefined) updateData.role = data.role;
     if (data.password) {
       updateData.password = await hashPassword(data.password);
     }

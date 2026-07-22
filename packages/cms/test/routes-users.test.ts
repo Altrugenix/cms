@@ -200,8 +200,159 @@ describe("Users Routes", () => {
     expect(JSON.parse(res.body).error).toBe("User not found");
   });
 
+  it("DELETE /api/users/1 rejects deleting the default admin", async () => {
+    const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "DELETE",
+      url: "/api/users/1",
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toContain("default admin");
+  });
+
   it("rejects unauthenticated requests", async () => {
     const res = await app.inject({ method: "GET", url: "/api/users" });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("PATCH /api/users/:id with role update succeeds", async () => {
+    const createRes = await app.inject({
+      body: { email: "role-target@test.com", password: "password123" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "POST",
+      url: "/api/users",
+    });
+    const userId = JSON.parse(createRes.body).user.id;
+
+    const res = await app.inject({
+      body: { role: "admin" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "PATCH",
+      url: `/api/users/${userId}`,
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.role).toBe("admin");
+  });
+
+  it("PATCH /api/users/:id persists name field", async () => {
+    const createRes = await app.inject({
+      body: { email: "name-test@test.com", password: "password123" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "POST",
+      url: "/api/users",
+    });
+    const userId = JSON.parse(createRes.body).user.id;
+
+    const res = await app.inject({
+      body: { email: "name-test@test.com", name: "Alchie Tagudin", role: "admin" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "PATCH",
+      url: `/api/users/${userId}`,
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.email).toBe("name-test@test.com");
+    expect(body.name).toBe("Alchie Tagudin");
+  });
+
+  it("PATCH /api/users/:id with password update succeeds", async () => {
+    const createRes = await app.inject({
+      body: { email: "pw-update@test.com", password: "password123" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "POST",
+      url: "/api/users",
+    });
+    const userId = JSON.parse(createRes.body).user.id;
+
+    const res = await app.inject({
+      body: { password: "newpassword456" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "PATCH",
+      url: `/api/users/${userId}`,
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("POST /api/users persists name field", async () => {
+    const res = await app.inject({
+      body: { email: "extra@test.com", name: "Should Persist", password: "password123" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "POST",
+      url: "/api/users",
+    });
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.user.email).toBe("extra@test.com");
+    expect(body.user.name).toBe("Should Persist");
+  });
+
+  it("POST /api/users returns 400 for duplicate email", async () => {
+    const res = await app.inject({
+      body: { email: "updated@test.com", password: "password123" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "POST",
+      url: "/api/users",
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toContain("already exists");
+  });
+
+  it("POST /api/users returns 400 for missing password", async () => {
+    const res = await app.inject({
+      body: { email: "nopass@test.com" },
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "POST",
+      url: "/api/users",
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("POST /api/users without body returns 400", async () => {
+    const res = await app.inject({
+      body: {},
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "POST",
+      url: "/api/users",
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("GET /api/users with limit and offset pagination", async () => {
+    const res = await app.inject({
+      headers: { authorization: `Bearer ${authToken}` },
+      method: "GET",
+      url: "/api/users?limit=1&offset=0",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data.length).toBeLessThanOrEqual(1);
+    expect(body.total).toBeGreaterThanOrEqual(1);
+  });
+
+  it("rejects PATCH /api/users/:id without auth", async () => {
+    const res = await app.inject({
+      body: { email: "noauth@test.com" },
+      method: "PATCH",
+      url: "/api/users/1",
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("rejects DELETE /api/users/:id without auth", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/users/1",
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("rejects POST /api/users without auth", async () => {
+    const res = await app.inject({
+      body: { email: "noauth@test.com", password: "password123" },
+      method: "POST",
+      url: "/api/users",
+    });
     expect(res.statusCode).toBe(401);
   });
 });

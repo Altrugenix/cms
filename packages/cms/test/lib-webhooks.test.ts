@@ -106,8 +106,8 @@ describe("dispatchWebhooks", () => {
             {
               collection: "posts",
               events: JSON.stringify(["entry.create"]),
+              id: 1,
               name: "test-hook",
-              rowid: 1,
               secret: "",
               url: "https://example.com/hook",
             },
@@ -175,8 +175,8 @@ describe("dispatchWebhooks", () => {
             {
               collection: "posts",
               events: JSON.stringify(["entry.update"]),
+              id: 1,
               name: "update-only-hook",
-              rowid: 1,
               secret: "",
               url: "https://example.com/hook",
             },
@@ -227,8 +227,8 @@ describe("dispatchWebhooks", () => {
             {
               collection: "posts",
               events: JSON.stringify(["entry.create"]),
+              id: 1,
               name: "failing-hook",
-              rowid: 1,
               secret: "",
               url: "https://example.com/fail",
             },
@@ -259,8 +259,8 @@ describe("dispatchWebhooks", () => {
             {
               collection: "posts",
               events: JSON.stringify(["entry.create"]),
+              id: 1,
               name: "signed-hook",
-              rowid: 1,
               secret: "my-secret-key",
               url: "https://example.com/signed",
             },
@@ -289,8 +289,8 @@ describe("dispatchWebhooks", () => {
             {
               collection: "posts",
               events: JSON.stringify(["entry.create"]),
+              id: 1,
               name: "unsigned-hook",
-              rowid: 1,
               secret: "",
               url: "https://example.com/nosig",
             },
@@ -320,8 +320,8 @@ describe("dispatchWebhooks", () => {
             {
               collection: "posts",
               events: JSON.stringify(["entry.create"]),
+              id: 5,
               name: "retry-hook",
-              rowid: 5,
               secret: "",
               url: "https://example.com/retry",
             },
@@ -353,8 +353,8 @@ describe("dispatchWebhooks", () => {
             {
               collection: "posts",
               events: JSON.stringify(["entry.create"]),
+              id: 1,
               name: "body-check",
-              rowid: 1,
               secret: "",
               url: "https://example.com/body",
             },

@@ -108,7 +108,7 @@ function createMockAdapter() {
           const tableName = tableMatch[1];
           const store = getRawStore(tableName);
           const rowId = rawRowIdCounter++;
-          const record: Record<string, unknown> = { rowid: rowId };
+          const record: Record<string, unknown> = { id: rowId };
           if (params && Array.isArray(params)) {
             const colMatches = sql.match(/\(([^)]+)\)\s+VALUES/i);
             if (colMatches) {
@@ -127,12 +127,12 @@ function createMockAdapter() {
         if (tableMatch) {
           const tableName = tableMatch[1];
           const store = getRawStore(tableName);
-          if (sql.includes("ORDER BY rowid DESC")) {
+          if (sql.includes("ORDER BY id DESC")) {
             return store.length > 0 ? [store[store.length - 1]] : [];
           }
-          if (sql.includes("WHERE rowid = ?") && params && params.length > 0) {
+          if (sql.includes("WHERE id = ?") && params && params.length > 0) {
             const targetId = Number(params[0]);
-            const found = store.find((r) => r.rowid === targetId);
+            const found = store.find((r) => r.id === targetId);
             return found ? [found] : [];
           }
           return [...store];
@@ -816,7 +816,7 @@ describe("users route — create, update, delete", () => {
       method: "DELETE",
       url: "/api/users/1",
     });
-    expect([200, 404]).toContain(res.statusCode);
+    expect([200, 400, 404]).toContain(res.statusCode);
   });
 });
 

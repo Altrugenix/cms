@@ -221,6 +221,9 @@ export function registerUserRoutes(
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
+      if (id === "1") {
+        return reply.status(400).send({ error: "Cannot delete the default admin user" });
+      }
       const deleted = await authService.deleteUser(id);
       if (!deleted) return reply.status(404).send({ error: "User not found" });
       recordActivity(adapter, {
