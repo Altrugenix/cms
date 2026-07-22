@@ -232,16 +232,20 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
+      const numericId = Number(id);
+      if (!Number.isFinite(numericId) || numericId <= 0) {
+        return reply.status(400).send({ error: "Invalid token ID" });
+      }
 
       const rows = (await adapter.raw(`SELECT rowid FROM ${TOKENS_TABLE} WHERE rowid = ?`, [
-        Number(id),
+        numericId,
       ])) as { rowid: number }[];
 
       if (!rows || rows.length === 0) {
         return reply.status(404).send({ error: "Token not found" });
       }
 
-      await adapter.raw(`DELETE FROM ${TOKENS_TABLE} WHERE rowid = ?`, [Number(id)]);
+      await adapter.raw(`DELETE FROM ${TOKENS_TABLE} WHERE rowid = ?`, [numericId]);
       return reply.send({ message: "Token revoked" });
     },
   );

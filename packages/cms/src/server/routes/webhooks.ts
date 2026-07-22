@@ -362,15 +362,19 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
     async (request: FastifyRequest, reply: FastifyReply) => {
       await init();
       const { id } = request.params as { id: string };
+      const numericId = Number(id);
+      if (!Number.isFinite(numericId) || numericId <= 0) {
+        return reply.status(400).send({ error: "Invalid webhook ID" });
+      }
       const existing = (await adapter.raw(`SELECT rowid FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`, [
-        Number(id),
+        numericId,
       ])) as { rowid: number }[];
 
       if (!existing || existing.length === 0) {
         return reply.status(404).send({ error: "Webhook not found" });
       }
 
-      await adapter.raw(`DELETE FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`, [Number(id)]);
+      await adapter.raw(`DELETE FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`, [numericId]);
       return reply.send({ message: "Webhook deleted" });
     },
   );
