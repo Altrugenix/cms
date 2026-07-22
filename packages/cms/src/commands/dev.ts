@@ -72,7 +72,7 @@ Start the CMS development server with file watching and hot-reload.
 
 Options:
   --dir <path>       Schema directory (default: ./cms)
-  --port <num>       Server port (default: 3000)
+  --port <num>       Server port (default: 3500)
   --host <addr>      Server host (default: 0.0.0.0)
   --db-url <url>     Database URL (default: file:./cms.db)
   --db-adapter <type> Database adapter: sqlite | postgres (default: sqlite)
@@ -115,7 +115,7 @@ export async function dev(options: DevOptions): Promise<void> {
   let viteServer: ViteDevServer | null = null;
 
   if (options.vite) {
-    viteServer = await startViteDevServer(options.port ?? 3000, logger);
+    viteServer = await startViteDevServer(options.port ?? 3500, logger);
     logger.info(`Admin dev server at http://localhost:5173`);
   } else {
     ensureAdminBuild(logger);

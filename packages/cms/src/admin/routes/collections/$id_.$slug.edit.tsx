@@ -1,11 +1,12 @@
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle, History } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { FieldInput } from "@/components/field-input";
-import { Skeleton } from "@/components/skeleton";
+import { LocaleSelector } from "@/components/locale-selector";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { VersionHistoryPanel } from "@/components/version-history-panel";
 import { ApiError } from "@/lib/api";
 import {
@@ -14,6 +15,7 @@ import {
   useUpdateEntry,
   usePublishEntry,
   useUnpublishEntry,
+  useUnsavedChanges,
 } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
@@ -39,12 +41,17 @@ function EditEntry() {
   const [entryStatus, setEntryStatus] = useState<string>("");
   const [initialized, setInitialized] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
+  const initialValuesRef = useRef<Record<string, unknown>>({});
+  const isDirty =
+    initialized && JSON.stringify(values) !== JSON.stringify(initialValuesRef.current);
+  const { cancelLeave, confirmLeave, isBlocking } = useUnsavedChanges(isDirty);
 
   if (collection && entry && !initialized) {
     const initial: Record<string, unknown> = {};
     for (const f of collection.fields) {
       initial[f.name] = entry[f.name] ?? "";
     }
+    initialValuesRef.current = initial;
     setValues(initial);
     setEntryStatus((entry._status as string) ?? "");
     setInitialized(true);
@@ -125,7 +132,7 @@ function EditEntry() {
             <Skeleton className="mt-1 h-5 w-32" />
           </div>
         </div>
-        <div className="space-y-4 rounded-lg border p-6">
+        <div className="space-y-6 rounded-lg border p-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-2">
               <Skeleton className="h-4 w-20" />
@@ -141,7 +148,9 @@ function EditEntry() {
     );
   if (entryError)
     return (
-      <div className="rounded-md bg-destructive/10 p-4 text-destructive">{entryError.message}</div>
+      <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+        {entryError.message}
+      </div>
     );
   if (!collection || !entry) return null;
   return (
@@ -150,34 +159,28 @@ function EditEntry() {
         <Link
           to="/collections/$slug"
           params={{ slug }}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit {collection.label}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Edit {collection.label}</h1>
           <p className="text-muted-foreground">Editing entry {id}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <select
+          <LocaleSelector
             value={locale}
-            onChange={(e) => setLocale(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {(collection.localization?.locales ?? ["en"]).map((l) => (
-              <option key={l} value={l}>
-                {l.toUpperCase()}
-              </option>
-            ))}
-          </select>
+            onChange={setLocale}
+            locales={collection.localization?.locales ?? ["en"]}
+          />
           {collection.versions?.drafts &&
             entryStatus &&
             (entryStatus === "published" ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">
                 <CheckCircle className="h-4 w-4" /> Published
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-3 py-1 text-sm font-medium text-warning">
                 Draft
               </span>
             ))}
@@ -185,10 +188,12 @@ function EditEntry() {
       </div>
 
       {formError && (
-        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{formError}</div>
+        <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+          {formError}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
         {collection.fields.map((f) => (
           <FieldInput
             key={f.name}
@@ -199,8 +204,8 @@ function EditEntry() {
           />
         ))}
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={updateEntry.isPending}>
-            {updateEntry.isPending ? "Saving..." : "Save Changes"}
+          <Button type="submit" loading={updateEntry.isPending}>
+            Save Changes
           </Button>
           {collection.versions?.drafts && (
             <>
@@ -208,19 +213,19 @@ function EditEntry() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={unpublishEntry.isPending}
+                  loading={unpublishEntry.isPending}
                   onClick={handleUnpublish}
                 >
-                  {unpublishEntry.isPending ? "Unpublishing..." : "Unpublish"}
+                  Unpublish
                 </Button>
               ) : (
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={publishEntry.isPending}
+                  loading={publishEntry.isPending}
                   onClick={handlePublish}
                 >
-                  {publishEntry.isPending ? "Publishing..." : "Publish"}
+                  Publish
                 </Button>
               )}
             </>
@@ -249,6 +254,25 @@ function EditEntry() {
               <VersionHistoryPanel slug={slug} entryId={id} />
             </div>
           )}
+        </div>
+      )}
+
+      {isBlocking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay">
+          <div className="rounded-lg border bg-card p-6 shadow-lg max-w-md">
+            <h3 className="text-lg font-semibold">Unsaved changes</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You have unsaved changes. Are you sure you want to leave?
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={cancelLeave}>
+                Stay
+              </Button>
+              <Button variant="destructive" onClick={confirmLeave}>
+                Leave
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

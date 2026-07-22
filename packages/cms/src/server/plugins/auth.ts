@@ -16,7 +16,6 @@ import {
   loginBodySchema,
   messageResponseSchema,
   refreshBodySchema,
-  registerBodySchema,
   resetPasswordBodySchema,
   userObjectSchema,
 } from "../schemas/shared.js";
@@ -82,57 +81,6 @@ export async function registerAuth(
 
   // Auth routes (public)
   fastify.post(
-    "/api/auth/register",
-    {
-      schema: {
-        ...publicSchema,
-        body: registerBodySchema,
-        description: "Create a new user account (requires setup to be complete)",
-        response: {
-          "201": {
-            ...authUserResponseSchema,
-            ...authTokensResponseSchema,
-            properties: {
-              ...authUserResponseSchema.properties,
-              ...authTokensResponseSchema.properties,
-            },
-          },
-          "400": errorWithCodeSchema,
-        },
-        summary: "Register a new user",
-        tags: ["Auth"],
-      },
-    },
-    async (
-      request: FastifyRequest<{ Body: { email: string; password: string } }>,
-      reply: FastifyReply,
-    ) => {
-      try {
-        const { email, password } = request.body;
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-          return reply
-            .status(400)
-            .send({ code: "VALIDATION_ERROR", error: "Invalid email format" });
-        }
-
-        if (password && password.length < 8) {
-          return reply
-            .status(400)
-            .send({ code: "VALIDATION_ERROR", error: "Password must be at least 8 characters" });
-        }
-
-        const result = await authService.register({ ...request.body, role: undefined });
-        return reply.status(201).send({ user: result.user, ...result.tokens });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Registration failed";
-        return reply.status(400).send({ error: message });
-      }
-    },
-  );
-
-  fastify.post(
     "/api/auth/login",
     {
       schema: {
@@ -155,7 +103,7 @@ export async function registerAuth(
       },
     },
     async (
-      request: FastifyRequest<{ Body: { email: string; password: string } }>,
+      request: FastifyRequest<{ Body: { email: string; password: string; rememberMe?: boolean } }>,
       reply: FastifyReply,
     ) => {
       try {

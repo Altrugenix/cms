@@ -71,17 +71,24 @@ function CreateWebhook() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/settings/webhooks" className="text-muted-foreground hover:text-foreground">
+        <Link
+          to="/settings/webhooks"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create Webhook</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Create Webhook</h1>
           <p className="text-muted-foreground">Send HTTP requests on content events</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
-        {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+        {error && (
+          <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+            {error}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
@@ -118,7 +125,7 @@ function CreateWebhook() {
                   type="checkbox"
                   checked={events.includes(evt.value)}
                   onChange={() => toggleEvent(evt.value)}
-                  className="h-4 w-4 rounded border-border accent-primary"
+                  className="h-4 w-4 rounded border-border accent-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <span className="text-sm">{evt.label}</span>
               </label>
@@ -154,8 +161,8 @@ function CreateWebhook() {
         </div>
 
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={createWebhook.isPending || events.length === 0}>
-            {createWebhook.isPending ? "Creating..." : "Create Webhook"}
+          <Button type="submit" disabled={events.length === 0} loading={createWebhook.isPending}>
+            Create Webhook
           </Button>
           <Link to="/settings/webhooks">
             <Button type="button" variant="outline">

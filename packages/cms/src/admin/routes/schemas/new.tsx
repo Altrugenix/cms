@@ -78,7 +78,7 @@ function NewSchema() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">New Schema</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">New Schema</h1>
           <p className="text-muted-foreground">Create a new collection, global, or component</p>
         </div>
       </div>
@@ -135,9 +135,9 @@ function NewSchema() {
           </p>
         </div>
 
-        <Button type="submit" className="w-full" disabled={creating}>
+        <Button type="submit" className="w-full" loading={creating}>
           <Plus className="mr-2 h-4 w-4" />
-          {creating ? "Creating..." : "Create Schema"}
+          Create Schema
         </Button>
       </form>
     </div>

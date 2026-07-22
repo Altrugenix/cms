@@ -2,11 +2,12 @@ import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-route
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUsers, updateUser, fetchRoles, type UserMeta, type RoleMeta } from "@/lib/api";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
@@ -23,6 +24,7 @@ function EditUser() {
   const [user, setUser] = useState<UserMeta | null>(null);
   const [roles, setRoles] = useState<RoleMeta[]>([]);
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -39,6 +41,7 @@ function EditUser() {
         if (cancelled) return;
         setUser(u);
         setEmail(u.email);
+        setName(u.name ?? "");
         setRole(u.role);
         setRoles(rolesRes.data);
       } catch (err) {
@@ -58,7 +61,11 @@ function EditUser() {
     if (!user) return;
     setSaving(true);
     try {
-      const updates: { email: string; role: string; password?: string } = { email, role };
+      const updates: { email: string; name: string; role: string; password?: string } = {
+        email,
+        name,
+        role,
+      };
       if (password) updates.password = password;
       await updateUser(id, updates);
       toast("User updated", "success");
@@ -82,7 +89,7 @@ function EditUser() {
             <Skeleton className="mt-1 h-5 w-40" />
           </div>
         </div>
-        <div className="space-y-4 rounded-lg border p-6">
+        <div className="space-y-6 rounded-lg border p-6">
           <div className="space-y-2">
             <Skeleton className="h-4 w-12" />
             <Skeleton className="h-10 w-full rounded-md" />
@@ -100,22 +107,29 @@ function EditUser() {
     );
   }
   if (error)
-    return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
+    return (
+      <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+        {error}
+      </div>
+    );
   if (!user) return null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/settings/users" className="text-muted-foreground hover:text-foreground">
+        <Link
+          to="/settings/users"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit User</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Edit User</h1>
           <p className="text-muted-foreground">{user.email}</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -124,6 +138,18 @@ function EditUser() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoComplete="email"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Optional"
+            autoComplete="name"
           />
         </div>
         <div className="space-y-2">
@@ -144,17 +170,17 @@ function EditUser() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">New Password</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Leave blank to keep current password"
+            autoComplete="new-password"
           />
         </div>
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
+          <Button type="submit" loading={saving}>
+            Save Changes
           </Button>
           <Link to="/settings/users">
             <Button type="button" variant="outline">

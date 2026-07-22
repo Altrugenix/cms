@@ -4,11 +4,11 @@ import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Pagination } from "@/components/pagination";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { type ApiTokenMeta } from "@/lib/api";
 import { useApiTokensList, useCreateApiToken, useDeleteApiToken } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
@@ -122,7 +122,7 @@ function ApiTokensPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">API Tokens</h1>
           <p className="text-muted-foreground">
@@ -136,7 +136,9 @@ function ApiTokensPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error.message}</div>
+        <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+          {error.message}
+        </div>
       )}
 
       {showForm && (
@@ -163,8 +165,8 @@ function ApiTokensPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={createApiToken.isPending || !newName.trim()}>
-                {createApiToken.isPending ? "Creating..." : "Create"}
+              <Button type="submit" disabled={!newName.trim()} loading={createApiToken.isPending}>
+                Create
               </Button>
               <Button
                 type="button"
@@ -196,7 +198,7 @@ function ApiTokensPage() {
               {createdToken.rawToken}
             </code>
             <Button variant="outline" size="icon" onClick={handleCopy}>
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
           <Button variant="ghost" size="sm" className="mt-3" onClick={() => setCreatedToken(null)}>

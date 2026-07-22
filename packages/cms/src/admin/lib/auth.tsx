@@ -12,27 +12,40 @@ type AuthState = {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
 
+function storageGet(key: string): string | null {
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+}
+
+function storageSet(key: string, value: string, persistent: boolean) {
+  const store = persistent ? localStorage : sessionStorage;
+  store.setItem(key, value);
+}
+
+function storageRemove(key: string) {
+  localStorage.removeItem(key);
+  sessionStorage.removeItem(key);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     try {
-      const stored = localStorage.getItem("cms_user");
+      const stored = storageGet("cms_user");
       if (!stored) return null;
       const parsed = JSON.parse(stored) as User;
       return parsed && typeof parsed === "object" ? parsed : null;
     } catch {
-      localStorage.removeItem("cms_user");
+      storageRemove("cms_user");
       return null;
     }
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("cms_token"));
+  const [token, setToken] = useState<string | null>(() => storageGet("cms_token"));
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,7 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const u = (await res.json()) as User | null;
           if (u && typeof u === "object") {
             setUser(u);
-            localStorage.setItem("cms_user", JSON.stringify(u));
+            const persistent = !!localStorage.getItem("cms_token");
+            storageSet("cms_user", JSON.stringify(u), persistent);
           } else {
             logoutCleanup();
           }
@@ -59,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         // token invalid, try refresh
       }
-      const refreshToken = localStorage.getItem("cms_refresh");
+      const refreshToken = storageGet("cms_refresh");
       if (refreshToken) {
         try {
           const r = await fetch(`${getApiUrl()}/api/auth/refresh`, {
@@ -73,11 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               accessToken: string;
               refreshToken: string;
             };
+            const persistent = !!localStorage.getItem("cms_token");
             setUser(data.user);
             setToken(data.accessToken);
-            localStorage.setItem("cms_user", JSON.stringify(data.user));
-            localStorage.setItem("cms_token", data.accessToken);
-            localStorage.setItem("cms_refresh", data.refreshToken);
+            storageSet("cms_user", JSON.stringify(data.user), persistent);
+            storageSet("cms_token", data.accessToken, persistent);
+            storageSet("cms_refresh", data.refreshToken, persistent);
             setIsLoading(false);
             return;
           }
@@ -93,16 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function logoutCleanup() {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("cms_user");
-    localStorage.removeItem("cms_token");
-    localStorage.removeItem("cms_refresh");
+    storageRemove("cms_user");
+    storageRemove("cms_token");
+    storageRemove("cms_refresh");
   }
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, rememberMe = false) => {
     setIsLoading(true);
     try {
       const res = await fetch(`${getApiUrl()}/api/auth/login`, {
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
@@ -110,35 +125,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const err = (await res.json()) as { error?: string };
         throw new Error(err.error ?? "Login failed");
       }
-      const data = (await res.json()) as { user: User; accessToken: string; refreshToken: string };
+      const data = (await res.json()) as {
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+      };
       setUser(data.user);
       setToken(data.accessToken);
-      localStorage.setItem("cms_user", JSON.stringify(data.user));
-      localStorage.setItem("cms_token", data.accessToken);
-      localStorage.setItem("cms_refresh", data.refreshToken);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const register = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${getApiUrl()}/api/auth/register`, {
-        body: JSON.stringify({ email, password }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      if (!res.ok) {
-        const err = (await res.json()) as { error?: string };
-        throw new Error(err.error ?? "Registration failed");
-      }
-      const data = (await res.json()) as { user: User; accessToken: string; refreshToken: string };
-      setUser(data.user);
-      setToken(data.accessToken);
-      localStorage.setItem("cms_user", JSON.stringify(data.user));
-      localStorage.setItem("cms_token", data.accessToken);
-      localStorage.setItem("cms_refresh", data.refreshToken);
+      storageSet("cms_user", JSON.stringify(data.user), rememberMe);
+      storageSet("cms_token", data.accessToken, rememberMe);
+      storageSet("cms_refresh", data.refreshToken, rememberMe);
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated: !!user, isLoading, login, logout, register, token, user }}
+      value={{ isAuthenticated: !!user, isLoading, login, logout, token, user }}
     >
       {children}
     </AuthContext.Provider>

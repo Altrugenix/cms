@@ -126,6 +126,7 @@ export const authUserResponseSchema = {
       properties: {
         email: { type: "string" },
         id: { type: "string" },
+        name: { type: "string" },
         role: { type: "string" },
       },
       required: ["email", "id", "role"],
@@ -133,21 +134,6 @@ export const authUserResponseSchema = {
     },
   },
   required: ["user"],
-  type: "object",
-} as const;
-
-export const registerBodySchema = {
-  properties: {
-    email: {
-      examples: ["admin@example.com"],
-      type: "string",
-    },
-    password: {
-      examples: ["admin123456"],
-      type: "string",
-    },
-  },
-  required: ["email", "password"],
   type: "object",
 } as const;
 
@@ -160,6 +146,11 @@ export const loginBodySchema = {
     password: {
       examples: ["admin123456"],
       type: "string",
+    },
+    rememberMe: {
+      description:
+        "If true, tokens persist across browser sessions (30-day refresh token). If false, tokens are cleared when the browser closes (1-hour refresh token).",
+      type: "boolean",
     },
   },
   required: ["email", "password"],
@@ -213,6 +204,7 @@ export const userObjectSchema = {
     createdAt: { type: "string" },
     email: { type: "string" },
     id: { type: "string" },
+    name: { type: "string" },
     role: { type: "string" },
     updatedAt: { type: "string" },
   },
@@ -234,6 +226,10 @@ export const createUserBodySchema = {
   properties: {
     email: {
       examples: ["user@example.com"],
+      type: "string",
+    },
+    name: {
+      examples: ["John Doe"],
       type: "string",
     },
     password: {

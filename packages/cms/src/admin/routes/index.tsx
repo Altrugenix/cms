@@ -1,8 +1,8 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { Plus, Users, FileText, Database, Image, Clock, Trash2, Pencil, Check } from "lucide-react";
 
-import { Skeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { type ActivityEntry } from "@/lib/api";
 import { useCollections, useDashboardData } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
@@ -134,13 +134,13 @@ function Dashboard() {
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-lg border p-4">
+          <div key={s.label} className="rounded-lg border p-4 transition-colors hover:bg-muted/50">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">{s.label}</p>
               <s.icon className="h-4 w-4 text-muted-foreground" />
             </div>
             {loading ? (
-              <p className="mt-1 text-sm text-muted-foreground">...</p>
+              <Skeleton className="mt-1 h-8 w-16" />
             ) : (
               <p className="mt-1 text-2xl font-bold">{s.value}</p>
             )}
@@ -161,7 +161,7 @@ function Dashboard() {
           <div className="divide-y">
             {collections.length === 0 ? (
               <p className="p-4 text-sm text-muted-foreground">
-                {loading ? "Loading..." : "No collections yet"}
+                {loading ? <Skeleton className="h-4 w-32" /> : "No collections yet"}
               </p>
             ) : (
               collections.map((c) => (
@@ -195,7 +195,7 @@ function Dashboard() {
               ))
             ) : (
               <p className="text-sm text-muted-foreground">
-                {loading ? "Loading..." : "Create a collection to get started"}
+                {loading ? <Skeleton className="h-4 w-40" /> : "Create a collection to get started"}
               </p>
             )}
           </div>

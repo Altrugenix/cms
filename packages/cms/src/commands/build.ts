@@ -36,11 +36,11 @@ RUN corepack enable && pnpm install --prod --frozen-lockfile
 
 COPY . .
 
-EXPOSE 3000
+EXPOSE 3500
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV PORT=3000
+ENV PORT=3500
 
 USER cms
 

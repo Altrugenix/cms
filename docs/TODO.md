@@ -1888,6 +1888,185 @@ Expand `apps/playground/test/playground-e2e.test.ts` from 27 tests covering basi
 
 ---
 
-## M35: New Feature Work
+## M35: Admin UI Visual Overhaul & Accessibility
+
+### Objective
+
+Comprehensive UI/UX polish of the admin panel. Improve visual hierarchy, accessibility (WCAG 2.1 AA), consistency, and modern aesthetics while preserving all existing functionality. Introduce missing reusable primitives, unify design tokens, and fix every accessibility violation identified in the codebase audit.
+
+**Constraints:** No changes to APIs, state management, business logic, data flows, or user workflows. Small, incremental improvements. Follow existing conventions (shadcn/ui patterns, Tailwind v4, TanStack Router).
+
+---
+
+### Phase 1: Design System Foundation — Reusable UI Primitives
+
+Add missing shadcn/ui components that are currently hand-rolled inline across 30+ files. Each new primitive eliminates duplicated Tailwind classes and ensures consistent theming.
+
+- [x] **Add `Badge` component** (`components/ui/badge.tsx`) — variant-based (`default`, `secondary`, `destructive`, `outline`, `success`, `warning`, `info`). Replaces hand-rolled status badges in `collections/$slug.tsx`, `settings/plugins.tsx`, `settings/webhooks/index.tsx`, `settings/api-tokens.tsx` (5+ files)
+- [x] **Add `Card` component** (`components/ui/card.tsx`) — `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`. Replaces `rounded-lg border p-4` pattern used in dashboard, collections list, globals list, settings plugins, auth pages (10+ files)
+- [x] **Add `Select` component** (`components/ui/select.tsx`) — accessible dropdown using Radix UI Select. Replaces raw `<select>` elements in collection entry list (locale), settings users (role), settings roles (actions/resources), webhooks (events), schema builder (field types) (8+ files)
+- [x] **Add `Dialog` / `AlertDialog` component** (`components/ui/dialog.tsx`) — accessible modal with focus trap, Escape key, backdrop click, `role="dialog"`, `aria-modal`. Replaces custom `ConfirmDialog` (8 files) and command palette overlay
+- [x] **Add `Checkbox` component** (`components/ui/checkbox.tsx`) — accessible checkbox with label association. Replaces raw `<input type="checkbox">` in webhook events, bulk actions, schema builder (6+ files)
+- [x] **Add `Switch` component** (`components/ui/switch.tsx`) — toggle switch for boolean settings. Replaces badge-styled toggle buttons in webhooks enable/disable
+- [x] **Add `Tooltip` component** (`components/ui/tooltip.tsx`) — hover tooltip for truncated text, icon-only buttons. Needed for collapsed sidebar nav items and truncated URLs
+- [x] **Add `Separator` component** (`components/ui/separator.tsx`) — `<hr>` alternative using `border` token. Replaces `border-b` dividers
+- [x] **Add `Avatar` component** (`components/ui/avatar.tsx`) — user avatar with fallback initials. Replaces plain email text in users list and header
+- [x] **Add `Alert` / `AlertBanner` component** (`components/ui/alert.tsx`) — semantic error/success/info banners. Replaces hand-rolled `bg-destructive/10 p-3 text-destructive` patterns (8+ files with inconsistent padding)
+- [x] **Add `Skeleton` to `ui/` directory** — move existing `skeleton.tsx` from `components/` into `components/ui/` for consistency with other primitives
+- [x] **Add `Tabs` component** (`components/ui/tabs.tsx`) — accessible tab navigation. Replaces hand-rolled tab UI in `field-input.tsx` TabsInput
+
+---
+
+### Phase 2: Accessibility (WCAG 2.1 AA) — Critical Violations
+
+Fix all accessibility violations that would fail a WCAG audit. These are legal compliance issues for many organizations.
+
+- [x] **Add `aria-label` to all icon-only buttons** — `header.tsx` (hamburger, logout, search), `sidebar.tsx` (collapse toggle), `field-input.tsx` (toolbar buttons), `media/index.tsx` (edit/delete on thumbnails), `pagination.tsx` (prev/next). Affects 20+ locations
+- [x] **Add focus trap to `ConfirmDialog`** — trap Tab key inside modal, restore focus on close, add `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, Escape key handler, backdrop click to close
+- [x] **Add focus trap to `CommandPalette`** — same treatment as ConfirmDialog. Currently focus escapes to background content behind overlay
+- [x] **Add `aria-current="page"` to active sidebar nav items** — `sidebar.tsx` active state currently uses visual-only `bg-sidebar-accent`; add ARIA attribute for screen readers
+- [x] **Add `aria-label` to pagination buttons** — "Page 1", "Page 2", etc. for page number buttons; "Previous page" / "Next page" for nav buttons
+- [x] **Link error messages to inputs via `aria-describedby`** — all form fields in `field-input.tsx`, `login.tsx`, `register.tsx`, `reset-password.tsx`, settings forms. Error `<p>` tags need `id` and inputs need `aria-describedby={errorId}`
+- [x] **Add `aria-live="polite"` to toast container** — `toast-provider.tsx` container should announce new toasts to screen readers
+- [x] **Add `role="status"` or `aria-live` to status badges** — published/draft status indicators should announce state
+- [x] **Add `autocomplete` attributes to auth forms** — `autocomplete="email"` on email inputs, `autocomplete="current-password"` on login, `autocomplete="new-password"` on register/reset
+- [x] **Fix `/reset-password` missing from `PUBLIC_PATHS`** — `__root.tsx:15` — unauthenticated users clicking reset links are redirected to login before the form loads. Bug
+- [x] **Add `aria-label` to locale selector** — `collections/$slug.tsx` and `new.$slug.tsx` raw `<select>` elements have no label
+- [x] **Add `role="switch"` and `aria-pressed` to webhook/plugin toggles** — `settings/webhooks/index.tsx` and `settings/plugins.tsx` toggle buttons visually look like badges but behave as toggles
+- [x] **Add skip-to-content link** — `__root.tsx` should render a visually-hidden "Skip to main content" link that becomes visible on focus, linking to the main content area
+- [x] **Add `aria-label` to settings sidebar nav** — `settings/index.tsx` `<nav>` element lacks `aria-label="Settings"`
+
+---
+
+### Phase 3: Visual Consistency — Design Tokens & Color Unification
+
+Replace all hardcoded Tailwind color classes with semantic design tokens. Unify spacing, border radius, and shadows across the UI.
+
+- [x] **Replace hardcoded status badge colors with `Badge` variants** — `collections/$slug.tsx` lines 507-530 use `bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400` etc. Replace with `<Badge variant="success">`, `<Badge variant="warning">`, `<Badge variant="info">`. Also fix `dark:dark:bg-gray-800` double-prefix bug on line 529
+- [x] **Replace hardcoded success/error colors in auth pages** — `reset-password.tsx` uses `bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400` while `forgot-password.tsx` uses `bg-success/10 text-success`. Unify to use `Alert variant="success"` component
+- [x] **Replace hardcoded plugin/webhook status colors** — `settings/plugins.tsx` uses `bg-green-100 text-green-700` without dark mode variants. `settings/webhooks/index.tsx` same issue. Replace with `<Badge variant="success">` / `<Badge variant="secondary">`
+- [x] **Unify error banner styling** — currently `p-3 text-sm` (login), `p-4` (dashboard), `p-3 text-sm` (auth pages). Standardize to `Alert` component with consistent padding
+- [x] **Unify card styling** — dashboard stat cards, collection cards, globals cards, auth form cards all use slightly different `rounded-lg border` patterns. Replace with `<Card>` component
+- [x] **Standardize heading typography** — some pages use `text-3xl` (collections index), others `text-2xl md:text-3xl` (dashboard, settings). Pick one pattern and apply consistently: `text-2xl font-bold tracking-tight md:text-3xl`
+- [x] **Standardize page spacing** — most pages use `space-y-6` but some use `space-y-4` or `space-y-8`. Standardize to `space-y-6` for page-level spacing, `space-y-4` for form sections
+- [x] **Standardize form card padding** — `rounded-lg border p-6` in create/edit forms vs `rounded-lg border p-4` in list items. Keep both but make them consistent within their category
+- [x] **Add consistent `shadow-sm` or `shadow-md` to elevated elements** — modals, dropdowns, and toast notifications should use the same shadow scale
+- [x] **Standardize border radius** — ensure all cards, badges, inputs, and buttons use the design system `--radius` variable (currently `0.5rem`). Remove any hardcoded `rounded-lg` vs `rounded-md` inconsistencies
+
+---
+
+### Phase 4: Interactive States & Micro-interactions
+
+Improve hover, focus, active, and disabled states across all interactive elements. Add subtle animations for state transitions.
+
+- [x] **Add `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` to all interactive elements** — buttons, inputs, selects, links. Currently only `Button` and `Input` components have focus rings; raw `<select>`, `<a>`, checkbox, toggle buttons do not
+- [x] **Add hover effects to dashboard stat cards** — currently static divs. Add `hover:bg-accent/50 hover:shadow-sm transition-all cursor-pointer` and wrap in `<Link>` to navigate to the respective list view
+- [x] **Add hover effects to collection/globals list cards** — globals already have `hover:bg-accent` and arrow slide animation; ensure collections match
+- [x] **Add loading spinner to form submit buttons** — when saving, show a small spinner inside the button instead of just disabling it. Affects: all create/edit forms (12+ locations)
+- [x] **Improve confirm dialog animation** — add `animate-in fade-in-0 zoom-in-95` enter animation and `animate-out fade-out-0 zoom-out-95` exit animation (matching shadcn Dialog pattern)
+- [x] **Improve toast exit animation** — `toast-provider.tsx` currently removes toasts abruptly after 4s. Add `animate-out slide-in-from-right` exit animation before removal
+- [x] **Extend toast timeout for errors** — error toasts should persist for 8 seconds (vs 4s for success/info) to give users time to read them
+- [x] **Add `transition-colors` to all clickable elements** — ensure smooth color transitions on hover/active for nav items, buttons, links, list items
+- [x] **Improve sidebar collapse animation** — current `transition-all duration-200` is fine; add smooth width transition for child content fade-out when collapsing
+- [x] **Add `active:scale-[0.98]` to primary action buttons** — subtle press effect on "Save", "Create", "Delete" buttons for tactile feedback
+
+---
+
+### Phase 5: Responsive Design & Mobile UX
+
+Fix responsive layout issues identified in the audit. Ensure usable experience on tablet (768px) and mobile (375px).
+
+- [x] **Make settings sidebar responsive** — `settings/index.tsx` `w-48` sidebar does not collapse on mobile. Add: on mobile, render as horizontal scrollable tabs or a dropdown select instead of fixed sidebar
+- [x] **Improve mobile header** — `header.tsx` hamburger menu works but search button disappears on mobile (`hidden md:inline` on email). Ensure all essential actions (search, theme toggle, logout) remain accessible on mobile
+- [x] **Improve mobile table scrolling** — `collections/$slug.tsx` uses `min-w-[500px] overflow-x-auto`. On mobile, the action column may be hidden. Add sticky last column or horizontal scroll indicator
+- [x] **Improve media library grid on very small screens** — currently `grid-cols-2` on mobile. On 375px screens, 2 columns with `gap-4` gives ~165px per item which is tight. Consider `grid-cols-1` below 400px
+- [x] **Improve schema editor on tablet** — `schemas/$type.$slug.tsx` two-column layout (`lg:grid-cols-2`) collapses to single column below `lg`. On tablet (768-1024px), the field settings panel appears below the field list requiring scroll. Consider sticky positioning for the settings panel
+- [x] **Improve auth forms on mobile** — login/register forms use `max-w-sm` which is fine, but ensure `px-4` padding prevents edge-to-edge content on small screens
+- [x] **Test and fix any overflow issues** — ensure no horizontal scrollbar on any page at 375px viewport width (except data tables which intentionally scroll)
+
+---
+
+### Phase 6: Typography & Readability
+
+Modernize typography scale, improve readability, and ensure accessible font sizes.
+
+- [x] **Increase minimum font size to 12px** — `schemas/$type.$slug.tsx` uses `text-[9px]` and `text-[10px]` throughout the field editor. Replace with `text-xs` (12px) minimum. WCAG recommends minimum 12px for readable text
+- [x] **Standardize font size scale** — establish and document: `text-xs` (12px) for labels/badges, `text-sm` (14px) for body/inputs, `text-base` (16px) for headings, `text-lg` (18px) for page titles, `text-2xl` (24px) for hero headings
+- [x] **Improve line height for body text** — ensure `leading-normal` (1.5) or `leading-relaxed` (1.625) for paragraph text. Some areas use `leading-tight` (1.25) which is too dense for body copy
+- [x] **Improve table header typography** — `text-sm font-medium text-muted-foreground` is good; ensure consistent across all table views
+- [x] **Improve empty state typography** — empty states should have a clear heading (`text-lg font-semibold`) and description (`text-sm text-muted-foreground`) with consistent spacing
+- [x] **Add `tracking-tight` to page headings** — large headings (`text-2xl` and above) benefit from tighter letter spacing for a modern look
+
+---
+
+### Phase 7: Component Decomposition & Code Quality
+
+Break down oversized components for maintainability. This phase does not change visuals but makes future changes easier.
+
+- [x] **Extract `MediaLibrary` sub-components** — `media/index.tsx` (645→377 lines) into: `MediaLoadingSkeleton`, `MediaHeader`, `BreadcrumbNav`, `FolderCard`, `MediaCard`, `UploadOverlay`, `NewFolderInput`, `EmptyState` in `media/components/`
+- [x] **Extract `SchemaEditor` sub-components** — `schemas/$type.$slug.tsx` (1574→1393 lines) into: `field-config.ts` (FIELD_TYPE_CONFIG, FIELD_TYPE_GROUPS, defaultField, getFieldConfig), `FieldTypePicker`, `SchemaLoadingSkeleton` in `schemas/components/`
+- [x] **Extract `FieldInput` sub-components** — `field-input.tsx` (1409→131 lines, 91% reduction) into `field-types/`: `field-helpers.tsx` (FieldLabel, FieldError, mapInputType, getOptions), `basic-inputs.tsx`, `text-inputs.tsx`, `media-inputs.tsx`, `structure-inputs.tsx`
+- [x] **Remove duplicate `BooleanInput`/`CheckboxInput`** — merged into single `BooleanInput` that handles both `boolean` and `checkbox` field types
+- [x] **Extract locale selector into shared component** — `LocaleSelector.tsx` replaces duplicated `<select>` markup in `collections/$slug.tsx`, `new.$slug.tsx`, `$id_.$slug.edit.tsx`
+- [x] **Extract `renderActions` into `EntryActions` component** — `collections/$slug.tsx` standalone function (47 lines, 7 params) → `components/entry-actions.tsx` with typed props
+
+---
+
+### Phase 8: Dark Mode & Theme Polish
+
+Fix dark mode inconsistencies and ensure all elements look polished in both themes.
+
+- [x] **Audit all hardcoded `dark:` classes** — search for `dark:bg-green-*`, `dark:text-green-*`, `dark:bg-amber-*`, etc. Replace with design token equivalents or Badge/Alert component variants that handle dark mode internally
+- [x] **Fix theme provider `storageKey` mismatch** — `main.tsx` passes `storageKey="cms-theme"` but `theme-provider.tsx` default is `"vite-ui-theme"`. The main.tsx override works but the provider should use `"cms-theme"` as its default
+- [x] **Add system theme listener** — `theme-provider.tsx` sets theme class once on mount but does not listen for `prefers-color-scheme` changes. Add `matchMedia("(prefers-color-scheme: dark)")` listener when theme is "system"
+- [x] **Fix sidebar section header contrast** — `text-sidebar-foreground/50` (50% opacity) may not meet 4.5:1 contrast ratio on dark sidebar background. Increase to `/70` or use a lighter color token
+- [x] **Ensure all borders are visible in dark mode** — `border-border` token resolves to `hsl(217.2 32.6% 17.5%)` in dark mode. Verify this is visible against `hsl(222.2 84% 4.9%)` background (both are very dark). May need to lighten the dark border
+- [x] **Test all modals/overlays in dark mode** — confirm dialogs, command palette, toast notifications should have appropriate contrast and shadow in dark mode
+
+---
+
+### Phase 9: Form UX Improvements
+
+Make forms easier to scan and complete without changing form structure or validation logic.
+
+- [x] **Add "show/hide password" toggle to auth forms** — `login.tsx`, `register.tsx`, `reset-password.tsx`, `settings/users/new.tsx`, `settings/users/$id.tsx`. Add eye/eye-off icon button inside password input
+- [ ] **Add password confirmation to register form** — `register.tsx` does not ask users to confirm their password. Add a "Confirm Password" field (frontend match validation only, no API change)
+- [x] **Add form-level error summary** — when a form submission fails with validation errors, show a summary banner at the top listing all errors with links to the relevant fields (in addition to inline errors)
+- [x] **Add unsaved changes warning** — `collections/new.$slug.tsx`, `collections/$id_.$slug.edit.tsx`, `globals/$slug.tsx`, settings edit forms. Use `beforeunload` event and TanStack Router `beforeRouteLeave` to warn when navigating away with dirty form state
+- [x] **Add `placeholder` text to all form inputs** — audit all `<Input>` usages and ensure meaningful placeholder text where helpful (e.g., "Enter email address", "Search...")
+- [x] **Improve select input styling** — all raw `<select>` elements should match the `Input` component's height (`h-9`), border, and focus ring. After Phase 1 adds the `Select` component, migrate all raw selects
+
+---
+
+### Phase 10: Loading States & Empty States
+
+Improve perceived performance and provide helpful guidance when content is empty.
+
+- [x] **Replace "Loading..." text with skeleton screens** — `__root.tsx` line 75 shows plain "Loading..." on initial app load. Replace with a layout skeleton that mimics the sidebar + header + content structure
+- [x] **Add skeleton loading to all list pages** — collections, globals, users, roles, webhooks, API tokens, plugins. Currently some show skeletons, others show nothing. Standardize: 3-5 skeleton rows matching the table layout
+- [x] **Add image placeholders in media library** — `media/index.tsx` uses `loading="lazy"` but no placeholder. Add a muted background or skeleton while images load
+- [x] **Improve empty states with icons and CTAs** — all empty states should have: an icon (matching the content type), a heading ("No items yet"), a description ("Create your first..."), and a CTA button. Currently some have icons, some don't. Standardize across: collections list, globals list, media library, users, roles, webhooks, API tokens, activity
+- [x] **Add search/filter empty states** — when a search or filter returns no results, show "No results found for [query]" instead of the generic empty state
+
+---
+
+### Verification
+
+- [x] Run `pnpm lint` — no new errors
+- [x] Run `pnpm typecheck` — no type errors
+- [x] Run `pnpm test` — all tests pass (no regressions)
+- [x] Run `pnpm build` — all packages build successfully
+- [x] Admin panel builds successfully (Vite build)
+- [ ] Manual: verify all pages render correctly in light and dark mode
+- [ ] Manual: verify keyboard navigation works on all interactive elements (Tab, Enter, Escape, Arrow keys)
+- [ ] Manual: verify screen reader announces all interactive elements correctly (VoiceOver on macOS)
+- [ ] Manual: verify responsive layout at 375px, 768px, 1024px, 1440px viewport widths
+- [ ] Manual: verify all form submissions show loading states and success/error feedback
+- [x] Manual: verify confirm dialogs trap focus and close on Escape
+- [ ] Run axe DevTools or Lighthouse accessibility audit — target score > 90
+
+---
+
+## M36: New Feature Work
 
 > _TBD — to be defined by the team. Possible candidates:_

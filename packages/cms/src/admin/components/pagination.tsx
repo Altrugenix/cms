@@ -55,8 +55,9 @@ export function Pagination({ limit, offset, onChange, total }: PaginationProps) 
       <p className="text-xs text-muted-foreground">
         {offset + 1}–{Math.min(offset + limit, total)} of {total}
       </p>
-      <div className="flex items-center gap-1">
+      <nav aria-label="Pagination" className="flex items-center gap-1">
         <Button
+          aria-label="Previous page"
           variant="outline"
           size="icon"
           className="h-8 w-8"
@@ -67,12 +68,14 @@ export function Pagination({ limit, offset, onChange, total }: PaginationProps) 
         </Button>
         {pages.map((page, i) =>
           page === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-1 text-xs text-muted-foreground">
+            <span key={`ellipsis-${i}`} className="px-1 text-xs text-muted-foreground" aria-hidden>
               …
             </span>
           ) : (
             <Button
               key={page}
+              aria-label={`Page ${page}`}
+              aria-current={page === currentPage ? "page" : undefined}
               variant={page === currentPage ? "default" : "outline"}
               size="icon"
               className="h-8 w-8 text-xs"
@@ -83,6 +86,7 @@ export function Pagination({ limit, offset, onChange, total }: PaginationProps) 
           ),
         )}
         <Button
+          aria-label="Next page"
           variant="outline"
           size="icon"
           className="h-8 w-8"
@@ -91,7 +95,7 @@ export function Pagination({ limit, offset, onChange, total }: PaginationProps) 
         >
           <ChevronRight className="h-3.5 w-3.5" />
         </Button>
-      </div>
+      </nav>
     </div>
   );
 }

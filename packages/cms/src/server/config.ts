@@ -60,7 +60,7 @@ export function loadConfig(): ServerConfig {
     logger: {
       level: process.env.LOG_LEVEL || "info",
     },
-    port: Number(process.env.PORT) || 3000,
+    port: Number(process.env.PORT) || 3500,
     rateLimit: {
       max: Number(process.env.RATE_LIMIT_MAX) || 100,
       timeWindow: process.env.RATE_LIMIT_WINDOW || "1 minute",

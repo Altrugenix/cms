@@ -25,11 +25,12 @@ export class JwtService {
     return token;
   }
 
-  async generateRefreshToken(payload: JwtPayload): Promise<string> {
+  async generateRefreshToken(payload: JwtPayload, expiresInSeconds?: number): Promise<string> {
+    const expiry = expiresInSeconds ? `${expiresInSeconds}s` : this.config.refreshTokenExpiresIn;
     const token = await new SignJWT({ ...payload, type: "refresh" })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
-      .setExpirationTime(this.config.refreshTokenExpiresIn)
+      .setExpirationTime(expiry)
       .sign(this.key);
 
     return token;

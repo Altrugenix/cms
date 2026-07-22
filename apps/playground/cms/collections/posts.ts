@@ -4,7 +4,13 @@ export default defineCollection({
     text("title"),
     slug("slug", { source: "title" }),
     richText("content"),
-    select("status", { defaultValue: "draft", options: ["draft", "published"] }),
+    select("status", {
+      defaultValue: "draft",
+      options: [
+        { label: "Draft", value: "draft" },
+        { label: "Published", value: "published" },
+      ],
+    }),
   ],
   labels: { plural: "Posts", singular: "Post" },
   slug: "posts",

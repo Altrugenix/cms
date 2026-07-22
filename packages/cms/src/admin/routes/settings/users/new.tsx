@@ -6,6 +6,7 @@ import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { createUser } from "@/lib/api";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
@@ -19,6 +20,7 @@ function CreateUser() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -28,7 +30,7 @@ function CreateUser() {
     if (!email || !password) return;
     setSaving(true);
     try {
-      await createUser(email, password);
+      await createUser(email, password, name || undefined);
       toast("User created", "success");
       navigate({ to: "/settings/users" });
     } catch (err) {
@@ -43,17 +45,24 @@ function CreateUser() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/settings/users" className="text-muted-foreground hover:text-foreground">
+        <Link
+          to="/settings/users"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create User</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Create User</h1>
           <p className="text-muted-foreground">Add a new user to the CMS</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
-        {error && <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>}
+        {error && (
+          <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+            {error}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
@@ -64,24 +73,37 @@ function CreateUser() {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="user@example.com"
+            autoComplete="email"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Optional"
+            autoComplete="name"
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="Minimum 8 characters"
+            autoComplete="new-password"
           />
         </div>
 
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Creating..." : "Create User"}
+          <Button type="submit" loading={saving}>
+            Create User
           </Button>
           <Link to="/settings/users">
             <Button type="button" variant="outline">

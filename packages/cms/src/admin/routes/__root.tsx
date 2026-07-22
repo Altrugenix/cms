@@ -12,7 +12,7 @@ export const Route = createRootRoute({
   component: RootLayout,
 });
 
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password"];
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password"];
 
 function RootLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -44,7 +44,26 @@ function RootLayout() {
     return (
       <ToastProvider>
         <div className="flex h-screen items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
+          <svg
+            className="h-8 w-8 animate-spin text-primary"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
         </div>
       </ToastProvider>
     );
@@ -69,6 +88,12 @@ function RootLayout() {
   return (
     <ToastProvider>
       <div className="flex h-screen overflow-hidden">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg"
+        >
+          Skip to content
+        </a>
         <Sidebar
           collapsed={sidebarCollapsed}
           mobileOpen={sidebarMobile}
@@ -80,7 +105,7 @@ function RootLayout() {
             onOpenPalette={palette.openPalette}
             onToggleSidebar={() => setSidebarMobile((prev) => !prev)}
           />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <main id="main-content" className="flex-1 overflow-y-auto p-4 md:p-6">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

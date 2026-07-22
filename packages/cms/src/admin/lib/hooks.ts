@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useBlocker } from "@tanstack/react-router";
+import { useCallback } from "react";
 
 import {
   fetchCollections,
@@ -493,3 +495,29 @@ export {
   useDeleteUser as useDeleteUserMutation,
   useDeleteRole as useDeleteRoleMutation,
 };
+
+export function useUnsavedChanges(isDirty: boolean) {
+  const blocker = useBlocker({
+    enableBeforeUnload: isDirty,
+    shouldBlockFn: () => isDirty,
+    withResolver: true,
+  });
+
+  const confirmLeave = useCallback(() => {
+    if (blocker.status === "blocked") {
+      blocker.proceed();
+    }
+  }, [blocker]);
+
+  const cancelLeave = useCallback(() => {
+    if (blocker.status === "blocked") {
+      blocker.reset();
+    }
+  }, [blocker]);
+
+  return {
+    cancelLeave,
+    confirmLeave,
+    isBlocking: blocker.status === "blocked",
+  };
+}

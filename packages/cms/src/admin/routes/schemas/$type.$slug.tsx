@@ -1,45 +1,7 @@
 import { createRoute, Link, useParams } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  Save,
-  Eye,
-  GripVertical,
-  Plus,
-  Trash2,
-  Copy,
-  FileText,
-  Type,
-  TextQuote,
-  Hash,
-  ToggleLeft,
-  Calendar,
-  Clock,
-  Mail,
-  Lock,
-  Link2,
-  Braces,
-  FileSpreadsheet,
-  Code,
-  Palette,
-  Image,
-  Upload,
-  ListChecks,
-  List,
-  Radio,
-  CheckSquare,
-  GitBranch,
-  Layers,
-  LayoutDashboard,
-  Box,
-  Columns,
-  FolderOpen,
-  Repeat,
-  Link as LinkIcon,
-  X,
-} from "lucide-react";
+import { ArrowLeft, Save, Eye, GripVertical, Plus, Trash2, Copy } from "lucide-react";
 import { useEffect, useState, useRef, useCallback } from "react";
 
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,85 +10,31 @@ import { fetchSchema, type FieldDefinition } from "@/lib/api";
 import { useSaveSchema } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
+import { FIELD_TYPE_GROUPS, defaultField, getFieldConfig } from "./components";
+import { FIELD_TYPE_CONFIG } from "./components/field-config";
+import { FieldTypePicker } from "./components/field-type-picker";
+import { SchemaLoadingSkeleton } from "./components/loading-skeleton";
+
 export const Route = createRoute({
   component: SchemaEditor,
   getParentRoute: () => rootRoute,
   path: "/schemas/$type/$slug",
 });
 
-const FIELD_TYPE_CONFIG: Record<string, { label: string; icon: typeof Type; group: string }> = {
-  array: { group: "structure", icon: Box, label: "Array" },
-  boolean: { group: "basic", icon: ToggleLeft, label: "Boolean" },
-  checkbox: { group: "choice", icon: CheckSquare, label: "Checkbox" },
-  code: { group: "advanced", icon: Code, label: "Code" },
-  color: { group: "advanced", icon: Palette, label: "Color" },
-  component: { group: "structure", icon: Layers, label: "Component" },
-  date: { group: "date", icon: Calendar, label: "Date" },
-  datetime: { group: "date", icon: Clock, label: "Date Time" },
-  dynamicZone: { group: "structure", icon: LayoutDashboard, label: "Dynamic Zone" },
-  email: { group: "text", icon: Mail, label: "Email" },
-  group: { group: "structure", icon: FolderOpen, label: "Group" },
-  json: { group: "advanced", icon: Braces, label: "JSON" },
-  markdown: { group: "text", icon: FileSpreadsheet, label: "Markdown" },
-  media: { group: "media", icon: Image, label: "Media" },
-  multiSelect: { group: "choice", icon: List, label: "Multi Select" },
-  number: { group: "basic", icon: Hash, label: "Number" },
-  object: { group: "structure", icon: Columns, label: "Object" },
-  password: { group: "text", icon: Lock, label: "Password" },
-  radio: { group: "choice", icon: Radio, label: "Radio" },
-  relation: { group: "advanced", icon: GitBranch, label: "Relation" },
-  repeater: { group: "structure", icon: Repeat, label: "Repeater" },
-  richText: { group: "text", icon: FileSpreadsheet, label: "Rich Text" },
-  select: { group: "choice", icon: ListChecks, label: "Select" },
-  slug: { group: "text", icon: LinkIcon, label: "Slug" },
-  tabs: { group: "structure", icon: FolderOpen, label: "Tabs" },
-  text: { group: "basic", icon: Type, label: "Text" },
-  textarea: { group: "basic", icon: TextQuote, label: "Textarea" },
-  upload: { group: "media", icon: Upload, label: "Upload" },
-  url: { group: "text", icon: Link2, label: "URL" },
-};
-
-const FIELD_TYPE_GROUPS = [
-  { label: "Basic", value: "basic" },
-  { label: "Text", value: "text" },
-  { label: "Date", value: "date" },
-  { label: "Choice", value: "choice" },
-  { label: "Media", value: "media" },
-  { label: "Advanced", value: "advanced" },
-  { label: "Structure", value: "structure" },
-];
-
-function defaultField(type: string): FieldDefinition {
-  const base: FieldDefinition = { name: "", type };
-  switch (type) {
-    case "select":
-    case "multiSelect":
-    case "radio":
-      return { ...base, options: [] };
-    case "relation":
-      return { ...base, to: "" };
-    case "component":
-      return { ...base, component: "" };
-    case "dynamicZone":
-      return { ...base, components: [] };
-    case "array":
-    case "object":
-    case "group":
-    case "repeater":
-      return { ...base, fields: [] };
-    case "tabs":
-      return { ...base, tabs: [] };
-    default:
-      return base;
-  }
-}
-
 function FieldEditorList({
+  dragIdx,
   fields,
   onChange,
+  onDragEnd,
+  onDragOver,
+  onDragStart,
 }: {
   fields: FieldDefinition[];
   onChange: (fields: FieldDefinition[]) => void;
+  onDragStart?: (idx: number) => void;
+  onDragOver?: (e: React.DragEvent, idx: number) => void;
+  onDragEnd?: () => void;
+  dragIdx?: number | null;
 }) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -154,11 +62,7 @@ function FieldEditorList({
     <div className="space-y-2">
       <div className="space-y-1">
         {fields.map((field, idx) => {
-          const cfg = FIELD_TYPE_CONFIG[field.type] ?? {
-            group: "basic",
-            icon: FileText,
-            label: "Text",
-          };
+          const cfg = getFieldConfig(field.type);
           const Icon = cfg.icon;
           return (
             <div
@@ -167,9 +71,9 @@ function FieldEditorList({
                 selectedIdx === idx ? "border-primary ring-1 ring-primary" : ""
               } ${dragIdx === idx ? "opacity-50" : ""}`}
               draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragOver={(e) => handleDragOver(e, idx)}
-              onDragEnd={handleDragEnd}
+              onDragStart={() => onDragStart?.(idx)}
+              onDragOver={(e) => onDragOver?.(e, idx)}
+              onDragEnd={onDragEnd}
               onClick={() => setSelectedIdx(idx)}
             >
               <div
@@ -215,46 +119,7 @@ function FieldEditorList({
       </div>
 
       {showPicker ? (
-        <div className="space-y-2 rounded border bg-card p-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-medium text-muted-foreground">Select type</p>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5"
-              onClick={() => setShowPicker(false)}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-          {FIELD_TYPE_GROUPS.map((group) => {
-            const types = Object.entries(FIELD_TYPE_CONFIG).filter(
-              ([, c]) => c.group === group.value,
-            );
-            if (types.length === 0) return null;
-            return (
-              <div key={group.value}>
-                <p className="mb-0.5 text-[9px] font-medium uppercase text-muted-foreground">
-                  {group.label}
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {types.map(([key, cfg]) => (
-                    <button
-                      key={key}
-                      onClick={() => addField(key)}
-                      className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] transition-colors hover:bg-muted ${
-                        newFieldType === key ? "border-primary bg-primary/5" : ""
-                      }`}
-                    >
-                      <cfg.icon className="h-2.5 w-2.5" />
-                      {cfg.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <FieldTypePicker onSelect={addField} onClose={() => setShowPicker(false)} />
       ) : (
         <Button
           size="sm"
@@ -276,7 +141,8 @@ function FieldEditorList({
               className="h-5 w-5"
               onClick={() => setSelectedIdx(null)}
             >
-              <X className="h-3 w-3" />
+              <span className="sr-only">Close</span>
+              <Trash2 className="h-3 w-3" />
             </Button>
           </div>
 
@@ -316,7 +182,7 @@ function FieldEditorList({
                   validation: v.required !== undefined ? v : undefined,
                 });
               }}
-              className="h-3.5 w-3.5 rounded border-gray-300"
+              className="h-3.5 w-3.5 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <Label htmlFor={`nested-required-${selectedIdx}`} className="text-xs">
               Required
@@ -324,7 +190,7 @@ function FieldEditorList({
           </div>
 
           {["select", "multiSelect", "radio"].includes(selectedField.type) && (
-            <div className="space-y-1 pt-1 border-t border-border">
+            <div className="space-y-1 border-t border-border pt-1">
               <Label className="text-[10px]">Options</Label>
               <div className="space-y-1">
                 {(selectedField.options ?? []).map((opt, oi) => {
@@ -380,7 +246,7 @@ function FieldEditorList({
           )}
 
           {selectedField.type === "relation" && (
-            <div className="space-y-1 pt-1 border-t border-border">
+            <div className="space-y-1 border-t border-border pt-1">
               <Label className="text-[10px]">Related Collection</Label>
               <Input
                 value={(selectedField as { to?: string }).to ?? ""}
@@ -388,11 +254,11 @@ function FieldEditorList({
                 placeholder="users"
                 className="h-7 text-xs"
               />
-              <Label className="text-[10px] mt-1">Kind</Label>
+              <Label className="mt-1 text-[10px]">Kind</Label>
               <select
                 value={(selectedField as { kind?: string }).kind ?? "oneToOne"}
                 onChange={(e) => updateField(selectedIdx as number, { kind: e.target.value })}
-                className="w-full rounded-md border bg-background px-2 py-1 text-xs"
+                className="w-full rounded-md border bg-background px-2 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
               >
                 <option value="oneToOne">One to One</option>
                 <option value="oneToMany">One to Many</option>
@@ -403,7 +269,7 @@ function FieldEditorList({
           )}
 
           {selectedField.type === "component" && (
-            <div className="space-y-1 pt-1 border-t border-border">
+            <div className="space-y-1 border-t border-border pt-1">
               <Label className="text-[10px]">Component Slug</Label>
               <Input
                 value={(selectedField as { component?: string }).component ?? ""}
@@ -421,7 +287,7 @@ function FieldEditorList({
                       repeatable: e.target.checked || undefined,
                     })
                   }
-                  className="h-3.5 w-3.5 rounded border-gray-300"
+                  className="h-3.5 w-3.5 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <Label htmlFor={`nested-repeatable-${selectedIdx}`} className="text-xs">
                   Repeatable
@@ -431,7 +297,7 @@ function FieldEditorList({
           )}
 
           {selectedField.type === "slug" && (
-            <div className="space-y-1 pt-1 border-t border-border">
+            <div className="space-y-1 border-t border-border pt-1">
               <Label className="text-[10px]">Source Field</Label>
               <Input
                 value={(selectedField as { source?: string }).source ?? ""}
@@ -451,7 +317,7 @@ function FieldEditorList({
                       unique: e.target.checked || undefined,
                     })
                   }
-                  className="h-3.5 w-3.5 rounded border-gray-300"
+                  className="h-3.5 w-3.5 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <Label htmlFor={`nested-unique-${selectedIdx}`} className="text-xs">
                   Unique
@@ -461,7 +327,7 @@ function FieldEditorList({
           )}
 
           {selectedField.type === "code" && (
-            <div className="space-y-1 pt-1 border-t border-border">
+            <div className="space-y-1 border-t border-border pt-1">
               <Label className="text-[10px]">Language</Label>
               <Input
                 value={(selectedField as { language?: string }).language ?? ""}
@@ -477,7 +343,7 @@ function FieldEditorList({
           )}
 
           {selectedField.type === "color" && (
-            <div className="space-y-1 pt-1 border-t border-border">
+            <div className="space-y-1 border-t border-border pt-1">
               <Label className="text-[10px]">Format</Label>
               <select
                 value={(selectedField as { format?: string }).format ?? "hex"}
@@ -486,7 +352,7 @@ function FieldEditorList({
                     format: e.target.value as "hex" | "rgb" | "rgba" | "hsl",
                   })
                 }
-                className="w-full rounded-md border bg-background px-2 py-1 text-xs"
+                className="w-full rounded-md border bg-background px-2 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
               >
                 <option value="hex">Hex</option>
                 <option value="rgb">RGB</option>
@@ -497,8 +363,8 @@ function FieldEditorList({
           )}
 
           {["array", "object", "group", "repeater"].includes(selectedField.type) && (
-            <div className="pt-1 border-t border-border">
-              <p className="text-[10px] font-medium text-muted-foreground mb-1">Nested Fields</p>
+            <div className="border-t border-border pt-1">
+              <p className="mb-1 text-[10px] font-medium text-muted-foreground">Nested Fields</p>
               <FieldEditorList
                 fields={(selectedField as { fields: FieldDefinition[] }).fields ?? []}
                 onChange={(newFields) => updateField(selectedIdx as number, { fields: newFields })}
@@ -507,13 +373,13 @@ function FieldEditorList({
           )}
 
           {selectedField.type === "tabs" && (
-            <div className="pt-1 border-t border-border space-y-1">
+            <div className="space-y-1 border-t border-border pt-1">
               <p className="text-[10px] font-medium text-muted-foreground">Tabs</p>
               {(
                 (selectedField as { tabs?: Array<{ label: string; fields: FieldDefinition[] }> })
                   .tabs ?? []
               ).map((tab, ti) => (
-                <div key={ti} className="rounded border p-1.5 space-y-1">
+                <div key={ti} className="space-y-1 rounded border p-1.5">
                   <div className="flex items-center gap-1">
                     <Input
                       value={tab.label}
@@ -529,7 +395,7 @@ function FieldEditorList({
                         updateField(selectedIdx as number, { tabs });
                       }}
                       placeholder="Tab label"
-                      className="h-7 text-xs flex-1"
+                      className="h-7 flex-1 text-xs"
                     />
                     <Button
                       variant="ghost"
@@ -602,7 +468,6 @@ function SchemaEditor() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [newFieldType, setNewFieldType] = useState("text");
   const saveSchemaMutation = useSaveSchema();
   const [showNewFieldPicker, setShowNewFieldPicker] = useState(false);
   const previewRef = useRef<HTMLPreElement>(null);
@@ -640,13 +505,11 @@ function SchemaEditor() {
     setSelectedIdx((prev) => (prev === idx ? null : prev));
   };
 
-  const addField = (type?: string) => {
-    const t = type ?? newFieldType;
+  const addField = (t: string) => {
     const field = defaultField(t);
     field.name = `field_${fields.length + 1}`;
     setFields((prev) => [...prev, field]);
     setSelectedIdx(fields.length);
-    setNewFieldType(t);
     setShowNewFieldPicker(false);
   };
 
@@ -782,7 +645,6 @@ function SchemaEditor() {
       if (f.type === "color" && (f as { format?: string }).format) {
         parts.push(`format: ${JSON.stringify((f as { format: string }).format)}`);
       }
-      // Nested fields
       if (
         ["array", "object", "group", "repeater"].includes(f.type) &&
         (f as { fields?: FieldDefinition[] }).fields?.length
@@ -812,7 +674,6 @@ function SchemaEditor() {
       return opts ? `${h}(${JSON.stringify(f.name)}, ${opts})` : `${h}(${JSON.stringify(f.name)})`;
     };
 
-    // Recurse for nested field helpers
     const scan = (f: FieldDefinition) => {
       getHelper(f);
       if (
@@ -864,25 +725,13 @@ function SchemaEditor() {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-9 w-9 rounded-md" />
-          <div>
-            <Skeleton className="h-8 w-40" />
-            <Skeleton className="mt-1 h-4 w-24" />
-          </div>
-        </div>
-        <Skeleton className="h-96 w-full rounded-lg" />
-      </div>
-    );
+    return <SchemaLoadingSkeleton />;
   }
 
   const previewCode = generatePreview();
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link to="/schemas">
@@ -892,7 +741,7 @@ function SchemaEditor() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight md:text-2xl">{label}</h1>
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{label}</h1>
               <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground capitalize">
                 {type}
               </span>
@@ -907,16 +756,14 @@ function SchemaEditor() {
             <Eye className="mr-2 h-4 w-4" />
             {showPreview ? "Editor" : "Preview"}
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} loading={saving}>
             <Save className="mr-2 h-4 w-4" />
-            {saving ? "Saving..." : "Save"}
+            Save
           </Button>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left: Field List */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-muted-foreground">Fields</h2>
@@ -928,53 +775,12 @@ function SchemaEditor() {
           </div>
 
           {showNewFieldPicker && (
-            <div className="rounded-lg border bg-card p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">Select field type</p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => setShowNewFieldPicker(false)}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              {FIELD_TYPE_GROUPS.map((group) => {
-                const types = Object.entries(FIELD_TYPE_CONFIG).filter(
-                  ([, c]) => c.group === group.value,
-                );
-                if (types.length === 0) return null;
-                return (
-                  <div key={group.value}>
-                    <p className="mb-1 text-[10px] font-medium uppercase text-muted-foreground">
-                      {group.label}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {types.map(([key, cfg]) => (
-                        <button
-                          key={key}
-                          onClick={() => addField(key)}
-                          className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors hover:bg-muted ${newFieldType === key ? "border-primary bg-primary/5" : ""}`}
-                        >
-                          <cfg.icon className="h-3 w-3" />
-                          {cfg.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <FieldTypePicker onSelect={addField} onClose={() => setShowNewFieldPicker(false)} />
           )}
 
           <div className="space-y-1.5">
             {fields.map((field, idx) => {
-              const cfg = FIELD_TYPE_CONFIG[field.type] ?? {
-                group: "basic",
-                icon: FileText,
-                label: "Text",
-              };
+              const cfg = getFieldConfig(field.type);
               const Icon = cfg.icon;
               const isSelected = selectedIdx === idx;
               const isDragging = dragIdx === idx;
@@ -1042,7 +848,6 @@ function SchemaEditor() {
           )}
         </div>
 
-        {/* Right: Settings / Preview */}
         <div className="space-y-3">
           {showPreview ? (
             <>
@@ -1121,14 +926,13 @@ function SchemaEditor() {
                         validation: v.required !== undefined ? v : undefined,
                       });
                     }}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                   <Label htmlFor="field-required" className="text-sm">
                     Required
                   </Label>
                 </div>
 
-                {/* Type-specific settings */}
                 {(selectedField.type === "select" ||
                   selectedField.type === "multiSelect" ||
                   selectedField.type === "radio") && (
@@ -1229,7 +1033,7 @@ function SchemaEditor() {
                         onChange={(e) =>
                           updateField(selectedIdx as number, { kind: e.target.value })
                         }
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
                       >
                         <option value="oneToOne">One to One</option>
                         <option value="oneToMany">One to Many</option>
@@ -1262,7 +1066,7 @@ function SchemaEditor() {
                             repeatable: e.target.checked || undefined,
                           })
                         }
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                       <Label htmlFor="field-repeatable" className="text-sm">
                         Repeatable
@@ -1295,7 +1099,7 @@ function SchemaEditor() {
                             unique: e.target.checked || undefined,
                           })
                         }
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                       <Label htmlFor="field-unique" className="text-sm">
                         Unique
@@ -1351,7 +1155,7 @@ function SchemaEditor() {
                             multiple: e.target.checked || undefined,
                           })
                         }
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                       <Label htmlFor="field-multiple" className="text-sm">
                         Allow Multiple
@@ -1489,7 +1293,7 @@ function SchemaEditor() {
                                 updateField(selectedIdx as number, { tabs });
                               }}
                               placeholder="Tab label"
-                              className="h-8 text-xs flex-1"
+                              className="h-8 flex-1 text-xs"
                             />
                             <Button
                               variant="ghost"
@@ -1510,7 +1314,7 @@ function SchemaEditor() {
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
-                          <div className="pl-2 border-l-2 border-muted">
+                          <div className="border-l-2 border-muted pl-2">
                             <FieldEditorList
                               fields={tab.fields}
                               onChange={(newFields) => {

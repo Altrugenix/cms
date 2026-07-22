@@ -110,13 +110,13 @@ describe("CMS API Server", () => {
       collections: [collection],
       config: testConfig,
     });
-    // Register a user and get an auth token for CRUD tests
-    const regRes = await app.inject({
-      body: { email: "crud@example.com", password: "password123" },
+    // Login as seeded admin to get an auth token for CRUD tests
+    const loginRes = await app.inject({
+      body: { email: "admin@arche-cms.com", password: "admin123" },
       method: "POST",
-      url: "/api/auth/register",
+      url: "/api/auth/login",
     });
-    authToken = JSON.parse(regRes.body).accessToken;
+    authToken = JSON.parse(loginRes.body).accessToken;
   });
 
   afterAll(async () => {
@@ -215,24 +215,24 @@ describe("CMS API Server", () => {
   });
 
   describe("auth endpoints", () => {
-    it("registers a new user", async () => {
+    it("creates a new user via admin endpoint", async () => {
       const res = await app.inject({
         body: { email: "test@example.com", password: "password123" },
+        headers: { authorization: `Bearer ${authToken}` },
         method: "POST",
-        url: "/api/auth/register",
+        url: "/api/users",
       });
       expect(res.statusCode).toBe(201);
       const body = JSON.parse(res.body);
       expect(body.user.email).toBe("test@example.com");
-      expect(body.accessToken).toBeTruthy();
-      expect(body.refreshToken).toBeTruthy();
     });
 
-    it("rejects duplicate registration", async () => {
+    it("rejects duplicate user creation", async () => {
       const res = await app.inject({
         body: { email: "test@example.com", password: "password123" },
+        headers: { authorization: `Bearer ${authToken}` },
         method: "POST",
-        url: "/api/auth/register",
+        url: "/api/users",
       });
       expect(res.statusCode).toBe(400);
     });
@@ -256,26 +256,6 @@ describe("CMS API Server", () => {
         url: "/api/auth/login",
       });
       expect(res.statusCode).toBe(401);
-    });
-
-    it("rejects register with invalid email format", async () => {
-      const res = await app.inject({
-        body: { email: "notanemail", password: "password123" },
-        method: "POST",
-        url: "/api/auth/register",
-      });
-      expect(res.statusCode).toBe(400);
-      expect(JSON.parse(res.body).code).toBe("VALIDATION_ERROR");
-    });
-
-    it("rejects register with short password", async () => {
-      const res = await app.inject({
-        body: { email: "valid@example.com", password: "short" },
-        method: "POST",
-        url: "/api/auth/register",
-      });
-      expect(res.statusCode).toBe(400);
-      expect(JSON.parse(res.body).code).toBe("VALIDATION_ERROR");
     });
 
     it("handles forgot-password endpoint", async () => {

@@ -15,7 +15,7 @@ describe("loadConfig", () => {
   it("uses defaults when no env vars set", async () => {
     const { loadConfig } = await import("../src/server/config.js");
     const config = loadConfig();
-    expect(config.port).toBe(3000);
+    expect(config.port).toBe(3500);
     expect(config.host).toBe("0.0.0.0");
     expect(config.logger.level).toBe("info");
     expect(config.cors.origin).toEqual(["http://localhost:5173"]);

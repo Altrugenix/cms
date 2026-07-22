@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const proxyTarget = process.env.VITE_PROXY_TARGET ?? "http://localhost:3000";
+const proxyTarget = process.env.VITE_PROXY_TARGET ?? "http://localhost:3500";
 
 export default defineConfig(({ mode: _mode }) => ({
   build: {

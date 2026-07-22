@@ -1,21 +1,13 @@
 import { createRoute, Link, useParams } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  Plus,
-  Pencil,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  Send,
-  Undo2,
-} from "lucide-react";
+import { ArrowLeft, Plus, Trash2, CheckCircle, Send, Undo2 } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Skeleton } from "@/components/skeleton";
+import { EntryActions } from "@/components/entry-actions";
+import { LocaleSelector } from "@/components/locale-selector";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useCollection,
   useEntries,
@@ -147,7 +139,7 @@ function CollectionEntries() {
           </div>
           <Skeleton className="h-10 w-36 rounded-md" />
         </div>
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
@@ -175,7 +167,7 @@ function CollectionEntries() {
     ) : null;
   if (error)
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <Link
           to="/collections"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -200,7 +192,7 @@ function CollectionEntries() {
           </div>
           <Skeleton className="h-10 w-36 rounded-md" />
         </div>
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
@@ -263,7 +255,10 @@ function CollectionEntries() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Link to="/collections" className="text-muted-foreground hover:text-foreground">
+          <Link
+            to="/collections"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
@@ -274,17 +269,11 @@ function CollectionEntries() {
           </div>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <select
+          <LocaleSelector
             value={locale}
-            onChange={(e) => setLocale(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {(collection.localization?.locales ?? ["en"]).map((l) => (
-              <option key={l} value={l}>
-                {l.toUpperCase()}
-              </option>
-            ))}
-          </select>
+            onChange={setLocale}
+            locales={collection.localization?.locales ?? ["en"]}
+          />
           {hasSoftDelete && (
             <Button
               variant={showDeleted ? "secondary" : "outline"}
@@ -315,7 +304,7 @@ function CollectionEntries() {
       ) : (
         <div className="space-y-3">
           {selected.size > 0 && (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm text-muted-foreground">{selected.size} selected</p>
               {hasDrafts && (
                 <>
@@ -352,7 +341,7 @@ function CollectionEntries() {
                       type="checkbox"
                       checked={selected.size === entries.length && entries.length > 0}
                       onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                      className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </th>
                   {displayFields.map((f) => (
@@ -381,7 +370,7 @@ function CollectionEntries() {
                         type="checkbox"
                         checked={selected.has(entry.id)}
                         onChange={() => toggleSelect(entry.id)}
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                        className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </td>
                     {displayFields.map((f) => (
@@ -399,15 +388,15 @@ function CollectionEntries() {
                     )}
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {renderActions(
-                          entry,
-                          hasDrafts,
-                          handlePublish,
-                          handleUnpublish,
-                          handleRestore,
-                          handleDelete,
-                          slug,
-                        )}
+                        <EntryActions
+                          entry={entry}
+                          hasDrafts={hasDrafts}
+                          onPublish={handlePublish}
+                          onUnpublish={handleUnpublish}
+                          onRestore={handleRestore}
+                          onDelete={handleDelete}
+                          slug={slug}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -446,55 +435,6 @@ function CollectionEntries() {
   );
 }
 
-// fallow-ignore-next-line complexity
-function renderActions(
-  entry: Entry,
-  hasDrafts: boolean,
-  handlePublish: (id: string) => void,
-  handleUnpublish: (id: string) => void,
-  handleRestore: (id: string) => void,
-  handleDelete: (id: string) => void,
-  slug: string,
-) {
-  const deleted = Boolean(entry._deletedAt);
-  if (deleted) {
-    return (
-      <div className="flex items-center justify-end gap-1">
-        <Button variant="ghost" size="icon" onClick={() => handleRestore(entry.id)} title="Restore">
-          <RefreshCw className="h-4 w-4 text-blue-500" />
-        </Button>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center justify-end gap-1">
-      {hasDrafts && entry._status !== "published" && (
-        <Button variant="ghost" size="icon" onClick={() => handlePublish(entry.id)} title="Publish">
-          <CheckCircle className="h-4 w-4 text-green-500" />
-        </Button>
-      )}
-      {hasDrafts && entry._status === "published" && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleUnpublish(entry.id)}
-          title="Unpublish"
-        >
-          <XCircle className="h-4 w-4 text-amber-500" />
-        </Button>
-      )}
-      <Link to="/collections/$slug/$id" params={{ id: entry.id, slug }}>
-        <Button variant="ghost" size="icon">
-          <Pencil className="h-4 w-4" />
-        </Button>
-      </Link>
-      <Button variant="ghost" size="icon" onClick={() => handleDelete(entry.id)}>
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
-  );
-}
-
 function formatValue(val: unknown): string {
   if (val === null || val === undefined) return "—";
   if (typeof val === "boolean") return val ? "Yes" : "No";
@@ -506,27 +446,39 @@ function renderStatus(status: string | undefined, publishAt?: string) {
   if (!status) return <span className="text-muted-foreground">—</span>;
   if (status === "published") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+      <span
+        role="status"
+        className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success"
+      >
         <CheckCircle className="h-3 w-3" /> Published
       </span>
     );
   }
   if (status === "draft" && publishAt) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+      <span
+        role="status"
+        className="inline-flex items-center gap-1 rounded-full bg-info/10 px-2 py-0.5 text-xs font-medium text-info"
+      >
         Scheduled
       </span>
     );
   }
   if (status === "draft") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+      <span
+        role="status"
+        className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning"
+      >
         Draft
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:dark:bg-gray-800 dark:text-gray-400">
+    <span
+      role="status"
+      className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+    >
       {status}
     </span>
   );

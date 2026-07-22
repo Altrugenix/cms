@@ -95,6 +95,7 @@ export class AuthService {
     const created = await this.db.create(USERS_TABLE, {
       createdAt: now,
       email: input.email,
+      name: input.name ?? "",
       password: passwordHash,
       role: "editor",
       updatedAt: now,
@@ -122,7 +123,7 @@ export class AuthService {
     }
 
     const publicUser = toPublicUser(user);
-    const tokens = await this.generateTokens(publicUser);
+    const tokens = await this.generateTokens(publicUser, input.rememberMe);
 
     return { tokens, user: publicUser };
   }
@@ -223,7 +224,7 @@ export class AuthService {
 
   async updateUser(
     id: string,
-    data: { email?: string; role?: string; password?: string },
+    data: { email?: string; name?: string; role?: string; password?: string },
   ): Promise<PublicUser | null> {
     const user = await this.findById(id);
     if (!user) return null;
@@ -256,11 +257,12 @@ export class AuthService {
     return castAuthUser(row);
   }
 
-  private async generateTokens(user: PublicUser): Promise<TokenPair> {
+  private async generateTokens(user: PublicUser, rememberMe?: boolean): Promise<TokenPair> {
     const payload = { email: user.email, role: user.role, sub: user.id };
+    const refreshExpiresIn = rememberMe ? 30 * 24 * 60 * 60 : 60 * 60;
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.generateAccessToken(payload),
-      this.jwt.generateRefreshToken(payload),
+      this.jwt.generateRefreshToken(payload, refreshExpiresIn),
     ]);
 
     return { accessToken, refreshToken };

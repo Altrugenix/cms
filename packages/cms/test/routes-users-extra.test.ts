@@ -201,8 +201,9 @@ describe("Users Routes — extra", () => {
     it("can change another user's role", async () => {
       const createRes = await app.inject({
         body: { email: "role-change@test.com", password: "password123" },
+        headers: auth(),
         method: "POST",
-        url: "/api/auth/register",
+        url: "/api/users",
       });
       const userId = JSON.parse(createRes.body).user.id;
 
@@ -257,8 +258,9 @@ describe("Users Routes — extra", () => {
     it("returns 404 for already deleted user", async () => {
       const createRes = await app.inject({
         body: { email: "delete-twice@test.com", password: "password123" },
+        headers: auth(),
         method: "POST",
-        url: "/api/auth/register",
+        url: "/api/users",
       });
       const userId = JSON.parse(createRes.body).user.id;
 

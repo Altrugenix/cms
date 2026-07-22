@@ -1,23 +1,10 @@
 import { createRoute } from "@tanstack/react-router";
-import {
-  Trash2,
-  Upload,
-  UploadCloud,
-  Pencil,
-  Folder,
-  FolderPlus,
-  FolderPen,
-  ChevronRight,
-  Home,
-} from "lucide-react";
 import { useEffect, useState, useRef, useCallback } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Pagination } from "@/components/pagination";
-import { Skeleton } from "@/components/skeleton";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   fetchMedia,
   fetchFolders,
@@ -26,11 +13,21 @@ import {
   uploadMedia,
   updateMedia,
   deleteMedia,
-  getMediaUrl,
   type MediaMeta,
   type MediaFolder,
 } from "@/lib/api";
 import { Route as rootRoute } from "@/routes/__root";
+
+import {
+  BreadcrumbNav,
+  EmptyState,
+  FolderCard,
+  MediaCard,
+  MediaHeader,
+  MediaLoadingSkeleton,
+  NewFolderInput,
+  UploadOverlay,
+} from "./components";
 
 export const Route = createRoute({
   component: MediaLibrary,
@@ -58,7 +55,6 @@ function MediaLibrary() {
   const dragCountRef = useRef(0);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const newFolderInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState({ limit: 20, offset: 0 });
   const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
   const [editingFolderName, setEditingFolderName] = useState("");
@@ -160,12 +156,10 @@ function MediaLibrary() {
       setUploading(true);
       let successCount = 0;
       let failCount = 0;
-      const items: MediaMeta[] = [];
       const folderIdStr = currentFolderId != null ? String(currentFolderId) : undefined;
       for (const file of Array.from(files)) {
         try {
-          const item = await uploadMedia(file, undefined, folderIdStr);
-          items.push(item);
+          await uploadMedia(file, undefined, folderIdStr);
           successCount++;
         } catch {
           failCount++;
@@ -185,11 +179,8 @@ function MediaLibrary() {
     [toast, currentFolderId],
   );
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleUpload = async (files: FileList) => {
     await uploadFiles(files);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -226,37 +217,15 @@ function MediaLibrary() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    setConfirmDeleteId(id);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!confirmDeleteId) return;
-    const id = confirmDeleteId;
-    try {
-      await deleteMedia(id);
-      setMedia((prev) => prev.filter((m) => m.id !== id));
-      setTotal((prev) => prev - 1);
-      setConfirmDeleteId(null);
-      toast("File deleted", "success");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to delete";
-      setError(msg);
-      toast(msg, "error");
-    }
-  };
-
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editAlt, setEditAlt] = useState("");
-  const editInputRef = useRef<HTMLInputElement>(null);
 
   const startEditing = (item: MediaMeta) => {
     setEditingId(item.id);
     setEditName(item.originalName);
     setEditAlt(item.alt);
-    setTimeout(() => editInputRef.current?.focus(), 0);
   };
 
   const cancelEditing = () => {
@@ -286,37 +255,28 @@ function MediaLibrary() {
     }
   };
 
-  const isImage = (mime: string) => mime.startsWith("image/");
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
 
-  useEffect(() => {
-    if (showNewFolder) {
-      setTimeout(() => newFolderInputRef.current?.focus(), 0);
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    const id = confirmDeleteId;
+    try {
+      await deleteMedia(id);
+      setMedia((prev) => prev.filter((m) => m.id !== id));
+      setTotal((prev) => prev - 1);
+      setConfirmDeleteId(null);
+      toast("File deleted", "success");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete";
+      setError(msg);
+      toast(msg, "error");
     }
-  }, [showNewFolder]);
+  };
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-9 w-40" />
-            <Skeleton className="mt-1 h-5 w-16" />
-          </div>
-          <Skeleton className="h-10 w-32 rounded-md" />
-        </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="rounded-lg border bg-card overflow-hidden">
-              <Skeleton className="aspect-square w-full rounded-none" />
-              <div className="p-2 space-y-1.5">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-3 w-12" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <MediaLoadingSkeleton />;
   }
 
   return (
@@ -327,69 +287,18 @@ function MediaLibrary() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Media Library</h1>
-          <p className="text-muted-foreground">
-            {total} file{total === 1 ? "" : "s"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <input
-            ref={fileInputRef}
-            type="file"
-            id="media-upload"
-            className="hidden"
-            multiple
-            onChange={handleUpload}
-          />
-          <Button
-            variant="outline"
-            onClick={() => setShowNewFolder(true)}
-            className="w-full sm:w-auto"
-          >
-            <FolderPlus className="mr-2 h-4 w-4" />
-            New Folder
-          </Button>
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-full sm:w-auto"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            {uploading ? "Uploading..." : "Upload File"}
-          </Button>
-        </div>
-      </div>
+      <MediaHeader
+        total={total}
+        uploading={uploading}
+        onNewFolder={() => setShowNewFolder(true)}
+        onUpload={handleUpload}
+      />
 
-      {/* Breadcrumb */}
-      {folderPath.length > 0 && (
-        <nav className="flex items-center gap-1 text-sm text-muted-foreground">
-          <button
-            onClick={navigateRoot}
-            className="flex items-center gap-1 rounded px-2 py-1 hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Home className="h-3.5 w-3.5" />
-            Root
-          </button>
-          <ChevronRight className="h-3.5 w-3.5" />
-          {folderPath.map((crumb, i) => (
-            <span key={crumb.id ?? "root"} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight className="h-3.5 w-3.5" />}
-              {i === folderPath.length - 1 ? (
-                <span className="font-medium text-foreground">{crumb.name}</span>
-              ) : (
-                <button
-                  onClick={() => navigateBreadcrumb(i)}
-                  className="rounded px-2 py-1 hover:bg-muted hover:text-foreground transition-colors"
-                >
-                  {crumb.name}
-                </button>
-              )}
-            </span>
-          ))}
-        </nav>
-      )}
+      <BreadcrumbNav
+        folderPath={folderPath}
+        onNavigateRoot={navigateRoot}
+        onNavigateBreadcrumb={navigateBreadcrumb}
+      />
 
       {error && (
         <div className="rounded-md bg-destructive/10 p-4 text-destructive">
@@ -400,228 +309,51 @@ function MediaLibrary() {
         </div>
       )}
 
-      {isDragging && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-primary bg-background/95">
-          <UploadCloud className="h-10 w-10 text-primary" />
-          <p className="text-lg font-medium">Drop files to upload</p>
-          <p className="text-sm text-muted-foreground">Release to start uploading</p>
-        </div>
-      )}
+      <UploadOverlay isDragging={isDragging} isUploading={uploading} />
 
-      {uploading && (
-        <div className="flex items-center justify-center gap-2 rounded-lg border bg-muted/50 p-4">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Uploading files...</p>
-        </div>
-      )}
-
-      {/* New Folder Input */}
       {showNewFolder && (
-        <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
-          <Folder className="h-5 w-5 text-muted-foreground" />
-          <Input
-            ref={newFolderInputRef}
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreateFolder();
-              if (e.key === "Escape") {
-                setShowNewFolder(false);
-                setNewFolderName("");
-              }
-            }}
-            placeholder="Folder name"
-            className="h-8 flex-1"
-          />
-          <Button size="sm" onClick={handleCreateFolder}>
-            Create
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setShowNewFolder(false);
-              setNewFolderName("");
-            }}
-          >
-            Cancel
-          </Button>
-        </div>
+        <NewFolderInput
+          value={newFolderName}
+          onChange={setNewFolderName}
+          onCreate={handleCreateFolder}
+          onCancel={() => {
+            setShowNewFolder(false);
+            setNewFolderName("");
+          }}
+        />
       )}
 
       {folders.length === 0 && media.length === 0 ? (
-        <div
-          className="flex flex-col items-center gap-4 rounded-lg border p-12 text-center transition-colors"
-          onDragEnter={handleDragEnter}
-        >
-          <UploadCloud className="h-8 w-8 text-muted-foreground" />
-          <p className="text-lg text-muted-foreground">Drop files here or click to upload</p>
-          <p className="text-sm text-muted-foreground">
-            Drag and drop images or files to get started
-          </p>
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="mr-2 h-4 w-4" /> Choose Files
-          </Button>
-        </div>
+        <EmptyState onUploadClick={() => fileInputRef.current?.click()} />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {folders.map((folder) => (
-            <div
+            <FolderCard
               key={`folder-${folder.id}`}
-              className="group relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 transition-shadow hover:shadow-md"
-              onClick={() => editingFolderId !== folder.id && navigateInto(folder)}
-            >
-              {editingFolderId === folder.id ? (
-                <div
-                  className="flex w-full flex-col items-center gap-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Folder className="h-10 w-10 text-primary/70" />
-                  <Input
-                    value={editingFolderName}
-                    onChange={(e) => setEditingFolderName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveRenameFolder();
-                      if (e.key === "Escape") cancelRenameFolder();
-                    }}
-                    onBlur={saveRenameFolder}
-                    className="h-7 text-center text-xs"
-                    autoFocus
-                  />
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 text-xs"
-                      onClick={saveRenameFolder}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 text-xs"
-                      onClick={cancelRenameFolder}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <Folder className="h-10 w-10 text-primary/70" />
-                  <p className="truncate text-center text-sm font-medium">{folder.name}</p>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startRenameFolder(folder);
-                    }}
-                  >
-                    <FolderPen className="h-3 w-3" />
-                  </Button>
-                </>
-              )}
-            </div>
+              folder={folder}
+              isEditing={editingFolderId === folder.id}
+              editingName={editingFolderName}
+              onNavigate={() => navigateInto(folder)}
+              onStartRename={() => startRenameFolder(folder)}
+              onSaveRename={saveRenameFolder}
+              onCancelRename={cancelRenameFolder}
+              onNameChange={setEditingFolderName}
+            />
           ))}
           {media.map((item) => (
-            <div
+            <MediaCard
               key={item.id}
-              className="group relative overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md"
-            >
-              {isImage(item.mimeType) ? (
-                <div className="aspect-square overflow-hidden bg-muted">
-                  <img
-                    src={getMediaUrl(item.id)}
-                    alt={item.alt || item.originalName}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ) : (
-                <div className="flex aspect-square items-center justify-center bg-muted p-4">
-                  <p className=" truncate text-center text-xs text-muted-foreground">
-                    {item.mimeType}
-                  </p>
-                </div>
-              )}
-              <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/50 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEditing(item);
-                  }}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(item.id);
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div className="p-2 space-y-1">
-                {editingId === item.id ? (
-                  <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
-                    <Input
-                      ref={editInputRef}
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveEditing(item.id);
-                        if (e.key === "Escape") cancelEditing();
-                      }}
-                      onBlur={() => saveEditing(item.id)}
-                      className="h-6 text-xs px-1 py-0"
-                      placeholder="Filename"
-                    />
-                    <Input
-                      value={editAlt}
-                      onChange={(e) => setEditAlt(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveEditing(item.id);
-                        if (e.key === "Escape") cancelEditing();
-                      }}
-                      onBlur={() => saveEditing(item.id)}
-                      className="h-6 text-xs px-1 py-0"
-                      placeholder="Alt text"
-                    />
-                    <p className="text-[10px] text-muted-foreground">
-                      {(item.size / 1024).toFixed(1)} KB
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <p
-                      className="truncate text-xs font-medium cursor-pointer hover:text-primary"
-                      title={item.originalName}
-                      onClick={() => startEditing(item)}
-                    >
-                      {item.originalName}
-                    </p>
-                    {item.alt && (
-                      <p className="truncate text-[10px] text-muted-foreground" title={item.alt}>
-                        {item.alt}
-                      </p>
-                    )}
-                    <p className="text-[10px] text-muted-foreground">
-                      {(item.size / 1024).toFixed(1)} KB
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
+              item={item}
+              isEditing={editingId === item.id}
+              editName={editName}
+              editAlt={editAlt}
+              onStartEdit={() => startEditing(item)}
+              onCancelEdit={cancelEditing}
+              onSaveEdit={() => saveEditing(item.id)}
+              onDelete={() => handleDelete(item.id)}
+              onNameChange={setEditName}
+              onAltChange={setEditAlt}
+            />
           ))}
         </div>
       )}

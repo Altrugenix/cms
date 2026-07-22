@@ -32,8 +32,8 @@ function SettingsLayout() {
   if (location.pathname === "/settings") return null;
 
   return (
-    <div className="flex gap-8">
-      <nav className="w-48 shrink-0 space-y-1">
+    <div className="flex flex-col lg:flex-row gap-8">
+      <nav className="w-full lg:w-48 shrink-0 space-y-1" aria-label="Settings">
         {settingsNavItems.map((item) => {
           const isActive =
             item.to === "/settings/api-tokens"

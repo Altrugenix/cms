@@ -93,7 +93,7 @@ export function scaffold(
       '    text("title"),',
       '    slug("slug", { source: "title" }),',
       '    richText("content"),',
-      '    select("status", { options: ["draft", "published"], defaultValue: "draft" }),',
+      '    select("status", { options: [{ label: "Draft", value: "draft" }, { label: "Published", value: "published" }], defaultValue: "draft" }),',
       "  ],",
       "});",
       "",

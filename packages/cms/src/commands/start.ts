@@ -28,7 +28,7 @@ Start the CMS production server (no file watching).
 
 Options:
   --dir <path>       Schema directory (default: ./cms)
-  --port <num>       Server port (default: 3000)
+  --port <num>       Server port (default: 3500)
   --host <addr>      Server host (default: 0.0.0.0)
   --db-url <url>     Database URL (default: file:./cms.db)
   --db-adapter <type> Database adapter: sqlite | postgres (default: sqlite)

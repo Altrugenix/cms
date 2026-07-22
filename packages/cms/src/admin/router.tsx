@@ -12,7 +12,6 @@ import { Route as indexRoute } from "@/routes/index";
 import { Route as loginRoute } from "@/routes/login";
 import { Route as mediaRoute } from "@/routes/media/index";
 import { Route as notFoundRoute } from "@/routes/not-found";
-import { Route as registerRoute } from "@/routes/register";
 import { Route as resetPasswordRoute } from "@/routes/reset-password";
 import { Route as roleEditRoute } from "@/routes/roles/$id";
 import { Route as rolesListRoute } from "@/routes/roles/index";
@@ -53,7 +52,6 @@ const settingsWithChildren = settingsRoute.addChildren([
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
-  registerRoute,
   forgotPasswordRoute,
   resetPasswordRoute,
   usersListRoute,

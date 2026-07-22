@@ -43,12 +43,14 @@ function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Forgot Password</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Forgot Password</h1>
           <p className="text-sm text-muted-foreground">Enter your email to receive a reset link</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </div>
           )}
           {message && (
             <div className="rounded-md bg-success/10 p-3 text-sm text-success">{message}</div>
@@ -62,14 +64,15 @@ function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Sending..." : "Send Reset Link"}
+          <Button type="submit" className="w-full" loading={loading}>
+            Send Reset Link
           </Button>
         </form>
         <p className="text-center text-sm text-muted-foreground">
-          <Link to="/login" className="text-primary hover:underline">
+          <Link to="/login" className="text-primary hover:underline transition-colors">
             Back to Sign In
           </Link>
         </p>

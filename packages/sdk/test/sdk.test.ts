@@ -266,22 +266,14 @@ describe("auth client", () => {
     );
   });
 
-  it("register sends POST", async () => {
-    const fetchFn = mockFetch([
-      jsonResponse(
-        {
-          accessToken: "at",
-          refreshToken: "rt",
-          user: { email: "a@b.com", id: "1", role: "admin" },
-        },
-        201,
-      ),
-    ]);
+  it("users.create sends POST to /api/users", async () => {
+    const fetchFn = mockFetch([jsonResponse({ email: "a@b.com", id: "1", role: "admin" }, 201)]);
     const client = createClient({ baseUrl: "http://localhost:3000", fetch: fetchFn });
-    await client.auth.register("a@b.com", "pass");
+    client.setToken("admin-token");
+    await client.users.create({ email: "a@b.com", password: "pass" });
 
     expect(fetchFn).toHaveBeenCalledWith(
-      "http://localhost:3000/api/auth/register",
+      "http://localhost:3000/api/users",
       expect.objectContaining({ method: "POST" }),
     );
   });

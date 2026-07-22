@@ -1,7 +1,7 @@
 import { createRoute } from "@tanstack/react-router";
 import { Puzzle } from "lucide-react";
 
-import { Skeleton } from "@/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { type PluginMeta } from "@/lib/api";
 import { usePluginsList } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
@@ -97,13 +97,14 @@ function PluginsPage() {
                 </div>
               </div>
               <span
+                role="status"
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
-                  p.enabled ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
+                  p.enabled ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                 }`}
               >
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${
-                    p.enabled ? "bg-green-500" : "bg-muted-foreground"
+                    p.enabled ? "bg-success" : "bg-muted-foreground"
                   }`}
                 />
                 {p.enabled ? "Enabled" : "Disabled"}

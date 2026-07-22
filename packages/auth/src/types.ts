@@ -27,6 +27,7 @@ export interface AuthConfig {
 export interface AuthUser {
   id: string;
   email: string;
+  name?: string;
   password: string;
   role: string;
   createdAt: Date;
@@ -36,6 +37,7 @@ export interface AuthUser {
 export interface PublicUser {
   id: string;
   email: string;
+  name?: string;
   role: string;
   createdAt: Date;
   updatedAt: Date;
@@ -44,10 +46,12 @@ export interface PublicUser {
 export interface LoginInput {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterInput {
   email: string;
+  name?: string;
   password: string;
   role?: string | undefined;
 }

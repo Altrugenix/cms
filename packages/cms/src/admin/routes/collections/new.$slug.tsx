@@ -1,13 +1,14 @@
 import { createRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { FieldInput } from "@/components/field-input";
-import { Skeleton } from "@/components/skeleton";
+import { LocaleSelector } from "@/components/locale-selector";
 import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
-import { useCollection, useCreateEntry } from "@/lib/hooks";
+import { useCollection, useCreateEntry, useUnsavedChanges } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
@@ -27,6 +28,10 @@ function CreateEntry() {
   const [error, setError] = useState<string | null>(loadError ?? null);
   const [locale, setLocale] = useState("en");
   const [initialized, setInitialized] = useState(false);
+  const initialValuesRef = useRef<Record<string, unknown>>({});
+  const isDirty =
+    initialized && JSON.stringify(values) !== JSON.stringify(initialValuesRef.current);
+  const { cancelLeave, confirmLeave, isBlocking } = useUnsavedChanges(isDirty);
 
   useEffect(() => {
     if (initialized || !collection) return;
@@ -34,6 +39,7 @@ function CreateEntry() {
     for (const f of collection.fields) {
       initial[f.name] = "";
     }
+    initialValuesRef.current = initial;
     setValues(initial);
     setInitialized(true);
   }, [collection, initialized]);
@@ -95,7 +101,7 @@ function CreateEntry() {
             <Skeleton className="mt-1 h-5 w-32" />
           </div>
         </div>
-        <div className="space-y-4 rounded-lg border p-6">
+        <div className="space-y-6 rounded-lg border p-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-2">
               <Skeleton className="h-4 w-20" />
@@ -111,7 +117,11 @@ function CreateEntry() {
     );
   }
   if (error)
-    return <div className="rounded-md bg-destructive/10 p-4 text-destructive">{error}</div>;
+    return (
+      <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
+        {error}
+      </div>
+    );
   if (!collection) return null;
 
   return (
@@ -120,30 +130,24 @@ function CreateEntry() {
         <Link
           to="/collections/$slug"
           params={{ slug }}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">New {collection.label}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">New {collection.label}</h1>
           <p className="text-muted-foreground">Create a new entry</p>
         </div>
         <div className="ml-auto">
-          <select
+          <LocaleSelector
             value={locale}
-            onChange={(e) => setLocale(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {(collection.localization?.locales ?? ["en"]).map((l) => (
-              <option key={l} value={l}>
-                {l.toUpperCase()}
-              </option>
-            ))}
-          </select>
+            onChange={setLocale}
+            locales={collection.localization?.locales ?? ["en"]}
+          />
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border p-6">
         {collection.fields.map((f) => (
           <FieldInput
             key={f.name}
@@ -154,8 +158,8 @@ function CreateEntry() {
           />
         ))}
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" disabled={createEntry.isPending}>
-            {createEntry.isPending ? "Creating..." : "Create"}
+          <Button type="submit" loading={createEntry.isPending}>
+            Create
           </Button>
           <Link to="/collections/$slug" params={{ slug }}>
             <Button type="button" variant="outline">
@@ -164,6 +168,25 @@ function CreateEntry() {
           </Link>
         </div>
       </form>
+
+      {isBlocking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay">
+          <div className="rounded-lg border bg-card p-6 shadow-lg max-w-md">
+            <h3 className="text-lg font-semibold">Unsaved changes</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You have unsaved changes. Are you sure you want to leave?
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={cancelLeave}>
+                Stay
+              </Button>
+              <Button variant="destructive" onClick={confirmLeave}>
+                Leave
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
