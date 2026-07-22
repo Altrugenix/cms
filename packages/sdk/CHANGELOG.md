@@ -1,5 +1,11 @@
 # @arche-cms/sdk
 
+## 0.1.9
+
+### Patch Changes
+
+- a52a20b: feat(ui): comprehensive UI improvements, auth enhancements, and admin refactoring
+
 ## 0.1.8
 
 ### Patch Changes

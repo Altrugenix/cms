@@ -1,5 +1,15 @@
 # @arche-cms/graphql
 
+## 0.1.9
+
+### Patch Changes
+
+- a52a20b: feat(ui): comprehensive UI improvements, auth enhancements, and admin refactoring
+- Updated dependencies [a52a20b]
+  - @arche-cms/database@0.1.9
+  - @arche-cms/types@0.1.9
+  - @arche-cms/validation@0.1.9
+
 ## 0.1.8
 
 ### Patch Changes
