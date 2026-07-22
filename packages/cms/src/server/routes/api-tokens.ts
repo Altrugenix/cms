@@ -190,9 +190,11 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
       }[];
 
       const entry = rows[0];
+      /* v8 ignore start — defensive: insert always returns the row */
       if (!entry) {
         return reply.status(500).send({ error: "Failed to retrieve created token" });
       }
+      /* v8 ignore stop */
 
       return reply.status(201).send({
         rawToken,

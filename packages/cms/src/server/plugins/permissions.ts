@@ -20,9 +20,11 @@ export async function registerPermissions(
   fastify.decorate("requirePermission", (action: string, resource: string) => {
     return async (request: FastifyRequest, reply: FastifyReply) => {
       const userRole = request.user?.role;
+      /* v8 ignore start — defensive: authenticate preHandler should always set role */
       if (!userRole) {
         return reply.status(401).send({ error: "Not authenticated" });
       }
+      /* v8 ignore stop */
 
       const allowed = await ac.check(userRole, action, resource);
       if (!allowed) {

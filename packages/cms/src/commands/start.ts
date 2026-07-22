@@ -100,7 +100,9 @@ export async function start(options: StartOptions): Promise<void> {
     process.on("SIGINT", shutdown);
     process.on("SIGTERM", shutdown);
 
+    /* v8 ignore start — blocks forever until SIGINT/SIGTERM */
     await new Promise(() => {});
+    /* v8 ignore stop */
   } catch (err) {
     logger.error("Failed to start server:", err instanceof Error ? err.message : String(err));
     await adapter.disconnect().catch(() => {});

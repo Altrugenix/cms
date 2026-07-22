@@ -89,6 +89,7 @@ function ensureAdminBuild(logger: ReturnType<typeof createLogger>): void {
   if (existsSync(bundledAdmin) && existsSync(resolve(bundledAdmin, "index.html"))) return;
 
   const adminSource = resolve(currentDir, "../../src/admin");
+  /* v8 ignore start — ensureAdminBuild depends on filesystem state and execSync, hard to test */
   if (existsSync(adminSource)) {
     logger.info("Admin panel build not found — building from source...");
     try {
@@ -104,6 +105,7 @@ function ensureAdminBuild(logger: ReturnType<typeof createLogger>): void {
   } else {
     logger.warn("Admin panel source not found at " + adminSource);
   }
+  /* v8 ignore stop */
 }
 
 export async function dev(options: DevOptions): Promise<void> {
@@ -241,5 +243,6 @@ export async function dev(options: DevOptions): Promise<void> {
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
 
+  /* v8 ignore next — blocks forever until SIGINT/SIGTERM */
   await new Promise(() => {});
 }

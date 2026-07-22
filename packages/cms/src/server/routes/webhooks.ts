@@ -144,9 +144,11 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
       }
 
       const entry = rows[0];
+      /* v8 ignore start — defensive: already checked rows.length above */
       if (!entry) {
         return reply.status(404).send({ error: "Webhook not found" });
       }
+      /* v8 ignore stop */
 
       return reply.send(mapRow(entry));
     },
@@ -215,9 +217,11 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
       }[];
 
       const created = rows[0];
+      /* v8 ignore start — defensive: insert always returns the row */
       if (!created) {
         return reply.status(500).send({ error: "Failed to retrieve created webhook" });
       }
+      /* v8 ignore stop */
 
       return reply.status(201).send(mapRow(created));
     },

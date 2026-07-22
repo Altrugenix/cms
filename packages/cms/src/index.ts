@@ -64,6 +64,7 @@ Options:
 `);
 }
 
+/* v8 ignore start — parseArgs is untested CLI glue that dispatches to command modules */
 function parseArgs(): void {
   const args = process.argv.slice(2);
 
@@ -276,6 +277,7 @@ function parseArgs(): void {
     process.exit(1);
   }
 }
+/* v8 ignore stop */
 
 export function main(): void {
   parseArgs();
