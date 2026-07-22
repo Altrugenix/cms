@@ -1,11 +1,11 @@
-import type { ServerConfig } from "@arche-cms/cms/src/server/config.js";
+import type { ServerConfig } from "@arche-cms/cms/server/config";
 import type { DatabaseAdapter } from "@arche-cms/database";
 import type { StorageAdapter } from "@arche-cms/storage";
 import type { CollectionDefinition, GlobalDefinition, ComponentDefinition } from "@arche-cms/types";
 import type { FastifyInstance } from "fastify";
 import type { Readable } from "node:stream";
 
-import { createApp } from "@arche-cms/cms/src/server/app.js";
+import { createApp } from "@arche-cms/cms/server/app";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 function createMockAdapter(): DatabaseAdapter {

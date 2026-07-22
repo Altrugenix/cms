@@ -20,8 +20,10 @@
   "workspaces": {
     ".": {
       "entry": [
-        "packages/*/src/index.ts",
+        "packages/*/src/index.{ts,tsx}",
         "packages/cms/src/admin/main.tsx",
+        "packages/cms/src/server/app.ts",
+        "packages/cms/src/server/config.ts",
         "apps/docs/.vitepress/config.ts"
       ]
     }

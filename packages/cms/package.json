@@ -10,8 +10,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./src/server/app.js": "./src/server/app.js",
-    "./src/server/config.js": "./src/server/config.js"
+    "./server/app": "./src/server/app.ts",
+    "./server/config": "./src/server/config.ts"
   },
   "files": [
     "bin",
