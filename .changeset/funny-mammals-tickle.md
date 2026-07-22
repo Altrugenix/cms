@@ -16,4 +16,4 @@
 "@arche-cms/validation": patch
 ---
 
-feat: UI Improvements
+feat(ui): comprehensive UI improvements, auth enhancements, and admin refactoring
