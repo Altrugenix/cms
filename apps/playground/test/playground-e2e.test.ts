@@ -209,7 +209,7 @@ function createMockAdapter(): DatabaseAdapter {
         const table = tableMatch?.[1] ?? "";
         const t = getTable(table);
         const nextId = idForTable(t);
-        const record: Record<string, unknown> = { id: nextId, rowid: nextId };
+        const record: Record<string, unknown> = { id: nextId };
         const colMatch = sql.match(/\(([^)]+)\)\s*VALUES/);
         if (colMatch && params) {
           const cols = colMatch[1]
@@ -233,11 +233,6 @@ function createMockAdapter(): DatabaseAdapter {
           rows = rows.filter((r) => r.token_hash === hash);
           return rows;
         }
-        if (sql.includes("WHERE rowid = ?") && params?.[0] != null) {
-          const id = String(params[0]);
-          const found = findByStringId(t, id);
-          return found ? [found] : [];
-        }
         if (sql.includes("WHERE id = ?") && params?.[0] != null) {
           const id = String(params[0]);
           const found = findByStringId(t, id);
@@ -251,7 +246,7 @@ function createMockAdapter(): DatabaseAdapter {
         if (sql.includes("IS NULL") && sql.includes("parentId")) {
           rows = rows.filter((r) => r.parentId === null || r.parentId === undefined);
         }
-        if (sql.includes("ORDER BY rowid DESC") || sql.includes("ORDER BY created_at DESC")) {
+        if (sql.includes("ORDER BY id DESC") || sql.includes("ORDER BY created_at DESC")) {
           rows.reverse();
         }
         if (sql.includes("LIMIT 1")) {
@@ -263,25 +258,6 @@ function createMockAdapter(): DatabaseAdapter {
         const tableMatch = sql.match(/UPDATE "?(\w+)"?/);
         const table = tableMatch?.[1] ?? "";
         const t = getTable(table);
-        if (sql.includes("WHERE rowid = ?") && params) {
-          const id = String(params[params.length - 1]);
-          const existing = findByStringId(t, id);
-          if (existing) {
-            const setMatch = sql.match(/SET\s+(.+)\s+WHERE/);
-            if (setMatch) {
-              const setParts = setMatch[1].split(", ");
-              for (let i = 0; i < setParts.length; i++) {
-                const colMatch = setParts[i]?.match(/"?(\w+)"?\s*=\s*\?/);
-                if (colMatch?.[1] && params[i] !== undefined) {
-                  existing[colMatch[1]] = params[i];
-                }
-              }
-            }
-            const existingKey = findKeyById(t, id);
-            if (existingKey !== undefined) t.set(existingKey, existing);
-          }
-          return [];
-        }
         if (sql.includes("WHERE id = ?") && params) {
           const id = String(params[params.length - 1]);
           const existing = findByStringId(t, id);
@@ -314,10 +290,6 @@ function createMockAdapter(): DatabaseAdapter {
         const tableMatch = sql.match(/DELETE FROM "?(\w+)"?/);
         const table = tableMatch?.[1] ?? "";
         const t = getTable(table);
-        if (sql.includes("WHERE rowid = ?") && params?.[0] != null) {
-          const id = String(params[0]);
-          deleteByStringId(t, id);
-        }
         if (sql.includes("WHERE id = ?") && params?.[0] != null) {
           const id = String(params[0]);
           deleteByStringId(t, id);

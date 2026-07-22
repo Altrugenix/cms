@@ -5,7 +5,7 @@ import { createHmac } from "node:crypto";
 const WEBHOOKS_TABLE = "__cms_webhooks";
 
 export interface WebhookRow {
-  rowid: number;
+  id: number;
   name: string;
   url: string;
   events: string;
@@ -62,7 +62,7 @@ export async function dispatchWebhooks(
 ): Promise<void> {
   try {
     const rows = (await adapter.raw(
-      `SELECT rowid, name, url, events, collection, secret FROM ${WEBHOOKS_TABLE} WHERE enabled = 1 AND (collection = ? OR collection = '*')`,
+      `SELECT id, name, url, events, collection, secret FROM ${WEBHOOKS_TABLE} WHERE enabled = 1 AND (collection = ? OR collection = '*')`,
       [collection],
     )) as WebhookRow[];
 
@@ -103,7 +103,7 @@ async function fireWebhookWithRetry(
       const status = await fireWebhook(webhook.url, body, webhook.secret);
       lastStatus = status;
       if (status >= 200 && status < 300) {
-        await updateDeliveryStatus(adapter, webhook.rowid, status, true, "");
+        await updateDeliveryStatus(adapter, webhook.id, status, true, "");
         return;
       }
       /* v8 ignore start -- requires non-2xx HTTP response from fetch */
@@ -116,7 +116,7 @@ async function fireWebhookWithRetry(
 
   await updateDeliveryStatus(
     adapter,
-    webhook.rowid,
+    webhook.id,
     lastStatus,
     false,
     lastError ?? /* v8 ignore next */ "Unknown error",
@@ -133,7 +133,7 @@ async function updateDeliveryStatus(
   const now = new Date().toISOString();
   await adapter
     .raw(
-      `UPDATE ${WEBHOOKS_TABLE} SET last_status = ?, last_success = ?, last_error = ?, last_delivered_at = ? WHERE rowid = ?`,
+      `UPDATE ${WEBHOOKS_TABLE} SET last_status = ?, last_success = ?, last_error = ?, last_delivered_at = ? WHERE id = ?`,
       [status, success ? 1 : 0, error, now, webhookId],
     )
     .catch(

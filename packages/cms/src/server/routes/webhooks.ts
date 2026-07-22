@@ -14,7 +14,7 @@ import {
 const WEBHOOKS_TABLE = "__cms_webhooks";
 
 function mapRow(row: {
-  rowid: number;
+  id: number;
   name: string;
   url: string;
   events: string;
@@ -34,7 +34,7 @@ function mapRow(row: {
     enabled: row.enabled === 1,
     events: JSON.parse(row.events ?? /* v8 ignore next */ "[]") as string[],
     hasSecret: Boolean(row.secret),
-    id: String(row.rowid),
+    id: String(row.id),
     lastDeliveredAt: row.last_delivered_at ?? null,
     lastError: row.last_error ?? "",
     lastStatus: row.last_status ?? null,
@@ -81,9 +81,9 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
         ? Math.max(0, Number(query.offset))
         : /* v8 ignore next */ undefined;
       const rows = (await adapter.raw(
-        `SELECT rowid, name, url, events, collection, enabled, created_at, updated_at, last_status, last_success, last_error, last_delivered_at FROM ${WEBHOOKS_TABLE} ORDER BY created_at DESC`,
+        `SELECT id, name, url, events, collection, enabled, created_at, updated_at, last_status, last_success, last_error, last_delivered_at FROM ${WEBHOOKS_TABLE} ORDER BY created_at DESC`,
       )) as {
-        rowid: number;
+        id: number;
         name: string;
         url: string;
         events: string;
@@ -125,10 +125,10 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
       await init();
       const { id } = request.params as { id: string };
       const rows = (await adapter.raw(
-        `SELECT rowid, name, url, events, collection, enabled, secret, created_at, updated_at, last_status, last_success, last_error, last_delivered_at FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`,
+        `SELECT id, name, url, events, collection, enabled, secret, created_at, updated_at, last_status, last_success, last_error, last_delivered_at FROM ${WEBHOOKS_TABLE} WHERE id = ?`,
         [Number(id)],
       )) as {
-        rowid: number;
+        id: number;
         name: string;
         url: string;
         events: string;
@@ -207,9 +207,9 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
       );
 
       const rows = (await adapter.raw(
-        `SELECT rowid, name, url, events, collection, enabled, created_at, updated_at FROM ${WEBHOOKS_TABLE} ORDER BY rowid DESC LIMIT 1`,
+        `SELECT id, name, url, events, collection, enabled, created_at, updated_at FROM ${WEBHOOKS_TABLE} ORDER BY id DESC LIMIT 1`,
       )) as {
-        rowid: number;
+        id: number;
         name: string;
         url: string;
         events: string;
@@ -269,9 +269,9 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
         secret?: string;
       };
 
-      const existing = (await adapter.raw(`SELECT rowid FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`, [
+      const existing = (await adapter.raw(`SELECT id FROM ${WEBHOOKS_TABLE} WHERE id = ?`, [
         Number(id),
-      ])) as { rowid: number }[];
+      ])) as { id: number }[];
 
       if (!existing || existing.length === 0) {
         return reply.status(404).send({ error: "Webhook not found" });
@@ -319,13 +319,13 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
       params.push(new Date().toISOString());
       params.push(Number(id));
 
-      await adapter.raw(`UPDATE ${WEBHOOKS_TABLE} SET ${sets.join(", ")} WHERE rowid = ?`, params);
+      await adapter.raw(`UPDATE ${WEBHOOKS_TABLE} SET ${sets.join(", ")} WHERE id = ?`, params);
 
       const rows = (await adapter.raw(
-        `SELECT rowid, name, url, events, collection, enabled, created_at, updated_at FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`,
+        `SELECT id, name, url, events, collection, enabled, created_at, updated_at FROM ${WEBHOOKS_TABLE} WHERE id = ?`,
         [Number(id)],
       )) as {
-        rowid: number;
+        id: number;
         name: string;
         url: string;
         events: string;
@@ -366,15 +366,15 @@ export function registerWebhookRoutes(fastify: FastifyInstance, adapter: Databas
       if (!Number.isFinite(numericId) || numericId <= 0) {
         return reply.status(400).send({ error: "Invalid webhook ID" });
       }
-      const existing = (await adapter.raw(`SELECT rowid FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`, [
+      const existing = (await adapter.raw(`SELECT id FROM ${WEBHOOKS_TABLE} WHERE id = ?`, [
         numericId,
-      ])) as { rowid: number }[];
+      ])) as { id: number }[];
 
       if (!existing || existing.length === 0) {
         return reply.status(404).send({ error: "Webhook not found" });
       }
 
-      await adapter.raw(`DELETE FROM ${WEBHOOKS_TABLE} WHERE rowid = ?`, [numericId]);
+      await adapter.raw(`DELETE FROM ${WEBHOOKS_TABLE} WHERE id = ?`, [numericId]);
       return reply.send({ message: "Webhook deleted" });
     },
   );

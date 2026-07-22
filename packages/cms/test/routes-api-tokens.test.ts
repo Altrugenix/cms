@@ -68,11 +68,11 @@ function createMockAdapter(): DatabaseAdapter {
           created_at: params?.[6] ?? new Date().toISOString(),
           created_by: params?.[5] ?? "unknown",
           description: params?.[3] ?? "",
+          id: Number(id),
           last_four: params?.[2] ?? "",
           last_used_at: null,
           name: params?.[0] ?? "",
           role: params?.[4] ?? "admin",
-          rowid: Number(id),
           token_hash: params?.[1] ?? "",
         };
         apiTokens.push(entry);
@@ -83,8 +83,8 @@ function createMockAdapter(): DatabaseAdapter {
           const match = apiTokens.filter((t) => t.token_hash === params?.[0]);
           return match;
         }
-        if (sql.includes("WHERE rowid")) {
-          const match = apiTokens.filter((t) => t.rowid === params?.[0]);
+        if (sql.includes("WHERE id")) {
+          const match = apiTokens.filter((t) => t.id === params?.[0]);
           return match;
         }
         return [...apiTokens].reverse();
@@ -93,7 +93,7 @@ function createMockAdapter(): DatabaseAdapter {
         return [];
       }
       if (sql.includes("DELETE FROM __cms_api_tokens")) {
-        const idx = apiTokens.findIndex((t) => t.rowid === params?.[0]);
+        const idx = apiTokens.findIndex((t) => t.id === params?.[0]);
         if (idx !== -1) apiTokens.splice(idx, 1);
         return [];
       }

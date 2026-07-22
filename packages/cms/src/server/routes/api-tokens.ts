@@ -41,25 +41,25 @@ export async function verifyApiToken(
 ): Promise<{ user: { sub: string; email: string; role: string } } | null> {
   const tokenHash = hashToken(token);
   const rows = (await adapter.raw(
-    `SELECT rowid, name, role FROM ${TOKENS_TABLE} WHERE token_hash = ?`,
+    `SELECT id, name, role FROM ${TOKENS_TABLE} WHERE token_hash = ?`,
     [tokenHash],
-  )) as { rowid: string; name: string; role: string }[];
+  )) as { id: string; name: string; role: string }[];
   if (!rows || rows.length === 0) return null;
 
   const entry = rows[0];
   /* v8 ignore next -- defensive guard; query always returns a row after checking length */
   if (!entry) return null;
 
-  await adapter.raw(`UPDATE ${TOKENS_TABLE} SET last_used_at = ? WHERE rowid = ?`, [
+  await adapter.raw(`UPDATE ${TOKENS_TABLE} SET last_used_at = ? WHERE id = ?`, [
     new Date().toISOString(),
-    entry.rowid,
+    entry.id,
   ]);
 
   return {
     user: {
       email: entry.name,
       role: entry.role || /* v8 ignore next */ "admin",
-      sub: String(entry.rowid),
+      sub: String(entry.id),
     },
   };
 }
@@ -100,9 +100,9 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
         ? Math.max(0, Number(query.offset))
         : /* v8 ignore next */ undefined;
       const rows = (await adapter.raw(
-        `SELECT rowid, name, last_four, description, role, created_at, created_by, last_used_at FROM ${TOKENS_TABLE} ORDER BY created_at DESC`,
+        `SELECT id, name, last_four, description, role, created_at, created_by, last_used_at FROM ${TOKENS_TABLE} ORDER BY created_at DESC`,
       )) as {
-        rowid: number;
+        id: number;
         name: string;
         last_four: string;
         description: string;
@@ -118,7 +118,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
         createdAt: r.created_at,
         createdBy: r.created_by,
         description: r.description,
-        id: String(r.rowid),
+        id: String(r.id),
         lastFour: r.last_four,
         lastUsedAt: r.last_used_at,
         name: r.name,
@@ -180,10 +180,10 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
       );
 
       const rows = (await adapter.raw(
-        `SELECT rowid, name, last_four, description, role, created_at, created_by FROM ${TOKENS_TABLE} WHERE token_hash = ?`,
+        `SELECT id, name, last_four, description, role, created_at, created_by FROM ${TOKENS_TABLE} WHERE token_hash = ?`,
         [tokenHash],
       )) as {
-        rowid: number;
+        id: number;
         name: string;
         last_four: string;
         description: string;
@@ -205,7 +205,7 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
           createdAt: entry.created_at,
           createdBy: entry.created_by,
           description: entry.description,
-          id: String(entry.rowid),
+          id: String(entry.id),
           lastFour: entry.last_four,
           name: entry.name,
           role: entry.role,
@@ -237,15 +237,15 @@ export function registerApiTokenRoutes(fastify: FastifyInstance, adapter: Databa
         return reply.status(400).send({ error: "Invalid token ID" });
       }
 
-      const rows = (await adapter.raw(`SELECT rowid FROM ${TOKENS_TABLE} WHERE rowid = ?`, [
+      const rows = (await adapter.raw(`SELECT id FROM ${TOKENS_TABLE} WHERE id = ?`, [
         numericId,
-      ])) as { rowid: number }[];
+      ])) as { id: number }[];
 
       if (!rows || rows.length === 0) {
         return reply.status(404).send({ error: "Token not found" });
       }
 
-      await adapter.raw(`DELETE FROM ${TOKENS_TABLE} WHERE rowid = ?`, [numericId]);
+      await adapter.raw(`DELETE FROM ${TOKENS_TABLE} WHERE id = ?`, [numericId]);
       return reply.send({ message: "Token revoked" });
     },
   );
