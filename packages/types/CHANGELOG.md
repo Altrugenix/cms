@@ -1,5 +1,11 @@
 # @arche-cms/types
 
+## 0.1.10
+
+### Patch Changes
+
+- 9d32d91: test: achieve 100% coverage across all packages
+
 ## 0.1.9
 
 ### Patch Changes

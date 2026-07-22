@@ -1,5 +1,14 @@
 # @arche-cms/plugins
 
+## 0.1.10
+
+### Patch Changes
+
+- 9d32d91: test: achieve 100% coverage across all packages
+- Updated dependencies [9d32d91]
+  - @arche-cms/core@0.1.10
+  - @arche-cms/types@0.1.10
+
 ## 0.1.9
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@arche-cms/cms",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "type": "module",
   "bin": "bin/cms.js",
   "main": "dist/index.js",
