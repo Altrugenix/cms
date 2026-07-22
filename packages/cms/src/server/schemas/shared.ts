@@ -228,10 +228,6 @@ export const createUserBodySchema = {
       examples: ["user@example.com"],
       type: "string",
     },
-    name: {
-      examples: ["John Doe"],
-      type: "string",
-    },
     password: {
       examples: ["securepassword123"],
       type: "string",

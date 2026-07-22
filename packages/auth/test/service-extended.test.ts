@@ -206,6 +206,22 @@ describe("AuthService extended", () => {
       const updated = await service.updateUser("nonexistent", { email: "x@example.com" });
       expect(updated).toBeNull();
     });
+
+    it("only persists known columns — ignores unknown fields", async () => {
+      const { user } = await service.register({ email: "strip@example.com", password: "pass" });
+      const updated = await service.updateUser(user.id, {
+        email: "newstrip@example.com",
+      } as { email?: string; name?: string; role?: string; password?: string });
+      expect(updated?.email).toBe("newstrip@example.com");
+    });
+
+    it("updates password via updateUser", async () => {
+      const { user } = await service.register({ email: "pw@example.com", password: "oldpass" });
+      const updated = await service.updateUser(user.id, { password: "newpass" });
+      expect(updated).not.toBeNull();
+      const loginResult = await service.login({ email: "pw@example.com", password: "newpass" });
+      expect(loginResult.user.id).toBe(user.id);
+    });
   });
 
   describe("deleteUser", () => {

@@ -71,7 +71,6 @@ export function registerUserRoutes(
       const body = request.body as {
         email: string;
         password: string;
-        name?: string;
         role?: string;
       };
       /* v8 ignore start — Fastify schema validation rejects missing email/password before handler */
@@ -144,7 +143,6 @@ export function registerUserRoutes(
         body: {
           properties: {
             email: { format: "email", type: "string" },
-            name: { type: "string" },
             password: { minLength: 8, type: "string" },
             role: { type: "string" },
           },
@@ -164,7 +162,6 @@ export function registerUserRoutes(
       const { id } = request.params as { id: string };
       const body = request.body as {
         email?: string;
-        name?: string;
         role?: string;
         password?: string;
       };
