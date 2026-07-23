@@ -1,5 +1,11 @@
 # @arche-cms/storage
 
+## 0.1.11
+
+### Patch Changes
+
+- 1e7269a: refactor(admin-ui): separate admin UI into standalone package
+
 ## 0.1.10
 
 ### Patch Changes

@@ -1,5 +1,24 @@
 # @arche-cms/cms
 
+## 0.1.11
+
+### Patch Changes
+
+- 1e7269a: refactor(admin-ui): separate admin UI into standalone package
+- Updated dependencies [1e7269a]
+  - @arche-cms/admin-ui@0.1.11
+  - @arche-cms/auth@0.1.11
+  - @arche-cms/core@0.1.11
+  - @arche-cms/database@0.1.11
+  - @arche-cms/generators@0.1.11
+  - @arche-cms/graphql@0.1.11
+  - @arche-cms/permissions@0.1.11
+  - @arche-cms/plugins@0.1.11
+  - @arche-cms/rest-api@0.1.11
+  - @arche-cms/schema@0.1.11
+  - @arche-cms/storage@0.1.11
+  - @arche-cms/types@0.1.11
+
 ## 0.1.10
 
 ### Patch Changes
