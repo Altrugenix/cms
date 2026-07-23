@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 complete — 90 playground E2E tests covering all API endpoints. M36 defined — Firebase-backed CMS MVP variant. M37 defined — Extract admin UI into `@arche-cms/admin-ui` package.
+> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 complete — 90 playground E2E tests covering all API endpoints. M36 in progress — Firebase-backed CMS MVP variant (new `packages/cms-firebase/` package). M37 complete — Extract admin UI into `@arche-cms/admin-ui` package.
 
 ---
 
@@ -2047,9 +2047,10 @@ Improve perceived performance and provide helpful guidance when content is empty
 ---
 
 ## M36: Firebase-Backed CMS MVP Variant
+
 ### Objective
 
-Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firestore + Storage) without depending on the current Fastify REST/GraphQL API. Introduce a provider abstraction in the admin layer, keep current REST behavior as one provider, and add a Firebase provider for MVP scope. This minimizes UI churn and preserves future extensibility.
+Build an MVP variant of the CMS that uses Firebase directly (Auth + Firestore + Storage) without depending on the current Fastify REST/GraphQL API. Implementation lives in a new **`packages/cms-firebase/`** package (`@arche-cms/cms-firebase`), keeping `packages/cms/` untouched.
 
 ### Scope
 
@@ -2057,22 +2058,29 @@ Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firest
 
 **Exclude for MVP:** API tokens, runtime schema write/edit in browser, server webhooks dispatch/retries, scheduled publishing workers, GraphQL endpoint.
 
+### Package Strategy
+
+- New package: `packages/cms-firebase/` — contains all Firebase provider implementations, Firebase config, security rules templates
+- `packages/admin-ui/` — will consume the Firebase provider via a provider boundary (context/factory pattern)
+- `packages/cms/` — **not modified** — remains the REST/GraphQL backend
+- Firebase provider exports a conformant `AdminProvider` interface that the admin UI consumes
+
 ---
 
-### Phase 1: MVP Scope & Configuration
+### Phase 1: Package Scaffolding
 
-- [ ] **Define `BackendMode` type** — add `"rest" | "firebase"` union type in `packages/types/src/index.ts`
-- [ ] **Add backend mode config** — `CMS_BACKEND_MODE` env var (default `"rest"`), typed in `packages/cms/src/index.ts` public API
-- [ ] **Add feature flag system** — `packages/cms/src/admin/lib/feature-flags.ts` with `isEnabled(flag)` helper and mode-aware defaults
-- [ ] **Update admin app entry** — read `VITE_BACKEND_MODE` env var, pass to provider factory
-- [ ] **Update Vite config** — conditionally set API proxy based on backend mode (skip proxy for Firebase mode)
-- [ ] **Add mode indicator** — show backend mode badge in admin sidebar header
+- [ ] **Create `packages/cms-firebase/` directory** — `src/`, `test/`, `README.md`
+- [ ] **Create `packages/cms-firebase/package.json`** — name: `@arche-cms/cms-firebase`, version: `0.1.0`, type: `module`, exports: `{ ".": "./src/index.ts" }`, peerDependencies: `firebase`
+- [ ] **Create `packages/cms-firebase/tsconfig.json`** — extend `../../tsconfig.base.json`
+- [ ] **Add `packages/cms-firebase/` to `pnpm-workspace.yaml`** — covered by `packages/*` glob
+- [ ] **Install Firebase SDK** — `firebase` package as peer dependency in `packages/cms-firebase/`
+- [ ] **Create `packages/cms-firebase/src/index.ts`** — barrel exports
 
-### Phase 2: Admin Backend Provider Boundary (Extraction)
+### Phase 2: Admin Backend Provider Boundary
 
-#### Provider Contract
+#### Provider Contract (in `packages/admin-ui/`)
 
-- [ ] **Define `AdminProvider` interface** — `packages/cms/src/admin/lib/providers/types.ts` with methods:
+- [ ] **Define `AdminProvider` interface** — `packages/admin-ui/src/lib/providers/types.ts` with methods:
   - Auth: `login(email, password)`, `register(email, password, name)`, `logout()`, `refreshToken()`, `getCurrentUser()`, `forgotPassword(email)`, `resetPassword(token, password)`
   - Collections: `listEntries(slug, params)`, `getEntry(slug, id, locale?)`, `createEntry(slug, data)`, `updateEntry(slug, id, data)`, `deleteEntry(slug, id)`, `bulkDelete(slug, ids)`, `publishEntry(slug, id)`, `unpublishEntry(slug, id)`, `restoreEntry(slug, id)`
   - Globals: `getGlobal(slug)`, `upsertGlobal(slug, data)`
@@ -2083,17 +2091,17 @@ Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firest
   - Metadata: `listCollections()`, `listGlobals()`, `listPlugins()`, `getDashboardData(colSlugs)`
   - Activity: `listActivity(params)`
 
-- [ ] **Create `ProviderContext`** — React Context (`packages/cms/src/admin/lib/providers/context.tsx`) that provides the active provider to all components
-- [ ] **Create provider factory** — `packages/cms/src/admin/lib/providers/index.ts` that returns the correct provider based on `VITE_BACKEND_MODE`
+- [ ] **Create `ProviderContext`** — React Context (`packages/admin-ui/src/lib/providers/context.tsx`) that provides the active provider to all components
+- [ ] **Create provider factory** — `packages/admin-ui/src/lib/providers/index.ts` that returns the correct provider based on `VITE_BACKEND_MODE`
 
-#### REST Provider (Existing Behavior)
+#### REST Provider (Existing Behavior — in `packages/admin-ui/`)
 
-- [ ] **Create `RestProvider`** — `packages/cms/src/admin/lib/providers/rest.ts` implementing `AdminProvider`
+- [ ] **Create `RestProvider`** — `packages/admin-ui/src/lib/providers/rest.ts` implementing `AdminProvider`
 - [ ] **Move existing `apiFetch` calls** — refactor `lib/api.ts` functions into `RestProvider` methods
 - [ ] **Keep `lib/api.ts` as thin wrapper** — delegate to provider, maintain backward compatibility during migration
 - [ ] **Verify REST mode regression** — all existing tests pass, no behavior changes
 
-#### Route Component Migration
+#### Route Component Migration (in `packages/admin-ui/`)
 
 - [ ] **Migrate `routes/collections/$slug.tsx`** — replace direct `apiFetch` with provider methods via hooks
 - [ ] **Migrate `routes/collections/new.$slug.tsx`** — replace direct `apiFetch` with provider methods
@@ -2115,13 +2123,12 @@ Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firest
 - [ ] **Migrate `components/command-palette.tsx`** — replace direct `apiFetch` with provider methods
 - [ ] **Migrate `components/field-input.tsx`** — replace RelationPicker and media upload `apiFetch` with provider methods
 
-### Phase 3: Firebase Provider Implementation
+### Phase 3: Firebase Provider Implementation (in `packages/cms-firebase/`)
 
 #### Firebase Auth
 
-- [ ] **Install Firebase SDK** — `firebase` package in `packages/cms/` (dev dependency)
-- [ ] **Create Firebase config** — `packages/cms/src/admin/lib/providers/firebase/config.ts` reading `VITE_FIREBASE_*` env vars
-- [ ] **Implement `FirebaseAuthProvider`** — `packages/cms/src/admin/lib/providers/firebase/auth.ts`
+- [ ] **Create Firebase config** — `packages/cms-firebase/src/config.ts` reading `VITE_FIREBASE_*` env vars
+- [ ] **Implement `FirebaseAuthProvider`** — `packages/cms-firebase/src/auth.ts`
   - Replace JWT refresh-cycle with Firebase Auth session listener (`onAuthStateChanged`)
   - `login(email, password)` → `signInWithEmailAndPassword`
   - `register(email, password, name)` → `createUserWithEmailAndPassword` + `updateProfile`
@@ -2139,7 +2146,7 @@ Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firest
   - Document ID: entry ID (UUID)
   - Fields: all schema fields + `_status`, `_deletedAt`, `_version`, `createdAt`, `updatedAt`
   - Globals: single document per global slug in a `__cms_globals` collection
-- [ ] **Create Firestore content provider** — `packages/cms/src/admin/lib/providers/firebase/content.ts`
+- [ ] **Create Firestore content provider** — `packages/cms-firebase/src/content.ts`
   - `listEntries(slug, params)` → Firestore query with `where`, `orderBy`, `limit`, `offset`
   - `getEntry(slug, id)` → `getDoc(doc(db, slug, id))`
   - `createEntry(slug, data)` → `addDoc(collection(db, slug), data)`
@@ -2149,7 +2156,7 @@ Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firest
   - `publishEntry(slug, id)` → update `_status` to `"published"`
   - `unpublishEntry(slug, id)` → update `_status` to `"draft"`
   - `restoreEntry(slug, id)` → clear `_deletedAt`
-- [ ] **Implement Firestore query builder** — `packages/cms/src/admin/lib/providers/firebase/query-builder.ts`
+- [ ] **Implement Firestore query builder** — `packages/cms-firebase/src/query-builder.ts`
   - Map Arche filter syntax to Firestore `where` clauses
   - Handle pagination via `startAfter` cursor (not offset, for performance)
   - Handle sorting via `orderBy`
@@ -2162,13 +2169,13 @@ Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firest
 
 #### Firebase Firestore — Globals
 
-- [ ] **Implement global provider** — `packages/cms/src/admin/lib/providers/firebase/globals.ts`
+- [ ] **Implement global provider** — `packages/cms-firebase/src/globals.ts`
   - `getGlobal(slug)` → `getDoc(doc(db, "__cms_globals", slug))`
   - `upsertGlobal(slug, data)` → `setDoc(doc(db, "__cms_globals", slug), data, { merge: true })`
 
 #### Firebase Storage — Media
 
-- [ ] **Create Firebase Storage provider** — `packages/cms/src/admin/lib/providers/firebase/media.ts`
+- [ ] **Create Firebase Storage provider** — `packages/cms-firebase/src/media.ts`
   - `uploadMedia(file)` → `uploadBytes(ref(storage, path), file)` + Firestore metadata record
   - `listMedia(params)` → Firestore query on `__cms_media` collection
   - `getMedia(id)` → Firestore doc + `getDownloadURL` for preview
@@ -2183,10 +2190,10 @@ Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firest
 
 #### Firebase Firestore — Users & Roles
 
-- [ ] **Implement users provider** — `packages/cms/src/admin/lib/providers/firebase/users.ts`
+- [ ] **Implement users provider** — `packages/cms-firebase/src/users.ts`
   - Map to Firestore `__cms_users` collection
   - Use Firebase Auth `customClaims` for role assignment
-- [ ] **Implement roles provider** — `packages/cms/src/admin/lib/providers/firebase/roles.ts`
+- [ ] **Implement roles provider** — `packages/cms-firebase/src/roles.ts`
   - Map to Firestore `__cms_roles` collection
   - Store permissions as JSON document
 
@@ -2197,53 +2204,62 @@ Build an MVP variant of the CMS admin that uses Firebase directly (Auth + Firest
 
 #### Firebase — Activity
 
-- [ ] **Implement activity provider** — `packages/cms/src/admin/lib/providers/firebase/activity.ts`
+- [ ] **Implement activity provider** — `packages/cms-firebase/src/activity.ts`
   - Write audit events to Firestore `__cms_activity` collection on mutations
   - List activity with filters (collection, action)
 
-### Phase 4: RBAC & Security Rules
+#### Firebase Provider Entry Point
+
+- [ ] **Create `FirebaseProvider`** — `packages/cms-firebase/src/provider.ts` implementing `AdminProvider` from `packages/admin-ui`
+- [ ] **Export barrel** — `packages/cms-firebase/src/index.ts` exports `FirebaseProvider`, config, and individual providers
+
+### Phase 4: RBAC & Security Rules (in `packages/cms-firebase/`)
 
 - [ ] **Define role model** — custom claims on Firebase Auth users (`role` field) + optional Firestore role documents
 - [ ] **Encode permission matrix** — Firestore Security Rules equivalent to `requirePermission` checks
-- [ ] **Write Firestore Security Rules** — `firestore.rules` file:
+- [ ] **Write Firestore Security Rules** — `packages/cms-firebase/firestore.rules` file:
   - Allow reads only if authenticated and role matches permission
   - Allow writes only if authenticated and role matches permission
   - Deny unauthenticated access to all collections except public reads
-- [ ] **Write Storage Security Rules** — `storage.rules` file:
+- [ ] **Write Storage Security Rules** — `packages/cms-firebase/storage.rules` file:
   - Allow uploads only if authenticated
   - Allow reads for authenticated users
   - Allow deletes only for admin/editor roles
 - [ ] **Add audit event writes** — Firestore writes for critical mutations (create/update/delete/publish) in `__cms_activity`
 
-### Phase 5: Mode-Aware Admin UX
+### Phase 5: Mode-Aware Admin UX (in `packages/admin-ui/`)
 
+- [ ] **Add `BackendMode` type** — `"rest" | "firebase"` union type in `packages/types/src/index.ts`
+- [ ] **Add backend mode config** — `VITE_BACKEND_MODE` env var (default `"rest"`)
 - [ ] **Hide unsupported pages in Firebase mode** — API Tokens, Webhooks, Schema Builder (write), Settings → Plugins
 - [ ] **Update sidebar navigation** — conditionally show/hide items based on `VITE_BACKEND_MODE`
 - [ ] **Update route guards** — prevent navigation to unsupported routes with redirect
 - [ ] **Update empty/error states** — explain Firebase-mode limitations (e.g., "Schema editing is not supported in Firebase mode")
-- [ ] **Add mode switcher** — settings page or env-based toggle to switch between REST and Firebase mode
+- [ ] **Add mode indicator** — show backend mode badge in admin sidebar header
 - [ ] **Update command palette** — filter actions based on mode
 - [ ] **Handle offline behavior** — Firebase supports offline persistence; show offline indicator
 
 ### Phase 6: Validation & Test Strategy
 
-- [ ] **Provider contract tests** — `packages/cms/test/providers/contract.test.ts`
+- [ ] **Provider contract tests** — `packages/admin-ui/test/providers/contract.test.ts`
   - Test that both REST and Firebase providers implement the same `AdminProvider` interface
   - Verify UI-facing behavior matches expectations for each provider
-- [ ] **Firebase Emulator integration tests** — `packages/cms/test/providers/firebase/`
+- [ ] **Firebase Emulator integration tests** — `packages/cms-firebase/test/`
   - Auth tests: login, register, logout, token refresh, password reset
   - Firestore tests: CRUD operations, queries, security rules
   - Storage tests: upload, download, delete, security rules
   - RBAC tests: permission enforcement via security rules
-- [ ] **Keep existing REST tests** — all 490+ tests pass unchanged for REST mode
+- [ ] **Keep existing REST tests** — all 1,400+ tests pass unchanged for REST mode
 - [ ] **Add mode-specific test suites** — separate Firebase test suite, only run when `FIREBASE_EMULATOR=true`
 - [ ] **Provider switching tests** — verify admin works correctly when switching modes
 
 ### Phase 7: Packaging & Rollout
 
-- [ ] **Ship as experimental backend mode** — `packages/cms` with explicit MVP capability matrix in README
+- [ ] **Update `@arche-cms/create-app`** — add `backend mode` question (`rest | firebase`, default `rest`) to scaffold prompts; write `VITE_BACKEND_MODE` to `.env` and include `@arche-cms/cms-firebase` in `package.json` dependencies when firebase is selected
+- [ ] **Create `apps/playground-firebase/`** — copy of `apps/playground/` using `@arche-cms/cms-firebase` as the backend provider; configured with Firebase emulator env vars; included in `pnpm-workspace.yaml` and `turbo.json`
+- [ ] **Ship `@arche-cms/cms-firebase` as experimental** — new package with explicit MVP capability matrix in README
 - [ ] **Add Firebase config docs** — required env vars, emulator/prod setup, index deployment
-- [ ] **Add `cms firebase:setup` CLI command** — interactive Firebase project setup wizard
+- [ ] **Add `cms firebase:setup` CLI command** — interactive Firebase project setup wizard (in `packages/cms-firebase/`)
 - [ ] **Add `cms firebase:deploy-rules` CLI command** — deploy Firestore/Storage security rules
 - [ ] **Add `cms firebase:deploy-indexes` CLI command** — deploy Firestore indexes
 - [ ] **Add Firebase mode to create-app** — `@arche-cms/create-app` scaffold with Firebase option
@@ -2311,7 +2327,8 @@ Security Rules:
 ### Decisions
 
 - **Chosen scope:** MVP — minimal viable Firebase integration
-- **Provider abstraction:** Keep "no CMS API needed" by using direct Firebase client SDK from admin
+- **Package strategy:** New `packages/cms-firebase/` package — `packages/cms/` remains untouched
+- **Provider abstraction:** `AdminProvider` interface in `packages/admin-ui/`, Firebase implementation in `packages/cms-firebase/`
 - **Data model:** Option A — one Firestore collection per CMS collection slug (simpler queries, easier indexes)
 - **Versioning:** Option A — minimal `updatedAt/version` only (Option B: full revision subcollections deferred to parity phase)
 - **Schema management:** Option A — read-only schema UI in Firebase mode with CLI-managed schema source of truth
@@ -2327,157 +2344,26 @@ Security Rules:
 
 ---
 
-## M37: Extract Admin UI into `@arche-cms/admin-ui` Package
+## M37: Extract Admin UI into `@arche-cms/admin-ui` Package (Complete)
 
 ### Objective
 
-Move the admin panel from `packages/cms/src/admin/` into a standalone `packages/admin-ui/` package (`@arche-cms/admin-ui`). This makes the admin UI reusable across projects (e.g., headless frontends, alternative CMS backends), enables independent versioning, and cleans up the `@arche-cms/cms` package by removing all React/UI dependencies from it.
+Move the admin panel from `packages/cms/src/admin/` into a standalone `packages/admin-ui/` package (`@arche-cms/admin-ui`).
 
-### Why
+### Status
 
-- The admin UI is already isolated: own `tsconfig.json`, `vite.config.ts`, excluded from server compilation (`"exclude": ["src/admin"]`), excluded from test coverage (`"src/admin/**"`)
-- Zero shared runtime dependencies: React/UI packages are admin-only, server packages are server-only
-- The only coupling is `src/server/plugins/static.ts` which discovers the admin build via filesystem traversal
-- All admin imports use `@/` alias — no workspace package imports
-- Separating enables: independent releases, alternative admin shells, plugin-provided admin panels
+Merged to main via PR #29 (`feat/separate-admin-ui` branch).
 
-### Current State
-
-```
-packages/cms/
-├── src/
-│   ├── admin/          ← ~90 files, Vite SPA (React 19 + TanStack Router + Tailwind v4 + shadcn/ui)
-│   ├── commands/       ← CLI commands (dev.ts, build.ts, start.ts reference admin via relative paths)
-│   └── server/
-│       └── plugins/
-│           └── static.ts   ← discovers admin build via filesystem traversal
-├── dist/admin/         ← Vite production build output
-└── package.json        ← mixes React/UI deps with server deps
-```
-
-### Target State
-
-```
-packages/admin-ui/      ← NEW — standalone package
-├── src/                ← moved from packages/cms/src/admin/
-├── dist/               ← Vite production build
-├── package.json        ← @arche-cms/admin-ui, React/UI deps only
-├── vite.config.ts
-└── tsconfig.json
-
-packages/cms/           ← CLEANED — server only
-├── src/
-│   ├── commands/       ← updated paths to reference @arche-cms/admin-ui
-│   └── server/
-│       └── plugins/
-│           └── static.ts   ← updated to find admin from node_modules
-└── package.json        ← server deps only, depends on @arche-cms/admin-ui
-```
-
----
-
-### Phase 1: Package Scaffolding
-
-- [ ] **Create `packages/admin-ui/` directory structure** — `src/`, `dist/`, `components/`, `lib/`, `routes/`, `ui/`
-- [ ] **Create `packages/admin-ui/package.json`** — name: `@arche-cms/admin-ui`, version: `0.1.0`, type: `module`, exports: `{ ".": "./src/index.ts", "./build": "./dist/" }`, files: `["dist"]`, publishConfig: `{ access: "public" }`
-- [ ] **Move admin dependencies from `packages/cms/package.json` to `packages/admin-ui/package.json`**:
-  - Dependencies: `@tanstack/react-query`, `@tanstack/react-router`, `clsx`, `dompurify`, `lucide-react`, `react`, `react-dom`, `tailwind-merge`
-  - DevDependencies: `@tailwindcss/vite`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `tailwindcss`, `vite`
-- [ ] **Remove admin dependencies from `packages/cms/package.json`** — keep only server deps
-- [ ] **Add `@arche-cms/admin-ui` as workspace dependency in `packages/cms/package.json`** — `"@arche-cms/admin-ui": "workspace:*"` (dependency, not devDependency — needed at runtime for static serving)
-- [ ] **Create `packages/admin-ui/tsconfig.json`** — extend `../../tsconfig.base.json`, target ES2022, DOM lib, JSX react-jsx, ESNext modules, bundler resolution, `@/*` path alias, noEmit
-- [ ] **Create `packages/admin-ui/vite.config.ts`** — build output to `dist/`, `@` alias, dev server proxy, same config as current but with corrected relative paths
-- [ ] **Create `packages/admin-ui/index.html`** — move from current `packages/cms/src/admin/index.html`, update script src
-- [ ] **Create `packages/admin-ui/src/index.ts`** — export the router (same as current `packages/cms/src/admin/index.ts`)
-
-### Phase 2: Move Source Files
-
-- [ ] **Move `packages/cms/src/admin/components/` → `packages/admin-ui/src/components/`** — all UI components, field-types, ui primitives (16+6+13 = 35 files)
-- [ ] **Move `packages/cms/src/admin/lib/` → `packages/admin-ui/src/lib/`** — api.ts, auth.tsx, hooks.ts, utils.ts
-- [ ] **Move `packages/cms/src/admin/routes/` → `packages/admin-ui/src/routes/`** — all 30 route files + sub-components
-- [ ] **Move `packages/cms/src/admin/main.tsx` → `packages/admin-ui/src/main.tsx`** — entry point
-- [ ] **Move `packages/cms/src/admin/router.tsx` → `packages/admin-ui/src/router.tsx`** — route tree
-- [ ] **Move `packages/cms/src/admin/index.css` → `packages/admin-ui/src/index.css`** — Tailwind + theme CSS
-- [ ] **Move `packages/cms/src/admin/vite-env.d.ts` → `packages/admin-ui/src/vite-env.d.ts`**
-- [ ] **Verify all `@/` imports resolve correctly** — no changes needed since the `@/` alias is redefined in the new `vite.config.ts` and `tsconfig.json`
-- [ ] **Delete `packages/cms/src/admin/` directory** — after successful move
-
-### Phase 3: Build Pipeline Update
-
-- [ ] **Update `packages/admin-ui/package.json` scripts**:
-  - `"build": "vite build"` (was `pnpm build:admin` in cms)
-  - `"dev": "vite"` (for standalone dev)
-  - `"lint": "tsc --noEmit"`
-  - `"typecheck": "tsc --noEmit"`
-- [ ] **Update `packages/cms/package.json` scripts**:
-  - Remove `"build:admin"` script (admin builds itself now)
-  - Change `"build"` from `"pnpm build:admin && tsc"` to `"tsc"` (admin is a separate package, turbo handles `^build` dependency)
-- [ ] **Update `turbo.json`** — ensure `build` task's `dependsOn: ["^build"]` correctly builds `@arche-cms/admin-ui` before `@arche-cms/cms` (already handled by `^build`)
-- [ ] **Add `packages/admin-ui/` to `pnpm-workspace.yaml`** — already covered by `packages/*` glob
-
-### Phase 4: Server Integration — Static Serving
-
-- [ ] **Update `static.ts` `findAdminDir()`** — find admin build from `node_modules/@arche-cms/admin-ui/dist/` instead of filesystem traversal:
-  - Resolve via `import.meta.url` → `../../node_modules/@arche-cms/admin-ui/dist/`
-  - Fallback to `CMS_ADMIN_DIR` env var
-  - Fallback to monorepo path `packages/admin-ui/dist/`
-- [ ] **Update `static.ts` log messages** — change `"pnpm --filter @arche-cms/admin build"` to `"pnpm --filter @arche-cms/admin-ui build"`
-- [ ] **Update `static.ts` `AdminStaticOptions`** — keep `adminDir` override for flexibility
-
-### Phase 5: CLI Command Updates
-
-- [ ] **Update `dev.ts` `startViteDevServer()`** — resolve admin source from `@arche-cms/admin-ui` package instead of relative `../../src/admin`:
-  - Find `node_modules/@arche-cms/admin-ui/` or monorepo `packages/admin-ui/`
-  - Use `packages/admin-ui/vite.config.ts` as configFile
-- [ ] **Update `dev.ts` `ensureAdminBuild()`** — check for `node_modules/@arche-cms/admin-ui/dist/index.html` or monorepo `packages/admin-ui/dist/index.html`
-  - If missing, run `pnpm --filter @arche-cms/admin-ui build` instead of `pnpm build:admin`
-- [ ] **Update `build.ts`** — remove admin build step from `cms build` (admin is built independently by turbo's `^build`)
-  - Update production bundle assembly: copy admin build from `node_modules/@arche-cms/admin-ui/dist/` or monorepo `packages/admin-ui/dist/`
-  - Keep `admin/` output directory structure for the production bundle (unchanged from consumer's perspective)
-
-### Phase 6: Package References & Workspace Config
-
-- [ ] **Update `pnpm-workspace.yaml`** — verify `packages/*` glob already covers `packages/admin-ui/`
-- [ ] **Update root `package.json` scripts** — add `"build:admin": "pnpm --filter @arche-cms/admin-ui build"` if referenced
-- [ ] **Update `packages/cms/tsconfig.json`** — add `{ "path": "../admin-ui" }` to `references` (for typecheck ordering)
-- [ ] **Verify `packages/admin-ui/tsconfig.json`** — no workspace references needed (admin imports zero `@arche-cms/*` packages)
-- [ ] **Verify `packages/cms/vitest.config.ts`** — no changes needed (already excludes `src/admin/**`)
-
-### Phase 7: Documentation & AGENTS.md
-
-- [ ] **Update `AGENTS.md`** — add `packages/admin-ui/` to monorepo structure, remove admin from `packages/cms/` description
-- [ ] **Update `docs/architecture.md`** — add admin-ui package to layout diagram
-- [ ] **Update `docs/TODO.md`** M5 references — change `packages/cms/admin` to `packages/admin-ui`
-- [ ] **Update `packages/admin-ui/README.md`** — document the standalone admin package
-- [ ] **Update root `README.md`** — mention admin-ui in package list
-
-### Phase 8: Verification
-
-- [ ] **Run `pnpm install`** — verify workspace resolution with new package
-- [ ] **Run `pnpm build`** — turbo builds `@arche-cms/admin-ui` first (via `^build`), then `@arche-cms/cms`
-- [ ] **Run `pnpm lint`** — no new errors across all packages
-- [ ] **Run `pnpm typecheck`** — no type errors across all packages
-- [ ] **Run `pnpm test`** — no regressions (existing tests only touch server code)
-- [ ] **Verify `cms dev`** — admin panel loads at http://localhost:5173 (with `--vite`) or http://localhost:3500 (without)
-- [ ] **Verify `cms build --out-dir ./dist`** — production bundle includes admin panel in `admin/` directory
-- [ ] **Verify admin panel functions end-to-end** — login, dashboard, collections CRUD, globals, media, settings
-
----
-
-### Decisions
-
-- **Package name:** `@arche-cms/admin-ui` (matches the previously deleted placeholder package name from M26, now properly implemented)
-- **Build output:** `dist/` at package root (not nested `admin/dist/`)
-- **Static serving:** `static.ts` resolves admin build from `node_modules/@arche-cms/admin-ui/dist/` with monorepo fallback
-- **No workspace imports:** Admin UI continues to import zero `@arche-cms/*` packages — it communicates purely via REST API client (`lib/api.ts`)
-- **Independent versioning:** Admin UI version tracks separately from CMS server
-- **Turbo dependency:** `^build` in `turbo.json` ensures admin-ui builds before cms
-
-### Risks & Mitigations
-
-- **Risk:** File path resolution breaks in different environments (monorepo vs published package)
-  - **Mitigation:** Three-tier fallback: `node_modules` → monorepo path → `CMS_ADMIN_DIR` env var
-- **Risk:** Vite dev server can't find admin source after move
-  - **Mitigation:** `dev.ts` resolves from `@arche-cms/admin-ui` package, with monorepo-aware path resolution
-- **Risk:** Published package missing admin build
-  - **Mitigation:** `"files": ["dist"]` in package.json ensures build output is included; CI verifies build before publish
+- [x] Create `packages/admin-ui/` with `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`
+- [x] Move all admin source files (`components/`, `lib/`, `routes/`, `main.tsx`, `router.tsx`, `index.css`, `vite-env.d.ts`)
+- [x] Move admin dependencies from `packages/cms/package.json` to `packages/admin-ui/package.json`
+- [x] Remove admin dependencies from `packages/cms/package.json`
+- [x] Add `@arche-cms/admin-ui` as workspace dependency in `packages/cms`
+- [x] Update `static.ts` to find admin build from `@arche-cms/admin-ui/dist/`
+- [x] Update `dev.ts` to resolve admin source from `@arche-cms/admin-ui`
+- [x] Update `build.ts` to copy admin build from `@arche-cms/admin-ui`
+- [x] Remove unused exports from admin-ui (`field-types/index.ts`, `api.ts`, `hooks.ts`, `schemas/components/index.ts`, `structure-inputs.tsx`)
+- [x] Upgrade `@fastify/static` to v10 (removes deprecated `glob@11.1.0`)
+- [x] Run `pnpm install`, `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` — all pass
+- [x] Verify `cms dev` serves admin panel from `@arche-cms/admin-ui`
+- [x] Verify `cms build --out-dir` includes admin build in production bundle
