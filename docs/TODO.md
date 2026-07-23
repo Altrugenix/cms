@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 complete — 90 playground E2E tests covering all API endpoints. M36 in progress — Firebase-backed CMS MVP variant (new `packages/cms-firebase/` package). 1,929 tests passing. M37 complete — Extract admin UI into `@arche-cms/admin-ui` package.
+> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 complete — 90 playground E2E tests covering all API endpoints. M36 complete — Firebase-backed CMS MVP variant (new `packages/cms-firebase/` package). 1,929+ tests passing. M37 complete — Extract admin UI into `@arche-cms/admin-ui` package.
 
 ---
 
@@ -2097,31 +2097,31 @@ Build an MVP variant of the CMS that uses Firebase directly (Auth + Firestore + 
 #### REST Provider (Existing Behavior — in `packages/admin-ui/`)
 
 - [x] **Create `RestProvider`** — `packages/admin-ui/src/lib/providers/rest.ts` implementing `AdminProvider`
-- [ ] **Move existing `apiFetch` calls** — refactor `lib/api.ts` functions into `RestProvider` methods
-- [ ] **Keep `lib/api.ts` as thin wrapper** — delegate to provider, maintain backward compatibility during migration
-- [ ] **Verify REST mode regression** — all existing tests pass, no behavior changes
+- [x] **Move existing `apiFetch` calls** — refactor `lib/api.ts` functions into `RestProvider` methods
+- [x] **Keep `lib/api.ts` as thin wrapper** — delegate to provider, maintain backward compatibility during migration
+- [x] **Verify REST mode regression** — all existing tests pass, no behavior changes
 
 #### Route Component Migration (in `packages/admin-ui/`)
 
-- [ ] **Migrate `routes/collections/$slug.tsx`** — replace direct `apiFetch` with provider methods via hooks
-- [ ] **Migrate `routes/collections/new.$slug.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/collections/$id_.$slug.edit.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/globals/$slug.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/index.tsx`** (Dashboard) — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/settings/index.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/settings/api-tokens.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/settings/webhooks/*`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/settings/users/*`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/settings/roles/*`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/settings/plugins.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/media/index.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/login.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/register.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/forgot-password.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `routes/reset-password.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `components/sidebar.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `components/command-palette.tsx`** — replace direct `apiFetch` with provider methods
-- [ ] **Migrate `components/field-input.tsx`** — replace RelationPicker and media upload `apiFetch` with provider methods
+- [x] **Migrate `routes/collections/$slug.tsx`** — replace direct `apiFetch` with provider methods via hooks
+- [x] **Migrate `routes/collections/new.$slug.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/collections/$id_.$slug.edit.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/globals/$slug.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/index.tsx`** (Dashboard) — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/settings/index.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/settings/api-tokens.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/settings/webhooks/*`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/settings/users/*`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/settings/roles/*`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/settings/plugins.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/media/index.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/login.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/register.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/forgot-password.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `routes/reset-password.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `components/sidebar.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `components/command-palette.tsx`** — replace direct `apiFetch` with provider methods
+- [x] **Migrate `components/field-input.tsx`** — replace RelationPicker and media upload `apiFetch` with provider methods
 
 ### Phase 3: Firebase Provider Implementation (in `packages/cms-firebase/`)
 
@@ -2233,25 +2233,25 @@ Build an MVP variant of the CMS that uses Firebase directly (Auth + Firestore + 
 - [x] **Add backend mode config** — `VITE_BACKEND_MODE` env var (default `"rest"`) via `packages/admin-ui/src/lib/backend-mode.ts`
 - [x] **Hide unsupported pages in Firebase mode** — API Tokens, Webhooks, Schema Builder (write), Settings → Plugins
 - [x] **Update sidebar navigation** — conditionally show/hide items based on `VITE_BACKEND_MODE` + Firebase badge
-- [ ] **Update route guards** — prevent navigation to unsupported routes with redirect
-- [ ] **Update empty/error states** — explain Firebase-mode limitations (e.g., "Schema editing is not supported in Firebase mode")
+- [x] **Update route guards** — prevent navigation to unsupported routes with redirect
+- [x] **Update empty/error states** — explain Firebase-mode limitations (e.g., "Schema editing is not supported in Firebase mode")
 - [x] **Add mode indicator** — show backend mode badge in admin sidebar header
 - [x] **Update command palette** — filter actions based on mode
-- [ ] **Handle offline behavior** — Firebase supports offline persistence; show offline indicator
+- [x] **Handle offline behavior** — Firebase supports offline persistence; show offline indicator
 
 ### Phase 6: Validation & Test Strategy
 
 - [x] **Provider contract tests** — `packages/admin-ui/test/providers/contract.test.ts`
   - Test that both REST and Firebase providers implement the same `AdminProvider` interface
   - Verify UI-facing behavior matches expectations for each provider
-- [ ] **Firebase Emulator integration tests** — `packages/cms-firebase/test/`
+- [x] **Firebase Emulator integration tests** — `packages/cms-firebase/test/`
   - Auth tests: login, register, logout, token refresh, password reset
   - Firestore tests: CRUD operations, queries, security rules
   - Storage tests: upload, download, delete, security rules
   - RBAC tests: permission enforcement via security rules
 - [x] **Keep existing REST tests** — all 1,929 tests pass unchanged for REST mode
-- [ ] **Add mode-specific test suites** — separate Firebase test suite, only run when `FIREBASE_EMULATOR=true`
-- [ ] **Provider switching tests** — verify admin works correctly when switching modes
+- [x] **Add mode-specific test suites** — separate Firebase test suite, only run when `FIREBASE_EMULATOR=true`
+- [x] **Provider switching tests** — verify admin works correctly when switching modes
 
 ### Phase 7: Packaging & Rollout
 
@@ -2259,12 +2259,12 @@ Build an MVP variant of the CMS that uses Firebase directly (Auth + Firestore + 
 - [x] **Create `apps/playground-firebase/`** — copy of `apps/playground/` using `@arche-cms/cms-firebase` as the backend provider; configured with Firebase emulator env vars; included in `pnpm-workspace.yaml` and `turbo.json`
 - [x] **Ship `@arche-cms/cms-firebase` as experimental** — new package with explicit MVP capability matrix in README
 - [x] **Add Firebase config docs** — required env vars, emulator/prod setup, index deployment (in README)
-- [ ] **Add `cms firebase:setup` CLI command** — interactive Firebase project setup wizard (in `packages/cms-firebase/`)
-- [ ] **Add `cms firebase:deploy-rules` CLI command** — deploy Firestore/Storage security rules
-- [ ] **Add `cms firebase:deploy-indexes` CLI command** — deploy Firestore indexes
+- [x] **Add `cms firebase:setup` CLI command** — interactive Firebase project setup wizard (in `packages/cms-firebase/`)
+- [x] **Add `cms firebase:deploy-rules` CLI command** — deploy Firestore/Storage security rules
+- [x] **Add `cms firebase:deploy-indexes` CLI command** — deploy Firestore indexes
 - [x] **Add Firebase mode to create-app** — `@arche-cms/create-app` scaffold with Firebase option
-- [ ] **Write migration guide** — from REST mode to Firebase mode
-- [ ] **Document capability matrix** — what works in Firebase mode vs REST mode
+- [x] **Write migration guide** — from REST mode to Firebase mode
+- [x] **Document capability matrix** — what works in Firebase mode vs REST mode
 
 ### Firebase Data Model Summary
 
@@ -2295,32 +2295,32 @@ Security Rules:
 
 #### Provider Wiring Verification
 
-- [ ] Run admin in REST mode — verify no behavior regressions on login, list/create/edit entries, media upload
-- [ ] Switch to Firebase mode — verify same core UI flows complete without `/api` network usage
-- [ ] Verify both providers pass the same contract tests
+- [x] Run admin in REST mode — verify no behavior regressions on login, list/create/edit entries, media upload
+- [x] Switch to Firebase mode — verify same core UI flows complete without `/api` network usage
+- [x] Verify both providers pass the same contract tests
 
 #### Security Verification (Firebase Emulator)
 
-- [ ] Validate each action (read/create/update/delete/publish/media upload) against role permutations
-- [ ] Confirm unauthenticated users are denied all actions
-- [ ] Confirm forbidden writes are blocked by rules, not only hidden in UI
+- [x] Validate each action (read/create/update/delete/publish/media upload) against role permutations
+- [x] Confirm unauthenticated users are denied all actions
+- [x] Confirm forbidden writes are blocked by rules, not only hidden in UI
 
 #### Data Behavior Verification
 
-- [ ] Validate filtering/sorting/pagination behavior in Firebase mode for representative collection sizes
-- [ ] Validate soft-delete and publish state transitions are reflected consistently in list/detail views
-- [ ] Validate offline persistence works correctly
+- [x] Validate filtering/sorting/pagination behavior in Firebase mode for representative collection sizes
+- [x] Validate soft-delete and publish state transitions are reflected consistently in list/detail views
+- [x] Validate offline persistence works correctly
 
 #### Test Execution
 
-- [ ] Run existing REST test suite — no regressions
-- [ ] Run new Firebase emulator integration tests — all pass
-- [ ] Run provider contract tests — both providers implement interface correctly
+- [x] Run existing REST test suite — no regressions
+- [x] Run new Firebase emulator integration tests — all pass
+- [x] Run provider contract tests — both providers implement interface correctly
 
 #### Documentation Verification
 
-- [ ] Confirm README/backend mode docs accurately describe supported vs unsupported features for Firebase MVP
-- [ ] Confirm Firebase setup guide covers env vars, emulator setup, index deployment, security rules
+- [x] Confirm README/backend mode docs accurately describe supported vs unsupported features for Firebase MVP
+- [x] Confirm Firebase setup guide covers env vars, emulator setup, index deployment, security rules
 
 ---
 
