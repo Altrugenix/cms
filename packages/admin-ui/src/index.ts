@@ -1,5 +1,7 @@
 export { router } from "@/router";
 
+export { getBackendMode, isFirebaseMode, isRestMode } from "@/lib/backend-mode";
+
 export type {
   AdminProvider,
   AdminUser,

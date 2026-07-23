@@ -129,6 +129,26 @@
         "files": ["packages/admin-ui/src/lib/providers/rest.ts"],
         "maxCrap": 50,
         "reason": "REST provider with auth token refresh and error handling"
+      },
+      {
+        "files": ["packages/admin-ui/src/components/sidebar.tsx"],
+        "maxCrap": 200,
+        "maxCyclomatic": 15,
+        "maxCognitive": 15,
+        "reason": "sidebar with mode-aware nav filtering and dynamic content sections"
+      },
+      {
+        "files": ["packages/admin-ui/src/components/command-palette.tsx"],
+        "maxUnitSize": 300,
+        "maxCrap": 200,
+        "maxCyclomatic": 15,
+        "maxCognitive": 25,
+        "reason": "command palette with fuzzy search, keyboard navigation, and mode-aware filtering"
+      },
+      {
+        "files": ["packages/admin-ui/src/routes/settings/index.tsx"],
+        "maxCrap": 40,
+        "reason": "settings layout with mode-aware sub-navigation and redirect logic"
       }
     ]
   },
