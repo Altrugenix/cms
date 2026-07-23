@@ -81,26 +81,7 @@ export async function saveSchema(
   });
 }
 
-export async function bulkDelete(path: string, ids: string[]): Promise<void> {
-  await apiFetch(`/api/${path}/bulk-delete`, {
-    body: JSON.stringify({ ids }),
-    method: "POST",
-  });
-}
 
-export async function bulkPublish(path: string, ids: string[]): Promise<void> {
-  await apiFetch(`/api/${path}/bulk-publish`, {
-    body: JSON.stringify({ ids }),
-    method: "POST",
-  });
-}
-
-export async function bulkUnpublish(path: string, ids: string[]): Promise<void> {
-  await apiFetch(`/api/${path}/bulk-unpublish`, {
-    body: JSON.stringify({ ids }),
-    method: "POST",
-  });
-}
 
 export async function deleteSchema(type: string, slug: string): Promise<void> {
   await apiFetch(`/api/schemas/${type}/${slug}`, { method: "DELETE" });
@@ -388,9 +369,7 @@ export async function fetchFolders(
   return apiFetch(path);
 }
 
-export async function fetchFolder(id: number): Promise<MediaFolder> {
-  return apiFetch(`/api/media/folders/${id}`);
-}
+
 
 export async function createFolder(name: string, parentId?: number | null): Promise<MediaFolder> {
   const body: Record<string, unknown> = { name };
@@ -413,9 +392,7 @@ export async function updateFolder(
   });
 }
 
-export async function deleteFolder(id: number): Promise<void> {
-  await apiFetch(`/api/media/folders/${id}`, { method: "DELETE" });
-}
+
 
 export async function deleteMedia(id: string): Promise<void> {
   await apiFetch(`/api/media/${id}`, { method: "DELETE" });

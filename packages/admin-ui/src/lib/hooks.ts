@@ -52,14 +52,7 @@ export function useCollection(slug: string) {
   };
 }
 
-export function useGlobal(slug: string) {
-  const { data: globals = [], error, isLoading } = useGlobals();
-  return {
-    error,
-    global: globals.find((g: GlobalMeta) => g.slug === slug),
-    isLoading,
-  };
-}
+
 
 export function useGlobalSchema(slug: string) {
   return useQuery({
@@ -486,15 +479,7 @@ export function useSaveSchema() {
   });
 }
 
-export {
-  useCreateApiToken as useCreateApiTokenMutation,
-  useDeleteApiToken as useDeleteApiTokenMutation,
-  useCreateWebhook as useCreateWebhookMutation,
-  useUpdateWebhook as useUpdateWebhookMutation,
-  useDeleteWebhook as useDeleteWebhookMutation,
-  useDeleteUser as useDeleteUserMutation,
-  useDeleteRole as useDeleteRoleMutation,
-};
+
 
 export function useUnsavedChanges(isDirty: boolean) {
   const blocker = useBlocker({
