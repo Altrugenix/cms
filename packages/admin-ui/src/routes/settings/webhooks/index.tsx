@@ -8,10 +8,12 @@ import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type WebhookMeta } from "@/lib/api";
+import { firebaseModeGuard } from "@/lib/firebase-mode-guard";
 import { useWebhooksList, useDeleteWebhook, useUpdateWebhook } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  beforeLoad: firebaseModeGuard({ to: "/settings/users" }),
   component: WebhooksList,
   getParentRoute: () => settingsRoute,
   path: "webhooks",

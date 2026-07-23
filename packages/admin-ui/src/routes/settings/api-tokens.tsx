@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type ApiTokenMeta } from "@/lib/api";
+import { firebaseModeGuard } from "@/lib/firebase-mode-guard";
 import { useApiTokensList, useCreateApiToken, useDeleteApiToken } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  beforeLoad: firebaseModeGuard({ to: "/settings/users" }),
   component: ApiTokensPage,
   getParentRoute: () => settingsRoute,
   path: "api-tokens",

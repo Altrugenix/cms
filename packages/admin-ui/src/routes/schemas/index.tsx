@@ -7,9 +7,11 @@ import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchSchemas, deleteSchema, type SchemaInfo } from "@/lib/api";
+import { firebaseModeGuard } from "@/lib/firebase-mode-guard";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  beforeLoad: firebaseModeGuard(),
   component: SchemasList,
   getParentRoute: () => rootRoute,
   path: "/schemas",

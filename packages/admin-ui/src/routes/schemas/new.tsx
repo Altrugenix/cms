@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createSchema } from "@/lib/api";
+import { firebaseModeGuard } from "@/lib/firebase-mode-guard";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
+  beforeLoad: firebaseModeGuard(),
   component: NewSchema,
   getParentRoute: () => rootRoute,
   path: "/schemas/new",
