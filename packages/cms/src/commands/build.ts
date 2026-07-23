@@ -67,7 +67,7 @@ function generatePackageJson(outDir: string): void {
     dependencies: {
       "@fastify/cors": "^11.0.1",
       "@fastify/rate-limit": "^10.2.2",
-      "@fastify/static": "^8.1.1",
+      "@fastify/static": "^10.1.0",
       "@fastify/swagger": "^9.4.2",
       "@fastify/swagger-ui": "^5.2.2",
       "@libsql/client": "^0.17.4",
