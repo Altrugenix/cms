@@ -40,6 +40,7 @@ describe("create-app scaffold", () => {
     expect(pkg.scripts.build).toBe("cms build");
     expect(pkg.scripts.start).toBe("cms start");
     expect(pkg.dependencies["@arche-cms/cms"]).toBe("^0.1.0");
+    expect(pkg.dependencies["@arche-cms/schema"]).toBe("^0.1.0");
   });
 
   it("creates .env with sqlite adapter", async () => {
