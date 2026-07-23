@@ -2069,12 +2069,12 @@ Build an MVP variant of the CMS that uses Firebase directly (Auth + Firestore + 
 
 ### Phase 1: Package Scaffolding
 
-- [ ] **Create `packages/cms-firebase/` directory** — `src/`, `test/`, `README.md`
-- [ ] **Create `packages/cms-firebase/package.json`** — name: `@arche-cms/cms-firebase`, version: `0.1.0`, type: `module`, exports: `{ ".": "./src/index.ts" }`, peerDependencies: `firebase`
-- [ ] **Create `packages/cms-firebase/tsconfig.json`** — extend `../../tsconfig.base.json`
-- [ ] **Add `packages/cms-firebase/` to `pnpm-workspace.yaml`** — covered by `packages/*` glob
-- [ ] **Install Firebase SDK** — `firebase` package as peer dependency in `packages/cms-firebase/`
-- [ ] **Create `packages/cms-firebase/src/index.ts`** — barrel exports
+- [x] **Create `packages/cms-firebase/` directory** — `src/`, `test/`, `README.md`
+- [x] **Create `packages/cms-firebase/package.json`** — name: `@arche-cms/cms-firebase`, version: `0.1.0`, type: `module`, exports: `{ ".": "./src/index.ts" }`, peerDependencies: `firebase`
+- [x] **Create `packages/cms-firebase/tsconfig.json`** — extend `../../tsconfig.base.json`
+- [x] **Add `packages/cms-firebase/` to `pnpm-workspace.yaml`** — covered by `packages/*` glob
+- [x] **Install Firebase SDK** — `firebase` package as peer dependency in `packages/cms-firebase/`
+- [x] **Create `packages/cms-firebase/src/index.ts`** — barrel exports
 
 ### Phase 2: Admin Backend Provider Boundary
 
