@@ -16,7 +16,7 @@ import { typegen, printTypegenHelp } from "./commands/typegen.js";
 export interface CmsUserConfig {
   database: {
     adapter: "sqlite" | "postgres";
-    url: string;
+    url?: string;
   };
   localization?:
     | {

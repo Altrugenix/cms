@@ -8,7 +8,7 @@ import type { FieldInputComponentProps } from "./field-helpers";
 
 import { FieldLabel, FieldError } from "./field-helpers";
 
-export type NestedFieldsRenderer = React.ComponentType<{
+type NestedFieldsRenderer = React.ComponentType<{
   fields: FieldDefinition[];
   values: Record<string, unknown>;
   onChange: (v: Record<string, unknown>) => void;

@@ -1,6 +1,6 @@
 # TODO — Arche CMS
 
-> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 complete — 90 playground E2E tests covering all API endpoints. M35 defined — Firebase-backed CMS MVP variant.
+> Project status: M30 complete — v0.3.0 released. M31 complete — 15 coverage gap tests. M32 complete — Version history UI, bulk publish/unpublish, media folder rename. M33 complete — SDK code generation integration with typed imports and pipeline. 1,400+ tests passing across all 17 packages. CMS 95.71% line coverage. M34 complete — 90 playground E2E tests covering all API endpoints. M36 defined — Firebase-backed CMS MVP variant. M37 defined — Extract admin UI into `@arche-cms/admin-ui` package.
 
 ---
 
@@ -137,7 +137,7 @@
 
 ## Milestone 5: Admin UI (Weeks 12–16)
 
-### Admin App Scaffold (`packages/cms/admin`)
+### Admin App Scaffold (`packages/admin-ui`)
 
 - [x] Scaffold Vite + React + TanStack Router + Tailwind v4 + shadcn/ui
 - [x] Set up dark mode with ThemeProvider
@@ -2324,3 +2324,160 @@ Security Rules:
 - Scheduled publishing workers
 - GraphQL endpoint
 - Full revision history (subcollections)
+
+---
+
+## M37: Extract Admin UI into `@arche-cms/admin-ui` Package
+
+### Objective
+
+Move the admin panel from `packages/cms/src/admin/` into a standalone `packages/admin-ui/` package (`@arche-cms/admin-ui`). This makes the admin UI reusable across projects (e.g., headless frontends, alternative CMS backends), enables independent versioning, and cleans up the `@arche-cms/cms` package by removing all React/UI dependencies from it.
+
+### Why
+
+- The admin UI is already isolated: own `tsconfig.json`, `vite.config.ts`, excluded from server compilation (`"exclude": ["src/admin"]`), excluded from test coverage (`"src/admin/**"`)
+- Zero shared runtime dependencies: React/UI packages are admin-only, server packages are server-only
+- The only coupling is `src/server/plugins/static.ts` which discovers the admin build via filesystem traversal
+- All admin imports use `@/` alias — no workspace package imports
+- Separating enables: independent releases, alternative admin shells, plugin-provided admin panels
+
+### Current State
+
+```
+packages/cms/
+├── src/
+│   ├── admin/          ← ~90 files, Vite SPA (React 19 + TanStack Router + Tailwind v4 + shadcn/ui)
+│   ├── commands/       ← CLI commands (dev.ts, build.ts, start.ts reference admin via relative paths)
+│   └── server/
+│       └── plugins/
+│           └── static.ts   ← discovers admin build via filesystem traversal
+├── dist/admin/         ← Vite production build output
+└── package.json        ← mixes React/UI deps with server deps
+```
+
+### Target State
+
+```
+packages/admin-ui/      ← NEW — standalone package
+├── src/                ← moved from packages/cms/src/admin/
+├── dist/               ← Vite production build
+├── package.json        ← @arche-cms/admin-ui, React/UI deps only
+├── vite.config.ts
+└── tsconfig.json
+
+packages/cms/           ← CLEANED — server only
+├── src/
+│   ├── commands/       ← updated paths to reference @arche-cms/admin-ui
+│   └── server/
+│       └── plugins/
+│           └── static.ts   ← updated to find admin from node_modules
+└── package.json        ← server deps only, depends on @arche-cms/admin-ui
+```
+
+---
+
+### Phase 1: Package Scaffolding
+
+- [ ] **Create `packages/admin-ui/` directory structure** — `src/`, `dist/`, `components/`, `lib/`, `routes/`, `ui/`
+- [ ] **Create `packages/admin-ui/package.json`** — name: `@arche-cms/admin-ui`, version: `0.1.0`, type: `module`, exports: `{ ".": "./src/index.ts", "./build": "./dist/" }`, files: `["dist"]`, publishConfig: `{ access: "public" }`
+- [ ] **Move admin dependencies from `packages/cms/package.json` to `packages/admin-ui/package.json`**:
+  - Dependencies: `@tanstack/react-query`, `@tanstack/react-router`, `clsx`, `dompurify`, `lucide-react`, `react`, `react-dom`, `tailwind-merge`
+  - DevDependencies: `@tailwindcss/vite`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `tailwindcss`, `vite`
+- [ ] **Remove admin dependencies from `packages/cms/package.json`** — keep only server deps
+- [ ] **Add `@arche-cms/admin-ui` as workspace dependency in `packages/cms/package.json`** — `"@arche-cms/admin-ui": "workspace:*"` (dependency, not devDependency — needed at runtime for static serving)
+- [ ] **Create `packages/admin-ui/tsconfig.json`** — extend `../../tsconfig.base.json`, target ES2022, DOM lib, JSX react-jsx, ESNext modules, bundler resolution, `@/*` path alias, noEmit
+- [ ] **Create `packages/admin-ui/vite.config.ts`** — build output to `dist/`, `@` alias, dev server proxy, same config as current but with corrected relative paths
+- [ ] **Create `packages/admin-ui/index.html`** — move from current `packages/cms/src/admin/index.html`, update script src
+- [ ] **Create `packages/admin-ui/src/index.ts`** — export the router (same as current `packages/cms/src/admin/index.ts`)
+
+### Phase 2: Move Source Files
+
+- [ ] **Move `packages/cms/src/admin/components/` → `packages/admin-ui/src/components/`** — all UI components, field-types, ui primitives (16+6+13 = 35 files)
+- [ ] **Move `packages/cms/src/admin/lib/` → `packages/admin-ui/src/lib/`** — api.ts, auth.tsx, hooks.ts, utils.ts
+- [ ] **Move `packages/cms/src/admin/routes/` → `packages/admin-ui/src/routes/`** — all 30 route files + sub-components
+- [ ] **Move `packages/cms/src/admin/main.tsx` → `packages/admin-ui/src/main.tsx`** — entry point
+- [ ] **Move `packages/cms/src/admin/router.tsx` → `packages/admin-ui/src/router.tsx`** — route tree
+- [ ] **Move `packages/cms/src/admin/index.css` → `packages/admin-ui/src/index.css`** — Tailwind + theme CSS
+- [ ] **Move `packages/cms/src/admin/vite-env.d.ts` → `packages/admin-ui/src/vite-env.d.ts`**
+- [ ] **Verify all `@/` imports resolve correctly** — no changes needed since the `@/` alias is redefined in the new `vite.config.ts` and `tsconfig.json`
+- [ ] **Delete `packages/cms/src/admin/` directory** — after successful move
+
+### Phase 3: Build Pipeline Update
+
+- [ ] **Update `packages/admin-ui/package.json` scripts**:
+  - `"build": "vite build"` (was `pnpm build:admin` in cms)
+  - `"dev": "vite"` (for standalone dev)
+  - `"lint": "tsc --noEmit"`
+  - `"typecheck": "tsc --noEmit"`
+- [ ] **Update `packages/cms/package.json` scripts**:
+  - Remove `"build:admin"` script (admin builds itself now)
+  - Change `"build"` from `"pnpm build:admin && tsc"` to `"tsc"` (admin is a separate package, turbo handles `^build` dependency)
+- [ ] **Update `turbo.json`** — ensure `build` task's `dependsOn: ["^build"]` correctly builds `@arche-cms/admin-ui` before `@arche-cms/cms` (already handled by `^build`)
+- [ ] **Add `packages/admin-ui/` to `pnpm-workspace.yaml`** — already covered by `packages/*` glob
+
+### Phase 4: Server Integration — Static Serving
+
+- [ ] **Update `static.ts` `findAdminDir()`** — find admin build from `node_modules/@arche-cms/admin-ui/dist/` instead of filesystem traversal:
+  - Resolve via `import.meta.url` → `../../node_modules/@arche-cms/admin-ui/dist/`
+  - Fallback to `CMS_ADMIN_DIR` env var
+  - Fallback to monorepo path `packages/admin-ui/dist/`
+- [ ] **Update `static.ts` log messages** — change `"pnpm --filter @arche-cms/admin build"` to `"pnpm --filter @arche-cms/admin-ui build"`
+- [ ] **Update `static.ts` `AdminStaticOptions`** — keep `adminDir` override for flexibility
+
+### Phase 5: CLI Command Updates
+
+- [ ] **Update `dev.ts` `startViteDevServer()`** — resolve admin source from `@arche-cms/admin-ui` package instead of relative `../../src/admin`:
+  - Find `node_modules/@arche-cms/admin-ui/` or monorepo `packages/admin-ui/`
+  - Use `packages/admin-ui/vite.config.ts` as configFile
+- [ ] **Update `dev.ts` `ensureAdminBuild()`** — check for `node_modules/@arche-cms/admin-ui/dist/index.html` or monorepo `packages/admin-ui/dist/index.html`
+  - If missing, run `pnpm --filter @arche-cms/admin-ui build` instead of `pnpm build:admin`
+- [ ] **Update `build.ts`** — remove admin build step from `cms build` (admin is built independently by turbo's `^build`)
+  - Update production bundle assembly: copy admin build from `node_modules/@arche-cms/admin-ui/dist/` or monorepo `packages/admin-ui/dist/`
+  - Keep `admin/` output directory structure for the production bundle (unchanged from consumer's perspective)
+
+### Phase 6: Package References & Workspace Config
+
+- [ ] **Update `pnpm-workspace.yaml`** — verify `packages/*` glob already covers `packages/admin-ui/`
+- [ ] **Update root `package.json` scripts** — add `"build:admin": "pnpm --filter @arche-cms/admin-ui build"` if referenced
+- [ ] **Update `packages/cms/tsconfig.json`** — add `{ "path": "../admin-ui" }` to `references` (for typecheck ordering)
+- [ ] **Verify `packages/admin-ui/tsconfig.json`** — no workspace references needed (admin imports zero `@arche-cms/*` packages)
+- [ ] **Verify `packages/cms/vitest.config.ts`** — no changes needed (already excludes `src/admin/**`)
+
+### Phase 7: Documentation & AGENTS.md
+
+- [ ] **Update `AGENTS.md`** — add `packages/admin-ui/` to monorepo structure, remove admin from `packages/cms/` description
+- [ ] **Update `docs/architecture.md`** — add admin-ui package to layout diagram
+- [ ] **Update `docs/TODO.md`** M5 references — change `packages/cms/admin` to `packages/admin-ui`
+- [ ] **Update `packages/admin-ui/README.md`** — document the standalone admin package
+- [ ] **Update root `README.md`** — mention admin-ui in package list
+
+### Phase 8: Verification
+
+- [ ] **Run `pnpm install`** — verify workspace resolution with new package
+- [ ] **Run `pnpm build`** — turbo builds `@arche-cms/admin-ui` first (via `^build`), then `@arche-cms/cms`
+- [ ] **Run `pnpm lint`** — no new errors across all packages
+- [ ] **Run `pnpm typecheck`** — no type errors across all packages
+- [ ] **Run `pnpm test`** — no regressions (existing tests only touch server code)
+- [ ] **Verify `cms dev`** — admin panel loads at http://localhost:5173 (with `--vite`) or http://localhost:3500 (without)
+- [ ] **Verify `cms build --out-dir ./dist`** — production bundle includes admin panel in `admin/` directory
+- [ ] **Verify admin panel functions end-to-end** — login, dashboard, collections CRUD, globals, media, settings
+
+---
+
+### Decisions
+
+- **Package name:** `@arche-cms/admin-ui` (matches the previously deleted placeholder package name from M26, now properly implemented)
+- **Build output:** `dist/` at package root (not nested `admin/dist/`)
+- **Static serving:** `static.ts` resolves admin build from `node_modules/@arche-cms/admin-ui/dist/` with monorepo fallback
+- **No workspace imports:** Admin UI continues to import zero `@arche-cms/*` packages — it communicates purely via REST API client (`lib/api.ts`)
+- **Independent versioning:** Admin UI version tracks separately from CMS server
+- **Turbo dependency:** `^build` in `turbo.json` ensures admin-ui builds before cms
+
+### Risks & Mitigations
+
+- **Risk:** File path resolution breaks in different environments (monorepo vs published package)
+  - **Mitigation:** Three-tier fallback: `node_modules` → monorepo path → `CMS_ADMIN_DIR` env var
+- **Risk:** Vite dev server can't find admin source after move
+  - **Mitigation:** `dev.ts` resolves from `@arche-cms/admin-ui` package, with monorepo-aware path resolution
+- **Risk:** Published package missing admin build
+  - **Mitigation:** `"files": ["dist"]` in package.json ensures build output is included; CI verifies build before publish

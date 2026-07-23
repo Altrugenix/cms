@@ -11,14 +11,14 @@ const proxyTarget = process.env.VITE_PROXY_TARGET ?? "http://localhost:3500";
 export default defineConfig(({ mode: _mode }) => ({
   build: {
     emptyOutDir: true,
-    outDir: path.resolve(__dirname, "../../dist/admin"),
+    outDir: path.resolve(__dirname, "dist"),
     sourcemap: true,
   },
   define: { "import.meta.env.VITE_API_URL": '""' },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "."),
+      "@": path.resolve(__dirname, "src"),
     },
   },
   root: __dirname,

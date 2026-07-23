@@ -39,7 +39,8 @@ describe("create-app scaffold", () => {
     expect(pkg.scripts.dev).toBe("cms dev");
     expect(pkg.scripts.build).toBe("cms build");
     expect(pkg.scripts.start).toBe("cms start");
-    expect(pkg.dependencies["@arche-cms/cms"]).toBe("^0.1.0");
+    expect(pkg.dependencies["@arche-cms/cms"]).toBe("^0.1.10");
+    expect(pkg.dependencies["@arche-cms/schema"]).toBe("^0.1.10");
   });
 
   it("creates .env with sqlite adapter", async () => {
@@ -114,5 +115,29 @@ describe("create-app scaffold", () => {
     expect(di).toContain("*.db");
     expect(di).toContain(".env");
     expect(di).toContain(".git");
+  });
+
+  it("creates docker-compose.yml for sqlite", async () => {
+    const projectDir = resolve(tmpDir, "compose-sqlite");
+    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    const compose = readFileSync(resolve(projectDir, "docker-compose.yml"), "utf-8");
+    expect(compose).toContain("services:");
+    expect(compose).toContain("app:");
+    expect(compose).toContain("build: .");
+    expect(compose).toContain('ports:');
+    expect(compose).toContain('"3000:3000"');
+    expect(compose).toContain("volumes:");
+    expect(compose).toContain("uploads:");
+    expect(compose).not.toContain("db:");
+  });
+
+  it("creates docker-compose.yml for postgres with db service", async () => {
+    const projectDir = resolve(tmpDir, "compose-pg");
+    await scaffold(projectDir, { dbAdapter: "postgres", defaultLocale: "en" });
+    const compose = readFileSync(resolve(projectDir, "docker-compose.yml"), "utf-8");
+    expect(compose).toContain("db:");
+    expect(compose).toContain("image: postgres:16-alpine");
+    expect(compose).toContain("POSTGRES_USER: cms");
+    expect(compose).toContain("pgdata:");
   });
 });

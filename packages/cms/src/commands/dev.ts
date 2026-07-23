@@ -39,15 +39,24 @@ async function startViteDevServer(
   logger: ReturnType<typeof createLogger>,
 ): Promise<ViteDevServer> {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const adminDir = resolve(currentDir, "../../src/admin");
+  const cmsRoot = resolve(currentDir, "../..");
+
+  // Resolve admin-ui package: monorepo symlink or node_modules
+  const adminDir = resolve(cmsRoot, "../admin-ui");
+  const adminDirFallback = resolve(cmsRoot, "node_modules/@arche-cms/admin-ui");
+  const adminRoot = existsSync(resolve(adminDir, "src/main.tsx"))
+    ? adminDir
+    : existsSync(resolve(adminDirFallback, "src/main.tsx"))
+      ? adminDirFallback
+      : adminDir;
 
   const { createServer } = await import("vite");
 
   logger.info(`Starting Vite dev server for admin panel...`);
   const server = await createServer({
-    configFile: resolve(adminDir, "vite.config.ts"),
+    configFile: resolve(adminRoot, "vite.config.ts"),
     define: { "import.meta.env.VITE_API_URL": '""' },
-    root: adminDir,
+    root: adminRoot,
     server: {
       port: 5173,
       proxy: {
@@ -84,26 +93,42 @@ Options:
 
 function ensureAdminBuild(logger: ReturnType<typeof createLogger>): void {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const bundledAdmin = resolve(currentDir, "../admin");
+  const cmsRoot = resolve(currentDir, "../..");
 
-  if (existsSync(bundledAdmin) && existsSync(resolve(bundledAdmin, "index.html"))) return;
+  // Check for existing admin build in admin-ui package
+  const monorepoDist = resolve(cmsRoot, "../admin-ui/dist");
+  const nodeModulesDist = resolve(cmsRoot, "node_modules/@arche-cms/admin-ui/dist");
 
-  const adminSource = resolve(currentDir, "../../src/admin");
+  const bundledAdmin = existsSync(resolve(monorepoDist, "index.html"))
+    ? monorepoDist
+    : existsSync(resolve(nodeModulesDist, "index.html"))
+      ? nodeModulesDist
+      : null;
+
+  if (bundledAdmin) return;
+
   /* v8 ignore start — ensureAdminBuild depends on filesystem state and execSync, hard to test */
-  if (existsSync(adminSource)) {
+  // Try to build from monorepo admin-ui source
+  const adminSource = resolve(cmsRoot, "../admin-ui");
+  const adminSourceFallback = resolve(cmsRoot, "node_modules/@arche-cms/admin-ui");
+  const hasSource = existsSync(resolve(adminSource, "package.json"));
+  const hasSourceFallback = existsSync(resolve(adminSourceFallback, "package.json"));
+
+  if (hasSource || hasSourceFallback) {
+    const sourceDir = hasSource ? adminSource : adminSourceFallback;
     logger.info("Admin panel build not found — building from source...");
     try {
-      execSync("pnpm build:admin", {
-        cwd: resolve(currentDir, "../.."),
+      execSync("pnpm build", {
+        cwd: sourceDir,
         env: { ...process.env, NODE_ENV: "production" },
         stdio: "inherit",
       });
-      logger.info("Admin panel built at " + bundledAdmin);
+      logger.info("Admin panel built at " + resolve(sourceDir, "dist"));
     } catch {
       logger.warn("Admin panel build failed — admin UI will not be available");
     }
   } else {
-    logger.warn("Admin panel source not found at " + adminSource);
+    logger.warn("Admin panel source not found — admin UI will not be available");
   }
   /* v8 ignore stop */
 }

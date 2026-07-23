@@ -35,7 +35,8 @@ export function scaffold(
     JSON.stringify(
       {
         dependencies: {
-          "@arche-cms/cms": "^0.1.0",
+          "@arche-cms/cms": "^0.1.10",
+          "@arche-cms/schema": "^0.1.10",
         },
         name: projectDir.split("/").pop() ?? /* v8 ignore next -- unreachable */ "my-cms-app",
         private: true,
@@ -169,6 +170,48 @@ export function scaffold(
   writeFileSync(
     resolve(projectDir, ".dockerignore"),
     ["node_modules", "dist", "*.db", "uploads", ".env", ".git", ""].join("\n"),
+  );
+
+  // docker-compose.yml
+  const composeServices: string[] = [
+    "  app:",
+    "    build: .",
+    "    ports:",
+    '      - "3000:3000"',
+    "    env_file:",
+    '      - .env',
+    "    volumes:",
+    '      - uploads:/app/uploads',
+  ];
+  const composeVolumes: string[] = ["  uploads:"];
+
+  if (opts.dbAdapter === "postgres") {
+    composeServices.push(
+      "",
+      "  db:",
+      "    image: postgres:16-alpine",
+      "    environment:",
+      "      POSTGRES_USER: cms",
+      "      POSTGRES_PASSWORD: cms",
+      "      POSTGRES_DB: cms",
+      "    ports:",
+      '      - "5432:5432"',
+      "    volumes:",
+      "      - pgdata:/var/lib/postgresql/data",
+    );
+    composeVolumes.push("  pgdata:");
+  }
+
+  writeFileSync(
+    resolve(projectDir, "docker-compose.yml"),
+    [
+      "services:",
+      ...composeServices,
+      "",
+      "volumes:",
+      ...composeVolumes,
+      "",
+    ].join("\n"),
   );
 
   console.log(`\nScaffolded CMS project at ${projectDir}`);

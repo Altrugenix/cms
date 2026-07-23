@@ -63,11 +63,12 @@ arche-cms/
 │   ├── docs/           # Documentation site
 │   └── playground/     # Dev playground
 ├── packages/
-│   ├── cms/            # CMS package (CLI, server, admin panel, API)
-│   │   ├── src/        # CLI + server logic + admin panel
-│   │   │   └── admin/  # Admin panel UI (React 19)
+│   ├── admin-ui/       # Admin panel UI (React 19, Vite, TanStack Router, shadcn/ui)
+│   │   ├── src/        # Components, routes, hooks, API client
+│   │   └── dist/       # Bundled admin panel build
+│   ├── cms/            # CMS package (CLI, server, API)
+│   │   ├── src/        # CLI + server logic
 │   │   ├── dist/       # Compiled output
-│   │   │   └── admin/  # Bundled admin panel build
 │   │   └── bin/        # CLI binary
 │   ├── core/           # Core framework, DI, event bus
 │   ├── schema/         # Schema definition API (defineCollection, field helpers)
