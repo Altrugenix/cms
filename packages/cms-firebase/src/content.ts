@@ -5,7 +5,7 @@ import {
   getDocs,
   addDoc,
   updateDoc,
-  deleteDoc,
+  writeBatch,
   query,
   where,
   orderBy,
@@ -24,6 +24,7 @@ export interface ListParams {
   sort?: string;
   filter?: Record<string, unknown>;
   select?: string[];
+  includeDeleted?: boolean;
 }
 
 export interface PaginatedResult<T> {
@@ -53,8 +54,12 @@ export function createFirestoreContentProvider(): FirestoreContentProvider {
   return {
     async bulkDelete(slug: string, ids: string[]): Promise<void> {
       const { db } = getFirebaseServices();
-      const deletePromises = ids.map((id) => deleteDoc(doc(db, slug, id)));
-      await Promise.all(deletePromises);
+      const batch = writeBatch(db);
+      const now = new Date().toISOString();
+      for (const id of ids) {
+        batch.update(doc(db, slug, id), { _deletedAt: now, updatedAt: now });
+      }
+      await batch.commit();
     },
 
     async createEntry<T>(slug: string, data: Partial<T>): Promise<T> {
@@ -70,7 +75,10 @@ export function createFirestoreContentProvider(): FirestoreContentProvider {
 
     async deleteEntry(slug: string, id: string): Promise<void> {
       const { db } = getFirebaseServices();
-      await deleteDoc(doc(db, slug, id));
+      await updateDoc(doc(db, slug, id), {
+        _deletedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
     },
 
     async getEntry<T>(slug: string, id: string): Promise<T | null> {
@@ -87,9 +95,13 @@ export function createFirestoreContentProvider(): FirestoreContentProvider {
 
     async listEntries<T>(slug: string, params: ListParams = {}): Promise<PaginatedResult<T>> {
       const { db } = getFirebaseServices();
-      const { filter, limit: queryLimit = 25, offset = 0, sort } = params;
+      const { filter, includeDeleted = false, limit: queryLimit = 25, offset = 0, sort } = params;
 
       const constraints: QueryConstraint[] = [];
+
+      if (!includeDeleted) {
+        constraints.push(where("_deletedAt", "==", null));
+      }
 
       if (filter) {
         for (const [field, value] of Object.entries(filter)) {

@@ -43,14 +43,7 @@ export function getFirebaseServices(): FirebaseServices {
 }
 
 export function getFirebaseConfig(): FirebaseConfig | null {
-  if (typeof globalThis.process === "undefined") {
-    return null;
-  }
-
-  const env = globalThis.process.env;
-  if (!env) {
-    return null;
-  }
+  const env = import.meta.env as unknown as Record<string, string | undefined>;
 
   const apiKey = env.VITE_FIREBASE_API_KEY;
   const authDomain = env.VITE_FIREBASE_AUTH_DOMAIN;

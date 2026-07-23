@@ -7,9 +7,11 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   limit as firestoreLimit,
   type DocumentData,
+  type QueryConstraint,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
@@ -22,6 +24,7 @@ const MEDIA_FOLDERS_COLLECTION = "__cms_media_folders";
 export interface MediaFile {
   id: string;
   name: string;
+  alt: string;
   url: string;
   mimeType: string;
   size: number;
@@ -129,21 +132,12 @@ export function createFirebaseStorageProvider(): FirebaseStorageProvider {
       const { db } = getFirebaseServices();
       const { folderId, limit = 25 } = params;
 
-      let q;
+      const constraints: QueryConstraint[] = [orderBy("createdAt", "desc"), firestoreLimit(limit)];
       if (folderId) {
-        q = query(
-          collection(db, MEDIA_COLLECTION),
-          orderBy("createdAt", "desc"),
-          firestoreLimit(limit),
-        );
-      } else {
-        q = query(
-          collection(db, MEDIA_COLLECTION),
-          orderBy("createdAt", "desc"),
-          firestoreLimit(limit),
-        );
+        constraints.unshift(where("folderId", "==", folderId));
       }
 
+      const q = query(collection(db, MEDIA_COLLECTION), ...constraints);
       const snapshot = await getDocs(q);
       return { data: snapshot.docs.map(mapMediaDoc), total: snapshot.size };
     },
@@ -162,6 +156,7 @@ export function createFirebaseStorageProvider(): FirebaseStorageProvider {
       const url = await getDownloadURL(storageRef);
 
       const docRef = await addDoc(collection(db, MEDIA_COLLECTION), {
+        alt: "",
         createdAt: new Date().toISOString(),
         folderId: folderId ?? null,
         mimeType: file.type,
@@ -172,6 +167,7 @@ export function createFirebaseStorageProvider(): FirebaseStorageProvider {
       });
 
       return {
+        alt: "",
         createdAt: new Date().toISOString(),
         folderId: folderId ?? null,
         id: docRef.id,
