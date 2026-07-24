@@ -96,7 +96,7 @@ describe("main - normal flow with project name arg", () => {
     process.argv = ["node", "test", projectName];
     process.cwd = () => tmpDir;
 
-    mockReadline(["postgres", "fr"]);
+    mockReadline(["rest", "postgres", "fr"]);
     await import("../src/index.js").catch(() => {});
 
     expect(mockLog).toHaveBeenCalledWith(
@@ -114,7 +114,7 @@ describe("main - normal flow without project name arg", () => {
     process.argv = ["node", "test"];
     process.cwd = () => tmpDir;
 
-    mockReadline([projectName, "sqlite", "en"]);
+    mockReadline([projectName, "rest", "sqlite", "en"]);
     await import("../src/index.js").catch(() => {});
     expect(mockLog).toHaveBeenCalledWith(
       expect.stringContaining("Creating CMS project: prompted-cms"),
@@ -148,7 +148,7 @@ describe("main - error handling", () => {
     process.argv = ["node", "test", "bad-adapter-project"];
     process.cwd = () => tmpDir;
     mockProcessExit();
-    mockReadline(["mysql", "en"]);
+    mockReadline(["rest", "mysql", "en"]);
 
     await import("../src/index.js").catch(() => {});
 

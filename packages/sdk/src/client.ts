@@ -9,7 +9,18 @@ import type {
 
 import { ApiError } from "./errors.js";
 
+/** Low-level HTTP transport interface for making requests to the Arche API. */
 export interface HttpClient {
+  /**
+   * Send an HTTP request and return the parsed JSON response.
+   *
+   * @param method - HTTP method
+   * @param path - API path (e.g. `/api/posts`)
+   * @param body - Optional JSON body for POST/PUT/PATCH requests
+   * @param options - Optional request options including query parameters
+   * @returns Parsed JSON response
+   * @throws {ApiError} When the server returns a non-2xx status
+   */
   request<T>(
     method: HttpMethod,
     path: string,
@@ -18,9 +29,13 @@ export interface HttpClient {
   ): Promise<T>;
 }
 
+/** Registry of request, response, and error interceptors. */
 export interface Interceptors {
+  /** Interceptors that modify outgoing requests. */
   request: RequestInterceptor[];
+  /** Interceptors that modify incoming responses. */
   response: ResponseInterceptor[];
+  /** Interceptors that modify errors before they are thrown. */
   error: ErrorInterceptor[];
 }
 
@@ -125,6 +140,15 @@ async function applyErrorInterceptors(
   return current as ApiError;
 }
 
+/**
+ * Create a low-level HTTP client for the Arche API.
+ *
+ * Prefer using {@link createClient} for most use cases. This factory is exposed
+ * for advanced scenarios such as extending the client with custom sub-clients.
+ *
+ * @param config - Client configuration
+ * @returns HTTP client with interceptor support and token management
+ */
 export function createHttpClient(config: ArcheConfig): HttpClient & {
   interceptors: Interceptors;
   setToken(token: string): void;

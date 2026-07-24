@@ -21,6 +21,8 @@
     "@arche-cms/schema",
     "@arche-cms/validation",
     "@arche-cms/cms",
+    "@arche-cms/cms-firebase",
+    "@arche-cms/admin-ui",
     "clsx",
     "lucide-react",
     "react",
@@ -55,10 +57,10 @@
       {
         "files": ["packages/cms/src/index.ts"],
         "maxUnitSize": 250,
-        "maxCyclomatic": 55,
-        "maxCognitive": 90,
+        "maxCyclomatic": 70,
+        "maxCognitive": 110,
         "maxCrap": 650,
-        "reason": "command-line arg parser with multiple subcommands including generate:types/sdk/validation"
+        "reason": "command-line arg parser with multiple subcommands including generate:types/sdk/validation and firebase"
       },
       {
         "files": ["packages/database/src/migration-generator.ts"],
@@ -89,6 +91,8 @@
       {
         "files": ["packages/generators/src/sdk.ts"],
         "maxCrap": 300,
+        "maxCyclomatic": 20,
+        "maxCognitive": 20,
         "reason": "field-to-TS-type mapping with many type branches"
       },
       {
@@ -124,6 +128,76 @@
         "files": ["packages/cms/src/server/plugins/auth.ts"],
         "maxUnitSize": 250,
         "reason": "auth plugin with JWT, API key, and session management"
+      },
+      {
+        "files": ["packages/admin-ui/src/lib/providers/rest.ts"],
+        "maxCrap": 50,
+        "reason": "REST provider with auth token refresh and error handling"
+      },
+      {
+        "files": ["packages/admin-ui/src/components/sidebar.tsx"],
+        "maxCrap": 200,
+        "maxCyclomatic": 15,
+        "maxCognitive": 15,
+        "reason": "sidebar with mode-aware nav filtering and dynamic content sections"
+      },
+      {
+        "files": ["packages/admin-ui/src/components/command-palette.tsx"],
+        "maxUnitSize": 300,
+        "maxCrap": 200,
+        "maxCyclomatic": 15,
+        "maxCognitive": 25,
+        "reason": "command palette with fuzzy search, keyboard navigation, and mode-aware filtering"
+      },
+      {
+        "files": ["packages/admin-ui/src/routes/settings/index.tsx"],
+        "maxCrap": 40,
+        "reason": "settings layout with mode-aware sub-navigation and redirect logic"
+      },
+      {
+        "files": [
+          "packages/admin-ui/src/routes/settings/roles/*.tsx",
+          "packages/admin-ui/src/routes/settings/users/*.tsx"
+        ],
+        "maxCrap": 150,
+        "maxCyclomatic": 15,
+        "maxCognitive": 35,
+        "maxUnitSize": 350,
+        "reason": "admin UI routes with complex form logic, media handling, and mode-aware rendering"
+      },
+      {
+        "files": [
+          "packages/admin-ui/src/routes/settings/webhooks/*.tsx",
+          "packages/admin-ui/src/routes/settings/api-tokens.tsx"
+        ],
+        "maxCrap": 200,
+        "maxCyclomatic": 15,
+        "maxCognitive": 25,
+        "maxUnitSize": 300,
+        "reason": "admin UI settings routes with CRUD forms, validation, and mode-aware rendering"
+      },
+      {
+        "files": ["packages/generators/src/hooks.ts"],
+        "maxCrap": 250,
+        "maxCyclomatic": 15,
+        "maxCognitive": 15,
+        "maxUnitSize": 350,
+        "reason": "React hooks generator with field-to-hook-type mapping and query client setup"
+      },
+      {
+        "files": [
+          "packages/admin-ui/src/routes/media/index.tsx",
+          "packages/admin-ui/src/routes/media/components/*.tsx",
+          "packages/admin-ui/src/components/field-types/*.tsx",
+          "packages/admin-ui/src/routes/__root.tsx",
+          "packages/admin-ui/src/lib/auth.tsx",
+          "packages/admin-ui/src/routes/reset-password.tsx"
+        ],
+        "maxCrap": 150,
+        "maxCyclomatic": 15,
+        "maxCognitive": 35,
+        "maxUnitSize": 350,
+        "reason": "admin UI routes with complex form logic, media handling, and mode-aware rendering"
       }
     ]
   },
@@ -136,7 +210,11 @@
       "packages/cms/src/server/**",
       "packages/graphql/src/resolvers.ts",
       "packages/rest-api/src/handlers.ts",
-      "packages/graphql/src/types.ts"
+      "packages/graphql/src/types.ts",
+      "packages/admin-ui/src/lib/providers/types.ts",
+      "packages/cms-firebase/src/provider.ts",
+      "packages/admin-ui/src/routes/settings/webhooks/**",
+      "packages/admin-ui/src/routes/settings/api-tokens.tsx"
     ]
   },
   "entry": ["packages/cms/src/admin/main.tsx", "packages/*/src/index.ts"]

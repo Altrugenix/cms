@@ -1,5 +1,7 @@
 export const PKG_NAME = "@arche-cms/types";
 
+export type BackendMode = "rest" | "firebase";
+
 export type {
   FieldType,
   FieldBase,

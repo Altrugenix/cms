@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "turbo dev",
     "dev:playground": "turbo dev --filter=@arche-cms/playground",
+    "dev:firebase": "turbo dev --filter=@arche-cms/playground-firebase",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",

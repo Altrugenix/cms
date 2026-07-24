@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 
-import { getApiUrl } from "@/lib/api";
+import { useProvider } from "@/lib/providers";
 
 type User = {
   id: string;
@@ -33,7 +33,12 @@ function storageRemove(key: string) {
   sessionStorage.removeItem(key);
 }
 
+function toUser(u: { uid: string; email: string | null; role?: string }): User {
+  return { email: u.email ?? "", id: u.uid, role: u.role };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const provider = useProvider();
   const [user, setUser] = useState<User | null>(() => {
     try {
       const stored = storageGet("cms_user");
@@ -55,52 +60,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     (async () => {
       try {
-        const res = await fetch(`${getApiUrl()}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const u = (await res.json()) as User | null;
-          if (u && typeof u === "object") {
-            setUser(u);
-            const persistent = !!localStorage.getItem("cms_token");
-            storageSet("cms_user", JSON.stringify(u), persistent);
-          } else {
-            logoutCleanup();
-          }
-          setIsLoading(false);
-          return;
+        const u = await provider.auth.getCurrentUser();
+        if (u) {
+          const mapped = toUser(u);
+          setUser(mapped);
+          const persistent = !!localStorage.getItem("cms_token");
+          storageSet("cms_user", JSON.stringify(mapped), persistent);
+        } else {
+          logoutCleanup();
         }
       } catch {
-        // token invalid, try refresh
+        logoutCleanup();
       }
-      const refreshToken = storageGet("cms_refresh");
-      if (refreshToken) {
-        try {
-          const r = await fetch(`${getApiUrl()}/api/auth/refresh`, {
-            body: JSON.stringify({ refreshToken }),
-            headers: { "Content-Type": "application/json" },
-            method: "POST",
-          });
-          if (r.ok) {
-            const data = (await r.json()) as {
-              user: User;
-              accessToken: string;
-              refreshToken: string;
-            };
-            const persistent = !!localStorage.getItem("cms_token");
-            setUser(data.user);
-            setToken(data.accessToken);
-            storageSet("cms_user", JSON.stringify(data.user), persistent);
-            storageSet("cms_token", data.accessToken, persistent);
-            storageSet("cms_refresh", data.refreshToken, persistent);
-            setIsLoading(false);
-            return;
-          }
-        } catch {
-          // refresh failed
-        }
-      }
-      logoutCleanup();
       setIsLoading(false);
     })();
   }, []);
@@ -113,36 +84,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     storageRemove("cms_refresh");
   }
 
-  const login = useCallback(async (email: string, password: string, rememberMe = false) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${getApiUrl()}/api/auth/login`, {
-        body: JSON.stringify({ email, password, rememberMe }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      if (!res.ok) {
-        const err = (await res.json()) as { error?: string };
-        throw new Error(err.error ?? "Login failed");
+  const login = useCallback(
+    async (email: string, password: string, rememberMe = false) => {
+      setIsLoading(true);
+      try {
+        const u = await provider.auth.login(email, password);
+        const mapped = toUser(u);
+        setUser(mapped);
+        // The provider handles token storage internally for REST mode.
+        // For Firebase mode, tokens are managed by Firebase Auth.
+        // We store a sentinel so isAuthenticated works.
+        storageSet("cms_token", "firebase", rememberMe);
+        setToken("firebase");
+        storageSet("cms_user", JSON.stringify(mapped), rememberMe);
+      } finally {
+        setIsLoading(false);
       }
-      const data = (await res.json()) as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
-      setUser(data.user);
-      setToken(data.accessToken);
-      storageSet("cms_user", JSON.stringify(data.user), rememberMe);
-      storageSet("cms_token", data.accessToken, rememberMe);
-      storageSet("cms_refresh", data.refreshToken, rememberMe);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [provider],
+  );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await provider.auth.logout();
     logoutCleanup();
-  }, []);
+  }, [provider]);
 
   return (
     <AuthContext.Provider

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchUsers, updateUser, fetchRoles, type UserMeta, type RoleMeta } from "@/lib/api";
+import { useUser, useUpdateUser, useRolesList } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
@@ -21,61 +21,36 @@ function EditUser() {
   const { id } = useParams({ from: Route.id });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<UserMeta | null>(null);
-  const [roles, setRoles] = useState<RoleMeta[]>([]);
+  const { data: user, error: loadError, isLoading: loading } = useUser(id);
+  const { data: rolesData } = useRolesList();
+  const updateUser = useUpdateUser();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [password, setPassword] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const roles = rolesData?.data ?? [];
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const [usersRes, rolesRes] = await Promise.all([fetchUsers(), fetchRoles()]);
-        const u = usersRes.data.find((x) => x.id === id);
-        if (!u) throw new Error("User not found");
-        if (cancelled) return;
-        setUser(u);
-        setEmail(u.email);
-        setName(u.name ?? "");
-        setRole(u.role);
-        setRoles(rolesRes.data);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load user");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    if (user) {
+      setEmail(user.email);
+      setName(user.name ?? "");
+      setRole(user.role);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  }, [user]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    setSaving(true);
+    const updates: Record<string, unknown> = { email, name, role };
+    if (password) updates.password = password;
     try {
-      const updates: { email: string; name: string; role: string; password?: string } = {
-        email,
-        name,
-        role,
-      };
-      if (password) updates.password = password;
-      await updateUser(id, updates);
+      await updateUser.mutateAsync({ data: updates, id });
       toast("User updated", "success");
       navigate({ to: "/settings/users" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to update user";
-      setError(msg);
       toast(msg, "error");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -106,10 +81,10 @@ function EditUser() {
       </div>
     );
   }
-  if (error)
+  if (loadError)
     return (
       <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
-        {error}
+        {loadError.message}
       </div>
     );
   if (!user) return null;
@@ -179,7 +154,7 @@ function EditUser() {
           />
         </div>
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" loading={saving}>
+          <Button type="submit" loading={updateUser.isPending}>
             Save Changes
           </Button>
           <Link to="/settings/users">

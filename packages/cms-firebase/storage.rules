@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getRole() {
+      return request.auth.token.role;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getRole() == 'admin';
+    }
+
+    function isEditor() {
+      return isAuthenticated() && (getRole() == 'editor' || getRole() == 'admin');
+    }
+
+    function isViewer() {
+      return isAuthenticated() && (
+        getRole() == 'viewer' || getRole() == 'editor' || getRole() == 'admin'
+      );
+    }
+
+    // ── Media files ──────────────────────────────────────────────────
+
+    match /media/{allPaths=**} {
+      // Anyone authenticated can read media (images are public via download URL)
+      allow read: if isAuthenticated();
+
+      // Editors and admins can upload
+      allow create: if isEditor()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|video/.*|application/pdf|text/.*');
+
+      // Only admins can delete media
+      allow delete: if isAdmin();
+    }
+
+    // ── Deny everything else ─────────────────────────────────────────
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

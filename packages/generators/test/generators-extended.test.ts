@@ -238,6 +238,8 @@ describe("sdkGenerator - field type coverage", () => {
     expect(content).toContain("CollectionTypeMap");
     expect(content).toContain("createClient");
     expect(content).toContain("interface Items");
+    expect(content).toContain("TypedClient");
+    expect(content).toContain("items: client.collection");
     expect(content).toContain("count?: number;");
     expect(content).toContain("active?: boolean;");
     expect(content).toContain("meta?: Record<string, unknown>;");
@@ -299,6 +301,88 @@ describe("sdkGenerator - field type coverage", () => {
     expect(content).toContain("GlobalTypeMap");
     expect(content).toContain('"siteSettings": SiteSettingsGlobals;');
     expect(content).toContain("interface SiteSettingsGlobals");
+    expect(content).toContain("siteSettings: client.global");
+  });
+
+  it("generates TypedClient interface with collection accessors", async () => {
+    const files = await sdkGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+        {
+          fields: [{ name: "name", type: "text" }],
+          labels: { plural: "Users", singular: "User" },
+          slug: "users",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const content = files[0]?.content ?? "";
+    expect(content).toContain("export interface TypedClient extends ArcheClient {");
+    expect(content).toContain(
+      'posts: import("@arche-cms/sdk").CollectionClient<CollectionTypeMap["posts"]>;',
+    );
+    expect(content).toContain(
+      'users: import("@arche-cms/sdk").CollectionClient<CollectionTypeMap["users"]>;',
+    );
+  });
+
+  it("generates TypedClient with global accessors", async () => {
+    const files = await sdkGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      globals: [
+        {
+          fields: [{ name: "logo", type: "text" }],
+          label: "Site Settings",
+          slug: "siteSettings",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const content = files[0]?.content ?? "";
+    /* eslint-disable no-secrets/no-secrets */
+    expect(content).toContain(
+      'siteSettings: import("@arche-cms/sdk").GlobalClient<GlobalTypeMap["siteSettings"]>;',
+    );
+    /* eslint-enable no-secrets/no-secrets */
+  });
+
+  it("generates createTypedClient with spread and typed accessors", async () => {
+    const files = await sdkGenerator.generate({
+      collections: [
+        {
+          fields: [{ name: "title", type: "text" }],
+          labels: { plural: "Posts", singular: "Post" },
+          slug: "posts",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const content = files[0]?.content ?? "";
+    expect(content).toContain("const client = createClient(config);");
+    expect(content).toContain("...client,");
+    expect(content).toContain(
+      'posts: client.collection("posts") as import("@arche-cms/sdk").CollectionClient<CollectionTypeMap["posts"]>,',
+    );
+  });
+
+  it("returns client as TypedClient when no collections or globals", async () => {
+    const files = await sdkGenerator.generate({
+      collections: [],
+      globals: [],
+      outputDir: "/tmp",
+    });
+    // Empty arrays should return no files
+    expect(files).toHaveLength(0);
   });
 });
 

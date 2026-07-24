@@ -17,6 +17,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/lib/auth";
+import { isFirebaseMode } from "@/lib/backend-mode";
 import { useCollections, useGlobals } from "@/lib/hooks";
 
 type CommandItem = {
@@ -25,10 +26,11 @@ type CommandItem = {
   description?: string;
   category: string;
   icon?: LucideIcon;
+  firebaseUnsupported?: boolean;
   onSelect: () => void;
 };
 
-const pageItems: CommandItem[] = [
+const allPageItems: CommandItem[] = [
   {
     category: "Pages",
     description: "Go to dashboard",
@@ -143,6 +145,11 @@ export function CommandPalette({ onClose, open }: CommandPaletteProps) {
     "nav-settings": "/settings",
     "nav-users": "/users",
   };
+
+  const firebaseMode = isFirebaseMode();
+  const pageItems = firebaseMode
+    ? allPageItems.filter((item) => !("firebaseUnsupported" in item && item.firebaseUnsupported))
+    : allPageItems;
 
   const items: CommandItem[] = [
     ...pageItems.map((item) => ({

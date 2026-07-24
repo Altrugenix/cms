@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
-import { createUser } from "@/lib/api";
+import { useCreateUser } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
@@ -19,26 +19,23 @@ export const Route = createRoute({
 function CreateUser() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const createUser = useCreateUser();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    setSaving(true);
     try {
-      await createUser(email, password, name || undefined);
+      await createUser.mutateAsync({ email, name: name || undefined, password });
       toast("User created", "success");
       navigate({ to: "/settings/users" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create user";
       setError(msg);
       toast(msg, "error");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -102,7 +99,7 @@ function CreateUser() {
         </div>
 
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" loading={saving}>
+          <Button type="submit" loading={createUser.isPending}>
             Create User
           </Button>
           <Link to="/settings/users">

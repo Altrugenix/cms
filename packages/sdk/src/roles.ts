@@ -1,14 +1,36 @@
 import type { HttpClient } from "./client.js";
 import type { Role, PaginatedResponse } from "./types.js";
 
+/** Client for role management operations. Requires admin privileges. */
 export interface RolesClient {
+  /**
+   * List roles with optional pagination.
+   *
+   * @param params - Pagination parameters
+   */
   list(params?: { limit?: number; offset?: number }): Promise<PaginatedResponse<Role>>;
+  /**
+   * Get a single role by ID.
+   *
+   * @param id - Role ID
+   */
   get(id: string): Promise<Role>;
+  /**
+   * Create a new role.
+   *
+   * @param data - Role data (name, optional description, optional permissions)
+   */
   create(data: {
     name: string;
     description?: string;
     permissions?: Array<{ action: string; resource: string }>;
   }): Promise<Role>;
+  /**
+   * Update a role's name, description, or permissions.
+   *
+   * @param id - Role ID
+   * @param data - Fields to update
+   */
   update(
     id: string,
     data: {
@@ -17,9 +39,19 @@ export interface RolesClient {
       permissions?: Array<{ action: string; resource: string }>;
     },
   ): Promise<Role>;
+  /**
+   * Delete a role.
+   *
+   * @param id - Role ID
+   */
   delete(id: string): Promise<{ message: string }>;
 }
 
+/**
+ * Create a roles client.
+ *
+ * @internal Use `client.roles` instead of calling this directly.
+ */
 export function createRolesClient(http: HttpClient): RolesClient {
   const base = "/api/roles";
 

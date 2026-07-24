@@ -1,11 +1,12 @@
 import { Trash2, Pencil } from "lucide-react";
 
+import type { MediaItem } from "@/lib/providers/types";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getMediaUrl, type MediaMeta } from "@/lib/api";
 
 interface MediaCardProps {
-  item: MediaMeta;
+  item: MediaItem;
   isEditing: boolean;
   editName: string;
   editAlt: string;
@@ -36,7 +37,7 @@ export function MediaCard({
       {isImage ? (
         <div className="aspect-square overflow-hidden bg-muted">
           <img
-            src={getMediaUrl(item.id)}
+            src={item.url}
             alt={item.alt || item.originalName}
             className="h-full w-full object-cover"
             loading="lazy"

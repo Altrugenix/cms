@@ -7,6 +7,7 @@ export { GenerationPipeline } from "./pipeline.js";
 import { adminFormGenerator } from "./admin-forms.js";
 import { apiRoutesGenerator } from "./api-routes.js";
 import { graphqlGenerator } from "./graphql-schema.js";
+import { hooksGenerator } from "./hooks.js";
 import { migrationGenerator } from "./migrations.js";
 import { openApiGenerator } from "./openapi.js";
 import { sdkGenerator } from "./sdk.js";
@@ -19,6 +20,7 @@ export { graphqlGenerator };
 export { openApiGenerator };
 export { sdkGenerator };
 export { adminFormGenerator };
+export { hooksGenerator };
 
 export const allGenerators = [
   apiRoutesGenerator,
@@ -27,5 +29,6 @@ export const allGenerators = [
   graphqlGenerator,
   openApiGenerator,
   sdkGenerator,
+  hooksGenerator,
   adminFormGenerator,
 ];

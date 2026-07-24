@@ -1,0 +1,106 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getRole() {
+      return request.auth.token.role;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getRole() == 'admin';
+    }
+
+    function isEditor() {
+      return isAuthenticated() && (getRole() == 'editor' || getRole() == 'admin');
+    }
+
+    function isViewer() {
+      return isAuthenticated() && (
+        getRole() == 'viewer' || getRole() == 'editor' || getRole() == 'admin'
+      );
+    }
+
+    // ── CMS Collections (dynamic, one per collection slug) ───────────
+
+    // Published content is publicly readable; drafts require auth.
+    match /{collection}/{entryId} {
+      allow read: if isViewer()
+        || (isPublicCollection(collection) && isPublished(entryId));
+
+      allow create: if isEditor();
+      allow update: if isEditor();
+      allow delete: if isAdmin();
+    }
+
+    // ── Globals ──────────────────────────────────────────────────────
+
+    match /__cms_globals/{slug} {
+      allow read: if isViewer();
+      allow write: if isAdmin();
+    }
+
+    // ── Media ────────────────────────────────────────────────────────
+
+    match /__cms_media/{mediaId} {
+      allow read: if isViewer();
+      allow create: if isEditor();
+      allow update: if isEditor();
+      allow delete: if isAdmin();
+    }
+
+    match /__cms_media_folders/{folderId} {
+      allow read: if isViewer();
+      allow create: if isEditor();
+      allow update: if isEditor();
+      allow delete: if isAdmin();
+    }
+
+    // ── Users ────────────────────────────────────────────────────────
+
+    match /__cms_users/{userId} {
+      allow read: if isViewer();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Roles ────────────────────────────────────────────────────────
+
+    match /__cms_roles/{roleId} {
+      allow read: if isViewer();
+      allow write: if isAdmin();
+    }
+
+    // ── Activity (audit log) ─────────────────────────────────────────
+
+    match /__cms_activity/{eventId} {
+      allow read: if isViewer();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // ── API Tokens ───────────────────────────────────────────────────
+
+    match /__cms_api_tokens/{tokenId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ── Public collections helper (extend as needed) ─────────────────
+
+    function isPublicCollection(name) {
+      return name in ['posts', 'pages'];
+    }
+
+    function isPublished(entryId) {
+      return resource.data._status == 'published';
+    }
+  }
+}

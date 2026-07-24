@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 async function scaffold(
   projectDir: string,
-  opts: { dbAdapter: string; defaultLocale: string },
+  opts: { backendMode: string; dbAdapter: string; defaultLocale: string },
 ): Promise<void> {
   const mod = await import("../src/index.js");
   (mod as { scaffold: typeof scaffold }).scaffold(projectDir, opts);
@@ -25,7 +25,7 @@ describe("create-app scaffold", () => {
 
   it("creates all required directories", async () => {
     const projectDir = resolve(tmpDir, "my-cms");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     expect(existsSync(resolve(projectDir, "cms/collections"))).toBe(true);
     expect(existsSync(resolve(projectDir, "cms/globals"))).toBe(true);
     expect(existsSync(resolve(projectDir, "cms/components"))).toBe(true);
@@ -33,7 +33,7 @@ describe("create-app scaffold", () => {
 
   it("creates package.json with correct structure", async () => {
     const projectDir = resolve(tmpDir, "test-app");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     const pkg = JSON.parse(readFileSync(resolve(projectDir, "package.json"), "utf-8"));
     expect(pkg.name).toBe("test-app");
     expect(pkg.scripts.dev).toBe("cms dev");
@@ -45,7 +45,7 @@ describe("create-app scaffold", () => {
 
   it("creates .env with sqlite adapter", async () => {
     const projectDir = resolve(tmpDir, "sqlite-app");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     const env = readFileSync(resolve(projectDir, ".env"), "utf-8");
     expect(env).toContain("DB_ADAPTER=sqlite");
     expect(env).toContain('DB_URL="file:./cms.db"');
@@ -54,7 +54,11 @@ describe("create-app scaffold", () => {
 
   it("creates .env with postgres adapter", async () => {
     const projectDir = resolve(tmpDir, "pg-app");
-    await scaffold(projectDir, { dbAdapter: "postgres", defaultLocale: "fr" });
+    await scaffold(projectDir, {
+      backendMode: "rest",
+      dbAdapter: "postgres",
+      defaultLocale: "fr",
+    });
     const env = readFileSync(resolve(projectDir, ".env"), "utf-8");
     expect(env).toContain("DB_ADAPTER=postgres");
     expect(env).toContain('DB_URL="postgresql://localhost:5432/mydb"');
@@ -63,7 +67,7 @@ describe("create-app scaffold", () => {
 
   it("creates arche-cms.config.ts", async () => {
     const projectDir = resolve(tmpDir, "config-test");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "ja" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "ja" });
     const config = readFileSync(resolve(projectDir, "arche-cms.config.ts"), "utf-8");
     expect(config).toContain('database: { adapter: "sqlite" }');
     expect(config).toContain('localization: { defaultLocale: "ja" }');
@@ -71,7 +75,7 @@ describe("create-app scaffold", () => {
 
   it("creates example posts collection", async () => {
     const projectDir = resolve(tmpDir, "posts-test");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     const posts = readFileSync(resolve(projectDir, "cms/collections/posts.ts"), "utf-8");
     expect(posts).toContain('slug: "posts"');
     expect(posts).toContain('labels: { singular: "Post", plural: "Posts" }');
@@ -80,7 +84,7 @@ describe("create-app scaffold", () => {
 
   it("creates example site-settings global", async () => {
     const projectDir = resolve(tmpDir, "global-test");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     const settings = readFileSync(resolve(projectDir, "cms/globals/site-settings.ts"), "utf-8");
     expect(settings).toContain('slug: "site-settings"');
     expect(settings).toContain('label: "Site Settings"');
@@ -88,7 +92,7 @@ describe("create-app scaffold", () => {
 
   it("creates .gitignore", async () => {
     const projectDir = resolve(tmpDir, "gitignore-test");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     const gi = readFileSync(resolve(projectDir, ".gitignore"), "utf-8");
     expect(gi).toContain("node_modules");
     expect(gi).toContain("*.db");
@@ -97,7 +101,7 @@ describe("create-app scaffold", () => {
 
   it("creates Dockerfile with multi-stage build", async () => {
     const projectDir = resolve(tmpDir, "docker-test");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     const dockerfile = readFileSync(resolve(projectDir, "Dockerfile"), "utf-8");
     expect(dockerfile).toContain("FROM node:24-alpine AS builder");
     expect(dockerfile).toContain("FROM node:24-alpine AS runner");
@@ -109,7 +113,7 @@ describe("create-app scaffold", () => {
 
   it("creates .dockerignore", async () => {
     const projectDir = resolve(tmpDir, "dockerignore-test");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     const di = readFileSync(resolve(projectDir, ".dockerignore"), "utf-8");
     expect(di).toContain("node_modules");
     expect(di).toContain("*.db");
@@ -119,12 +123,12 @@ describe("create-app scaffold", () => {
 
   it("creates docker-compose.yml for sqlite", async () => {
     const projectDir = resolve(tmpDir, "compose-sqlite");
-    await scaffold(projectDir, { dbAdapter: "sqlite", defaultLocale: "en" });
+    await scaffold(projectDir, { backendMode: "rest", dbAdapter: "sqlite", defaultLocale: "en" });
     const compose = readFileSync(resolve(projectDir, "docker-compose.yml"), "utf-8");
     expect(compose).toContain("services:");
     expect(compose).toContain("app:");
     expect(compose).toContain("build: .");
-    expect(compose).toContain('ports:');
+    expect(compose).toContain("ports:");
     expect(compose).toContain('"3000:3000"');
     expect(compose).toContain("volumes:");
     expect(compose).toContain("uploads:");
@@ -133,11 +137,34 @@ describe("create-app scaffold", () => {
 
   it("creates docker-compose.yml for postgres with db service", async () => {
     const projectDir = resolve(tmpDir, "compose-pg");
-    await scaffold(projectDir, { dbAdapter: "postgres", defaultLocale: "en" });
+    await scaffold(projectDir, {
+      backendMode: "rest",
+      dbAdapter: "postgres",
+      defaultLocale: "en",
+    });
     const compose = readFileSync(resolve(projectDir, "docker-compose.yml"), "utf-8");
     expect(compose).toContain("db:");
     expect(compose).toContain("image: postgres:16-alpine");
     expect(compose).toContain("POSTGRES_USER: cms");
     expect(compose).toContain("pgdata:");
+  });
+
+  it("creates firebase scaffold with VITE_BACKEND_MODE and cms-firebase dep", async () => {
+    const projectDir = resolve(tmpDir, "firebase-app");
+    await scaffold(projectDir, {
+      backendMode: "firebase",
+      dbAdapter: "sqlite",
+      defaultLocale: "en",
+    });
+    const env = readFileSync(resolve(projectDir, ".env"), "utf-8");
+    expect(env).toContain("VITE_BACKEND_MODE=firebase");
+    expect(env).toContain("VITE_FIREBASE_API_KEY=your-api-key");
+    expect(env).not.toContain("DB_ADAPTER");
+
+    const pkg = JSON.parse(readFileSync(resolve(projectDir, "package.json"), "utf-8"));
+    expect(pkg.dependencies["@arche-cms/cms-firebase"]).toBe("^0.1.0");
+
+    const config = readFileSync(resolve(projectDir, "arche-cms.config.ts"), "utf-8");
+    expect(config).not.toContain("database:");
   });
 });

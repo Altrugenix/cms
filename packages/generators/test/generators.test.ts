@@ -130,7 +130,7 @@ describe("openApiGenerator", () => {
 });
 
 describe("sdkGenerator", () => {
-  it("generates typed SDK client with collection type maps", async () => {
+  it("generates typed SDK client with collection type maps and accessors", async () => {
     const files = await sdkGenerator.generate({
       collections: sampleCollections,
       outputDir: "/tmp",
@@ -143,7 +143,29 @@ describe("sdkGenerator", () => {
     expect(files[0]?.content).toContain('"users": Users;');
     expect(files[0]?.content).toContain("interface Posts");
     expect(files[0]?.content).toContain("interface Users");
+    expect(files[0]?.content).toContain("TypedClient");
     expect(files[0]?.content).toContain("createTypedClient");
+    expect(files[0]?.content).toContain("posts: client.collection");
+    expect(files[0]?.content).toContain("users: client.collection");
+  });
+
+  it("generates GlobalTypeMap when globals provided", async () => {
+    const files = await sdkGenerator.generate({
+      collections: sampleCollections,
+      globals: [
+        {
+          fields: [{ name: "logo", type: "text" }],
+          label: "Site Settings",
+          slug: "siteSettings",
+        },
+      ],
+      outputDir: "/tmp",
+    });
+    const content = files[0]?.content ?? "";
+    expect(content).toContain("GlobalTypeMap");
+    expect(content).toContain('"siteSettings": SiteSettingsGlobals;');
+    expect(content).toContain("interface SiteSettingsGlobals");
+    expect(content).toContain("siteSettings: client.global");
   });
 });
 
@@ -181,7 +203,7 @@ describe("GenerationPipeline", () => {
 describe("allGenerators", () => {
   it("exports all 7 generators", async () => {
     const { allGenerators } = await import("../src/index.js");
-    expect(allGenerators).toHaveLength(7);
+    expect(allGenerators).toHaveLength(8);
     const names = allGenerators.map((g: { name: string }) => g.name);
     expect(names).toContain("api-routes");
     expect(names).toContain("validation");

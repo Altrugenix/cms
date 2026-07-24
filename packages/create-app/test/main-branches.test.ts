@@ -44,7 +44,7 @@ describe("main — line 15: empty answer uses default value", () => {
     process.argv = ["node", "test", projectName];
     process.cwd = () => tmpDir;
 
-    mockReadline(["", "en"]);
+    mockReadline(["", "", "en"]);
     await import("../src/index.js").catch(() => {});
 
     expect(existsSync(projectDir)).toBe(true);
@@ -57,7 +57,7 @@ describe("main — line 15: empty answer uses default value", () => {
     process.argv = ["node", "test", projectName];
     process.cwd = () => tmpDir;
 
-    mockReadline(["", ""]);
+    mockReadline(["", "", ""]);
     await import("../src/index.js").catch(() => {});
 
     expect(existsSync(projectDir)).toBe(true);
@@ -72,7 +72,7 @@ describe("main — line 37: projectDir split pop fallback", () => {
     process.argv = ["node", "test", projectName];
     process.cwd = () => tmpDir;
 
-    mockReadline(["sqlite", "en"]);
+    mockReadline(["rest", "sqlite", "en"]);
     await import("../src/index.js").catch(() => {});
 
     expect(existsSync(projectDir)).toBe(true);

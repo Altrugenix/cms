@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchRoles, updateRole, type RoleMeta } from "@/lib/api";
+import { useRole, useUpdateRole } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
@@ -22,37 +22,19 @@ function EditRole() {
   const { id } = useParams({ from: Route.id });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [role, setRole] = useState<RoleMeta | null>(null);
+  const { data: role, error: loadError, isLoading: loading } = useRole(id);
+  const updateRole = useUpdateRole();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [permissions, setPermissions] = useState<Array<{ action: string; resource: string }>>([]);
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await fetchRoles();
-        const r = data.data.find((x) => x.id === id);
-        if (!r) throw new Error("Role not found");
-        if (cancelled) return;
-        setRole(r);
-        setName(r.name);
-        setDescription(r.description);
-        setPermissions(r.permissions.map((p) => ({ action: p.action, resource: p.resource })));
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load role");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    if (role) {
+      setName(role.name);
+      setDescription(role.description);
+      setPermissions(role.permissions.map((p) => ({ action: p.action, resource: p.resource })));
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  }, [role]);
 
   const addPermission = () => {
     setPermissions((prev) => [...prev, { action: "read", resource: "*" }]);
@@ -75,17 +57,13 @@ function EditRole() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!role) return;
-    setSaving(true);
     try {
-      await updateRole(id, { description, name, permissions });
+      await updateRole.mutateAsync({ data: { description, name, permissions }, id });
       toast("Role updated", "success");
       navigate({ to: "/settings/roles" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to update role";
-      setError(msg);
       toast(msg, "error");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -127,10 +105,10 @@ function EditRole() {
       </div>
     );
   }
-  if (error)
+  if (loadError)
     return (
       <div role="alert" className="rounded-md bg-destructive/10 p-4 text-destructive">
-        {error}
+        {loadError.message}
       </div>
     );
   if (!role) return null;
@@ -208,7 +186,7 @@ function EditRole() {
         </div>
 
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" loading={saving}>
+          <Button type="submit" loading={updateRole.isPending}>
             Save Changes
           </Button>
           <Link to="/settings/roles">

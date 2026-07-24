@@ -3,10 +3,12 @@ import { Puzzle } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { type PluginMeta } from "@/lib/api";
+import { firebaseModeGuard } from "@/lib/firebase-mode-guard";
 import { usePluginsList } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
+  beforeLoad: firebaseModeGuard({ to: "/settings/users" }),
   component: PluginsPage,
   getParentRoute: () => settingsRoute,
   path: "plugins",

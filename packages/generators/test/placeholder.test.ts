@@ -5,7 +5,7 @@ describe("package exports", () => {
     const mod = await import("../src/index.js");
     expect(mod.GenerationPipeline).toBeDefined();
     expect(mod.allGenerators).toBeDefined();
-    expect(mod.allGenerators).toHaveLength(7);
+    expect(mod.allGenerators).toHaveLength(8);
   });
 
   it("imports generator types module", async () => {
@@ -25,6 +25,7 @@ describe("package exports", () => {
       import("../src/graphql-schema.js"),
       import("../src/admin-forms.js"),
       import("../src/sdk.js"),
+      import("../src/hooks.js"),
       import("../src/pipeline.js"),
     ]);
     for (const mod of modules) {

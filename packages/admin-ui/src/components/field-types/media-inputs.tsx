@@ -2,8 +2,8 @@ import { Upload } from "lucide-react";
 import { useState, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
-import { uploadMedia, getMediaUrl } from "@/lib/api";
 import { useRelationEntries } from "@/lib/hooks";
+import { useProvider } from "@/lib/providers/context";
 
 import type { FieldInputComponentProps } from "./field-helpers";
 
@@ -15,8 +15,10 @@ export function MediaUploadInput({
   onChange,
   strVal,
 }: FieldInputComponentProps & { strVal: string }) {
+  const provider = useProvider();
   const [uploading, setUploading] = useState(false);
   const mediaInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const isImage = strVal
     ? ["png", "jpg", "jpeg", "gif", "webp", "svg"].some((ext) =>
@@ -24,13 +26,16 @@ export function MediaUploadInput({
       ) || strVal.startsWith("data:image")
     : false;
 
+  const displayUrl = previewUrl ?? (isImage ? strVal : null);
+
   const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     try {
-      const item = await uploadMedia(file, field.label ?? field.name);
+      const item = await provider.media.uploadMedia(file);
       onChange(item.id);
+      setPreviewUrl(item.url);
     } catch {
       // error is handled via the form's error state
     } finally {
@@ -53,7 +58,7 @@ export function MediaUploadInput({
         {strVal ? (
           <div className="flex flex-1 items-center gap-3">
             {isImage ? (
-              <img src={getMediaUrl(strVal)} alt="" className="h-12 w-12 rounded object-cover" />
+              <img src={displayUrl} alt="" className="h-12 w-12 rounded object-cover" />
             ) : (
               <div className="flex h-12 w-12 items-center justify-center rounded bg-muted text-xs text-muted-foreground">
                 File

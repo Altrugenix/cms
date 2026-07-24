@@ -2,13 +2,15 @@ import { Outlet, createRoute, Link, useLocation, useNavigate } from "@tanstack/r
 import { Key, Puzzle, Webhook, Shield, Users } from "lucide-react";
 import { useEffect } from "react";
 
+import { FirebaseModeNotice } from "@/components/firebase-mode-notice";
+import { isFirebaseMode } from "@/lib/backend-mode";
 import { cn } from "@/lib/utils";
 import { Route as rootRoute } from "@/routes/__root";
 
-const settingsNavItems = [
-  { icon: Key, label: "API Tokens", to: "/settings/api-tokens" },
-  { icon: Puzzle, label: "Plugins", to: "/settings/plugins" },
-  { icon: Webhook, label: "Webhooks", to: "/settings/webhooks" },
+const allSettingsNavItems = [
+  { firebaseUnsupported: true, icon: Key, label: "API Tokens", to: "/settings/api-tokens" },
+  { firebaseUnsupported: true, icon: Puzzle, label: "Plugins", to: "/settings/plugins" },
+  { firebaseUnsupported: true, icon: Webhook, label: "Webhooks", to: "/settings/webhooks" },
   { icon: Shield, label: "Roles", to: "/settings/roles" },
   { icon: Users, label: "Users", to: "/settings/users" },
 ];
@@ -22,12 +24,20 @@ export const Route = createRoute({
 function SettingsLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const firebaseMode = isFirebaseMode();
+  const settingsNavItems = firebaseMode
+    ? allSettingsNavItems.filter(
+        (item) => !("firebaseUnsupported" in item && item.firebaseUnsupported),
+      )
+    : allSettingsNavItems;
+
+  const defaultTab = settingsNavItems[0]?.to ?? "/settings/users";
 
   useEffect(() => {
     if (location.pathname === "/settings") {
-      navigate({ replace: true, to: "/settings/api-tokens" });
+      navigate({ replace: true, to: defaultTab });
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, defaultTab]);
 
   if (location.pathname === "/settings") return null;
 
@@ -56,7 +66,8 @@ function SettingsLayout() {
           );
         })}
       </nav>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 space-y-4">
+        <FirebaseModeNotice />
         <Outlet />
       </div>
     </div>

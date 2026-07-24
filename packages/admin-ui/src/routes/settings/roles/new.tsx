@@ -6,7 +6,7 @@ import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createRole } from "@/lib/api";
+import { useCreateRole } from "@/lib/hooks";
 import { Route as settingsRoute } from "@/routes/settings/index";
 
 export const Route = createRoute({
@@ -20,12 +20,12 @@ const DEFAULT_ACTIONS = ["create", "read", "update", "delete"];
 function CreateRole() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const createRole = useCreateRole();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [permissions, setPermissions] = useState<Array<{ action: string; resource: string }>>([
     { action: "read", resource: "*" },
   ]);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const addPermission = () => {
@@ -49,17 +49,14 @@ function CreateRole() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name) return;
-    setSaving(true);
     try {
-      await createRole({ description, name, permissions });
+      await createRole.mutateAsync({ description, name, permissions });
       toast("Role created", "success");
       navigate({ to: "/settings/roles" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create role";
       setError(msg);
       toast(msg, "error");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -143,7 +140,7 @@ function CreateRole() {
         </div>
 
         <div className="flex items-center gap-2 pt-4">
-          <Button type="submit" loading={saving}>
+          <Button type="submit" loading={createRole.isPending}>
             Create Role
           </Button>
           <Link to="/settings/roles">

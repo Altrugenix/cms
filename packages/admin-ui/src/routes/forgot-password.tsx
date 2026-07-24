@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getApiUrl } from "@/lib/api";
+import { useProvider } from "@/lib/providers";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
@@ -14,6 +14,7 @@ export const Route = createRoute({
 });
 
 function ForgotPasswordPage() {
+  const provider = useProvider();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -25,13 +26,8 @@ function ForgotPasswordPage() {
     setMessage("");
     setLoading(true);
     try {
-      const res = await fetch(`${getApiUrl()}/api/auth/forgot-password`, {
-        body: JSON.stringify({ email }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      const data = (await res.json()) as { message: string };
-      setMessage(data.message);
+      await provider.auth.forgotPassword(email);
+      setMessage("If an account exists with that email, a reset link has been sent.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Request failed");
     } finally {

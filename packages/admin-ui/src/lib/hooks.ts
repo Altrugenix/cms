@@ -5,27 +5,15 @@ import { useCallback } from "react";
 import {
   fetchCollections,
   fetchGlobals,
-  fetchGlobal,
   fetchGlobalSchema,
-  fetchApiTokens,
-  fetchWebhooks,
-  fetchWebhook,
   fetchPlugins,
-  fetchUsers,
-  fetchRoles,
   fetchVersions,
   restoreVersion,
   saveSchema,
-  createApiToken,
-  deleteApiToken,
-  createWebhook,
-  updateWebhook,
-  deleteWebhook,
-  apiFetch,
   type CollectionMeta,
-  type GlobalMeta,
   type FieldDefinition,
 } from "@/lib/api";
+import { useProvider } from "@/lib/providers";
 
 export function useCollections() {
   return useQuery({
@@ -52,8 +40,6 @@ export function useCollection(slug: string) {
   };
 }
 
-
-
 export function useGlobalSchema(slug: string) {
   return useQuery({
     queryFn: () => fetchGlobalSchema(slug),
@@ -63,53 +49,56 @@ export function useGlobalSchema(slug: string) {
 }
 
 export function useGlobalData(slug: string) {
+  const provider = useProvider();
   return useQuery({
-    queryFn: () => fetchGlobal(slug),
+    queryFn: () => provider.globals.getGlobal(slug),
     queryKey: ["global", slug],
     staleTime: 30_000,
   });
 }
 
 export function useEntries(slug: string, params: Record<string, string> = {}) {
+  const provider = useProvider();
   return useQuery({
     enabled: !!slug,
-    queryFn: async () => {
-      const searchParams = new URLSearchParams(params);
-      return apiFetch<{ data: Record<string, unknown>[]; total: number }>(
-        `/api/${slug}?${searchParams}`,
-      );
-    },
+    queryFn: () =>
+      provider.collections.listEntries(slug, {
+        limit: params.limit ? Number(params.limit) : undefined,
+        locale: params.locale,
+        offset: params.offset ? Number(params.offset) : undefined,
+      }),
     queryKey: ["entries", slug, params],
   });
 }
 
 export function useEntry(slug: string, id: string, locale = "en") {
+  const provider = useProvider();
   return useQuery({
     enabled: !!slug && !!id,
-    queryFn: () => apiFetch<Record<string, unknown>>(`/api/${slug}/${id}?locale=${locale}`),
+    queryFn: () => provider.collections.getEntry(slug, id, locale),
     queryKey: ["entry", slug, id, locale],
   });
 }
 
 export function useDashboardData(colSlugs: string[]) {
+  const provider = useProvider();
   return useQuery({
     enabled: colSlugs.length > 0,
     queryFn: async () => {
       const counts = await Promise.all(
         colSlugs.map(async (slug) => {
           try {
-            const data = await apiFetch<{ total: number }>(`/api/${slug}`);
+            const data = await provider.collections.listEntries(slug, { limit: 1 });
             return { entryCount: data.total, slug };
           } catch {
             return { entryCount: 0, slug };
           }
         }),
       );
-      const { fetchActivity, fetchMedia, fetchUsers } = await import("@/lib/api");
       const [usersRes, mediaRes, activityRes] = await Promise.all([
-        fetchUsers(),
-        fetchMedia(),
-        fetchActivity().catch(() => ({ data: [], total: 0 })),
+        provider.users.listUsers(),
+        provider.media.listMedia(),
+        provider.activity.listActivity().catch(() => ({ data: [], total: 0 })),
       ]);
       return { activityRes, counts, mediaRes, usersRes };
     },
@@ -119,41 +108,46 @@ export function useDashboardData(colSlugs: string[]) {
 }
 
 export function useApiTokensList(params?: { limit?: number; offset?: number }) {
+  const provider = useProvider();
   return useQuery({
-    queryFn: () => fetchApiTokens(params),
+    queryFn: () => provider.settings.listApiTokens(params),
     queryKey: ["api-tokens", params],
     staleTime: 30_000,
   });
 }
 
 export function useUsersList(params?: { limit?: number; offset?: number }) {
+  const provider = useProvider();
   return useQuery({
-    queryFn: () => fetchUsers(params),
+    queryFn: () => provider.users.listUsers(params),
     queryKey: ["users", params],
     staleTime: 30_000,
   });
 }
 
 export function useRolesList(params?: { limit?: number; offset?: number }) {
+  const provider = useProvider();
   return useQuery({
-    queryFn: () => fetchRoles(params),
+    queryFn: () => provider.roles.listRoles(params),
     queryKey: ["roles", params],
     staleTime: 30_000,
   });
 }
 
 export function useWebhooksList(params?: { limit?: number; offset?: number }) {
+  const provider = useProvider();
   return useQuery({
-    queryFn: () => fetchWebhooks(params),
+    queryFn: () => provider.settings.listWebhooks(params),
     queryKey: ["webhooks", params],
     staleTime: 30_000,
   });
 }
 
 export function useWebhook(id: string) {
+  const provider = useProvider();
   return useQuery({
     enabled: !!id,
-    queryFn: () => fetchWebhook(id),
+    queryFn: () => provider.settings.getWebhook(id),
     queryKey: ["webhook", id],
   });
 }
@@ -167,13 +161,16 @@ export function usePluginsList() {
 }
 
 export function useRelationEntries(to: string) {
+  const provider = useProvider();
   return useQuery({
     enabled: !!to,
     queryFn: async () => {
-      const data = await apiFetch<{ data: Array<Record<string, unknown>> }>(`/api/${to}`);
+      const data = await provider.collections.listEntries(to);
       return data.data.map((e) => ({
-        id: String(e.id),
-        label: (e.title ?? e.name ?? e.id) as string,
+        id: String((e as Record<string, unknown>).id),
+        label: ((e as Record<string, unknown>).title ??
+          (e as Record<string, unknown>).name ??
+          (e as Record<string, unknown>).id) as string,
       }));
     },
     queryKey: ["relation-entries", to],
@@ -181,13 +178,14 @@ export function useRelationEntries(to: string) {
 }
 
 export function useCollectionEntryCounts(slugs: string[]) {
+  const provider = useProvider();
   return useQuery({
     enabled: slugs.length > 0,
     queryFn: async () => {
       const counts = await Promise.all(
         slugs.map(async (slug) => {
           try {
-            const data = await apiFetch<{ total: number }>(`/api/${slug}`);
+            const data = await provider.collections.listEntries(slug, { limit: 1 });
             return { count: data.total, slug };
           } catch {
             return { count: 0, slug };
@@ -208,12 +206,10 @@ export function useCollectionEntryCounts(slugs: string[]) {
 }
 
 export function useSaveGlobal(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
-      const { saveGlobal } = await import("@/lib/api");
-      return saveGlobal(slug, data);
-    },
+    mutationFn: (data: Record<string, unknown>) => provider.globals.upsertGlobal(slug, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["global", slug] });
     },
@@ -221,11 +217,10 @@ export function useSaveGlobal(slug: string) {
 }
 
 export function useDeleteEntry(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await apiFetch(`/api/${slug}/${id}`, { method: "DELETE" });
-    },
+    mutationFn: (id: string) => provider.collections.deleteEntry(slug, id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
@@ -233,14 +228,10 @@ export function useDeleteEntry(slug: string) {
 }
 
 export function useBulkDelete(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (ids: string[]) => {
-      await apiFetch(`/api/${slug}/bulk-delete`, {
-        body: JSON.stringify({ ids }),
-        method: "POST",
-      });
-    },
+    mutationFn: (ids: string[]) => provider.collections.bulkDelete(slug, ids),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
@@ -248,13 +239,11 @@ export function useBulkDelete(slug: string) {
 }
 
 export function useBulkPublish(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      await apiFetch(`/api/${slug}/bulk-publish`, {
-        body: JSON.stringify({ ids }),
-        method: "POST",
-      });
+      await Promise.all(ids.map((id) => provider.collections.publishEntry(slug, id)));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
@@ -263,13 +252,11 @@ export function useBulkPublish(slug: string) {
 }
 
 export function useBulkUnpublish(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      await apiFetch(`/api/${slug}/bulk-unpublish`, {
-        body: JSON.stringify({ ids }),
-        method: "POST",
-      });
+      await Promise.all(ids.map((id) => provider.collections.unpublishEntry(slug, id)));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
@@ -278,11 +265,10 @@ export function useBulkUnpublish(slug: string) {
 }
 
 export function useRestoreEntry(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await apiFetch(`/api/${slug}/${id}/restore`, { method: "POST" });
-    },
+    mutationFn: (id: string) => provider.collections.restoreEntry(slug, id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
@@ -290,9 +276,11 @@ export function useRestoreEntry(slug: string) {
 }
 
 export function useCreateApiToken() {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name: string; description?: string }) => createApiToken(data),
+    mutationFn: (data: { name: string; description?: string }) =>
+      provider.settings.createApiToken(data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["api-tokens"] });
     },
@@ -300,9 +288,10 @@ export function useCreateApiToken() {
 }
 
 export function useDeleteApiToken() {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteApiToken(id),
+    mutationFn: (id: string) => provider.settings.deleteApiToken(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["api-tokens"] });
     },
@@ -310,6 +299,7 @@ export function useDeleteApiToken() {
 }
 
 export function useCreateWebhook() {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: {
@@ -318,7 +308,7 @@ export function useCreateWebhook() {
       events: string[];
       collection?: string;
       secret?: string;
-    }) => createWebhook(data),
+    }) => provider.settings.createWebhook(data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["webhooks"] });
     },
@@ -326,6 +316,7 @@ export function useCreateWebhook() {
 }
 
 export function useUpdateWebhook() {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -341,7 +332,7 @@ export function useUpdateWebhook() {
         enabled: boolean;
         secret: string;
       }>;
-    }) => updateWebhook(id, data),
+    }) => provider.settings.updateWebhook(id, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["webhooks"] });
     },
@@ -349,9 +340,10 @@ export function useUpdateWebhook() {
 }
 
 export function useDeleteWebhook() {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteWebhook(id),
+    mutationFn: (id: string) => provider.settings.deleteWebhook(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["webhooks"] });
     },
@@ -359,12 +351,10 @@ export function useDeleteWebhook() {
 }
 
 export function useDeleteUser() {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { deleteUser } = await import("@/lib/api");
-      return deleteUser(id);
-    },
+    mutationFn: (id: string) => provider.users.deleteUser(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["users"] });
     },
@@ -372,27 +362,90 @@ export function useDeleteUser() {
 }
 
 export function useDeleteRole() {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { deleteRole } = await import("@/lib/api");
-      return deleteRole(id);
-    },
+    mutationFn: (id: string) => provider.roles.deleteRole(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["roles"] });
     },
   });
 }
 
-export function useCreateEntry(slug: string) {
+export function useCreateUser() {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
-      return apiFetch(`/api/${slug}`, {
-        body: JSON.stringify(data),
-        method: "POST",
-      });
+    mutationFn: (data: { email: string; name?: string; password: string; role?: string }) =>
+      provider.users.createUser(data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
     },
+  });
+}
+
+export function useUpdateUser() {
+  const provider = useProvider();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ data, id }: { id: string; data: Record<string, unknown> }) =>
+      provider.users.updateUser(id, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useUser(id: string) {
+  const provider = useProvider();
+  return useQuery({
+    enabled: !!id,
+    queryFn: () => provider.users.getUser(id),
+    queryKey: ["user", id],
+  });
+}
+
+export function useCreateRole() {
+  const provider = useProvider();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      description: string;
+      permissions: Array<{ action: string; resource: string }>;
+    }) => provider.roles.createRole(data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}
+
+export function useUpdateRole() {
+  const provider = useProvider();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ data, id }: { id: string; data: Record<string, unknown> }) =>
+      provider.roles.updateRole(id, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}
+
+export function useRole(id: string) {
+  const provider = useProvider();
+  return useQuery({
+    enabled: !!id,
+    queryFn: () => provider.roles.getRole(id),
+    queryKey: ["role", id],
+  });
+}
+
+export function useCreateEntry(slug: string) {
+  const provider = useProvider();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => provider.collections.createEntry(slug, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
@@ -400,14 +453,11 @@ export function useCreateEntry(slug: string) {
 }
 
 export function useUpdateEntry(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ data, id }: { id: string; data: Record<string, unknown> }) => {
-      return apiFetch(`/api/${slug}/${id}`, {
-        body: JSON.stringify(data),
-        method: "PATCH",
-      });
-    },
+    mutationFn: ({ data, id }: { id: string; data: Record<string, unknown> }) =>
+      provider.collections.updateEntry(slug, id, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
@@ -415,11 +465,10 @@ export function useUpdateEntry(slug: string) {
 }
 
 export function usePublishEntry(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await apiFetch(`/api/${slug}/${id}/publish`, { method: "POST" });
-    },
+    mutationFn: (id: string) => provider.collections.publishEntry(slug, id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
@@ -427,11 +476,10 @@ export function usePublishEntry(slug: string) {
 }
 
 export function useUnpublishEntry(slug: string) {
+  const provider = useProvider();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await apiFetch(`/api/${slug}/${id}/unpublish`, { method: "POST" });
-    },
+    mutationFn: (id: string) => provider.collections.unpublishEntry(slug, id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["entries", slug] });
     },
@@ -478,8 +526,6 @@ export function useSaveSchema() {
     },
   });
 }
-
-
 
 export function useUnsavedChanges(isDirty: boolean) {
   const blocker = useBlocker({

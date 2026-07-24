@@ -10,15 +10,16 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { isFirebaseMode } from "@/lib/backend-mode";
 import { useCollections, useGlobals } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+const allNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/" },
   { icon: FileText, label: "Collections", to: "/collections" },
   { icon: Globe, label: "Globals", to: "/globals" },
   { icon: Image, label: "Media", to: "/media" },
-  { icon: Layers, label: "Schema Builder", to: "/schemas" },
+  { firebaseUnsupported: true, icon: Layers, label: "Schema Builder", to: "/schemas" },
   { icon: Settings, label: "Settings", to: "/settings" },
 ];
 
@@ -33,6 +34,10 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose, onToggle }: Side
   const location = useLocation();
   const { data: collections = [] } = useCollections();
   const { data: globals = [] } = useGlobals();
+  const firebaseMode = isFirebaseMode();
+  const navItems = firebaseMode
+    ? allNavItems.filter((item) => !("firebaseUnsupported" in item && item.firebaseUnsupported))
+    : allNavItems;
 
   return (
     <>
@@ -50,7 +55,16 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose, onToggle }: Side
         )}
       >
         <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
-          {!collapsed && <span className="font-semibold tracking-tight">Arche CMS</span>}
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold tracking-tight">Arche CMS</span>
+              {firebaseMode && (
+                <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-600 dark:text-orange-400">
+                  Firebase
+                </span>
+              )}
+            </div>
+          )}
           <Button
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             variant="ghost"

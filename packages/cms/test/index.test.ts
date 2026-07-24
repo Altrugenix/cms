@@ -368,7 +368,13 @@ describe("index / CLI entrypoint", () => {
       const { main } = await import("../src/index.js");
       const { generate } = await import("../src/commands/generate.js");
       main();
-      expect(generate).toHaveBeenCalledWith({ dir: "./schemas", out: "./gen" });
+      expect(generate).toHaveBeenCalledWith({
+        dir: "./schemas",
+        generators: undefined,
+        hooks: false,
+        out: "./gen",
+        sdk: false,
+      });
     });
 
     it("forwards --dir and --out to typegen", async () => {

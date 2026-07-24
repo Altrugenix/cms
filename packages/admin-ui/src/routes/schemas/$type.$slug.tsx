@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fetchSchema, type FieldDefinition } from "@/lib/api";
+import { firebaseModeGuard } from "@/lib/firebase-mode-guard";
 import { useSaveSchema } from "@/lib/hooks";
 import { Route as rootRoute } from "@/routes/__root";
 
@@ -16,6 +17,7 @@ import { FieldTypePicker } from "./components/field-type-picker";
 import { SchemaLoadingSkeleton } from "./components/loading-skeleton";
 
 export const Route = createRoute({
+  beforeLoad: firebaseModeGuard(),
   component: SchemaEditor,
   getParentRoute: () => rootRoute,
   path: "/schemas/$type/$slug",

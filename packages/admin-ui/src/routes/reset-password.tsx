@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
-import { getApiUrl } from "@/lib/api";
+import { useProvider } from "@/lib/providers";
 import { Route as rootRoute } from "@/routes/__root";
 
 export const Route = createRoute({
@@ -18,6 +18,7 @@ export const Route = createRoute({
 
 function ResetPasswordPage() {
   const { token } = Route.useSearch();
+  const provider = useProvider();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -41,17 +42,8 @@ function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${getApiUrl()}/api/auth/reset-password`, {
-        body: JSON.stringify({ password, token }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      const data = (await res.json()) as { message?: string; error?: string };
-      if (!res.ok) {
-        setError(data.error ?? "Reset failed");
-      } else {
-        setMessage(data.message ?? "Password reset successfully");
-      }
+      await provider.auth.resetPassword(token, password);
+      setMessage("Password reset successfully");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Reset failed");
     } finally {

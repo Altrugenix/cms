@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Header } from "@/components/header";
+import { OfflineIndicator } from "@/components/offline-indicator";
 import { Sidebar } from "@/components/sidebar";
 import { ToastProvider } from "@/components/toast-provider";
 import { useAuth } from "@/lib/auth";
@@ -105,6 +106,7 @@ function RootLayout() {
             onOpenPalette={palette.openPalette}
             onToggleSidebar={() => setSidebarMobile((prev) => !prev)}
           />
+          <OfflineIndicator />
           <main id="main-content" className="flex-1 overflow-y-auto p-4 md:p-6">
             <ErrorBoundary>
               <Outlet />

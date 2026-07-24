@@ -1,0 +1,19 @@
+{
+  "name": "@arche-cms/playground-firebase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cms dev",
+    "start": "cms start",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@arche-cms/cms": "workspace:*",
+    "@arche-cms/cms-firebase": "workspace:*",
+    "@arche-cms/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@arche-cms/types": "workspace:*",
+    "vitest": "^3.2.7"
+  }
+}

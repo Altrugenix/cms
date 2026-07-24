@@ -20,6 +20,7 @@ export function ask(query: string, defaultVal?: string): Promise<string> {
 export function scaffold(
   projectDir: string,
   opts: {
+    backendMode: string;
     dbAdapter: string;
     defaultLocale: string;
   },
@@ -29,15 +30,21 @@ export function scaffold(
     mkdirSync(resolve(projectDir, d), { recursive: true });
   }
 
+  const dependencies: Record<string, string> = {
+    "@arche-cms/cms": "^0.1.10",
+    "@arche-cms/schema": "^0.1.10",
+  };
+
+  if (opts.backendMode === "firebase") {
+    dependencies["@arche-cms/cms-firebase"] = "^0.1.0";
+  }
+
   // package.json
   writeFileSync(
     resolve(projectDir, "package.json"),
     JSON.stringify(
       {
-        dependencies: {
-          "@arche-cms/cms": "^0.1.10",
-          "@arche-cms/schema": "^0.1.10",
-        },
+        dependencies,
         name: projectDir.split("/").pop() ?? /* v8 ignore next -- unreachable */ "my-cms-app",
         private: true,
         scripts: {
@@ -54,32 +61,58 @@ export function scaffold(
   );
 
   // .env
-  writeFileSync(
-    resolve(projectDir, ".env"),
-    [
-      `DB_ADAPTER=${opts.dbAdapter}`,
+  const envLines: string[] = [];
+
+  if (opts.backendMode === "firebase") {
+    envLines.push("VITE_BACKEND_MODE=firebase");
+    envLines.push("VITE_FIREBASE_API_KEY=your-api-key");
+    envLines.push("VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com");
+    envLines.push("VITE_FIREBASE_PROJECT_ID=your-project-id");
+    envLines.push("VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com");
+    envLines.push("VITE_FIREBASE_MESSAGING_SENDER_ID=123456789");
+    envLines.push("VITE_FIREBASE_APP_ID=1:123456789:web:abcdef");
+  } else {
+    envLines.push(`DB_ADAPTER=${opts.dbAdapter}`);
+    envLines.push(
       opts.dbAdapter === "sqlite"
         ? 'DB_URL="file:./cms.db"'
         : 'DB_URL="postgresql://localhost:5432/mydb"',
-      'STORAGE_DIR="./uploads"',
-      `DEFAULT_LOCALE=${opts.defaultLocale}`,
-      "",
-    ].join("\n"),
-  );
+    );
+    envLines.push('STORAGE_DIR="./uploads"');
+  }
+
+  envLines.push(`DEFAULT_LOCALE=${opts.defaultLocale}`);
+  envLines.push("");
+
+  writeFileSync(resolve(projectDir, ".env"), envLines.join("\n"));
 
   // arche-cms.config.ts
-  writeFileSync(
-    resolve(projectDir, "arche-cms.config.ts"),
-    [
-      `import { defineConfig } from "@arche-cms/cms";`,
-      "",
-      "export default defineConfig({",
-      `  database: { adapter: "${opts.dbAdapter}" },`,
-      `  localization: { defaultLocale: "${opts.defaultLocale}" },`,
-      "});",
-      "",
-    ].join("\n"),
-  );
+  if (opts.backendMode === "firebase") {
+    writeFileSync(
+      resolve(projectDir, "arche-cms.config.ts"),
+      [
+        `import { defineConfig } from "@arche-cms/cms";`,
+        "",
+        "export default defineConfig({",
+        `  localization: { defaultLocale: "${opts.defaultLocale}" },`,
+        "});",
+        "",
+      ].join("\n"),
+    );
+  } else {
+    writeFileSync(
+      resolve(projectDir, "arche-cms.config.ts"),
+      [
+        `import { defineConfig } from "@arche-cms/cms";`,
+        "",
+        "export default defineConfig({",
+        `  database: { adapter: "${opts.dbAdapter}" },`,
+        `  localization: { defaultLocale: "${opts.defaultLocale}" },`,
+        "});",
+        "",
+      ].join("\n"),
+    );
+  }
 
   // Example collection
   writeFileSync(
@@ -179,9 +212,9 @@ export function scaffold(
     "    ports:",
     '      - "3000:3000"',
     "    env_file:",
-    '      - .env',
+    "      - .env",
     "    volumes:",
-    '      - uploads:/app/uploads',
+    "      - uploads:/app/uploads",
   ];
   const composeVolumes: string[] = ["  uploads:"];
 
@@ -204,14 +237,7 @@ export function scaffold(
 
   writeFileSync(
     resolve(projectDir, "docker-compose.yml"),
-    [
-      "services:",
-      ...composeServices,
-      "",
-      "volumes:",
-      ...composeVolumes,
-      "",
-    ].join("\n"),
+    ["services:", ...composeServices, "", "volumes:", ...composeVolumes, ""].join("\n"),
   );
 
   console.log(`\nScaffolded CMS project at ${projectDir}`);
@@ -244,14 +270,24 @@ Creates a new Arche CMS project in the specified directory.
 
   console.log(`Creating CMS project: ${projectName}\n`);
 
-  const dbAdapter = await ask("Database adapter (sqlite/postgres)", "sqlite");
-  if (!["sqlite", "postgres"].includes(dbAdapter)) {
-    console.error(`Invalid database adapter: "${dbAdapter}". Must be "sqlite" or "postgres".`);
+  const backendMode = await ask("Backend mode (rest/firebase)", "rest");
+  if (!["rest", "firebase"].includes(backendMode)) {
+    console.error(`Invalid backend mode: "${backendMode}". Must be "rest" or "firebase".`);
     process.exit(1);
   }
+
+  let dbAdapter = "sqlite";
+  if (backendMode === "rest") {
+    dbAdapter = await ask("Database adapter (sqlite/postgres)", "sqlite");
+    if (!["sqlite", "postgres"].includes(dbAdapter)) {
+      console.error(`Invalid database adapter: "${dbAdapter}". Must be "sqlite" or "postgres".`);
+      process.exit(1);
+    }
+  }
+
   const defaultLocale = await ask("Default locale", "en");
 
-  scaffold(projectDir, { dbAdapter, defaultLocale });
+  scaffold(projectDir, { backendMode, dbAdapter, defaultLocale });
 }
 
 main().catch((err: unknown) => {

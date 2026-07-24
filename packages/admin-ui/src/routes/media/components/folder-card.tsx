@@ -1,6 +1,6 @@
 import { Folder, FolderPen } from "lucide-react";
 
-import type { MediaFolder } from "@/lib/api";
+import type { MediaFolder } from "@/lib/providers/types";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

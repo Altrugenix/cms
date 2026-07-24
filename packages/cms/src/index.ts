@@ -6,6 +6,12 @@ import { build, printBuildHelp } from "./commands/build.js";
 import { collectionCreate, printCollectionCreateHelp } from "./commands/collection.js";
 import { dev, printDevHelp } from "./commands/dev.js";
 import { doctor, printDoctorHelp } from "./commands/doctor.js";
+import {
+  firebaseSetup,
+  firebaseDeployRules,
+  firebaseDeployIndexes,
+  printFirebaseHelp,
+} from "./commands/firebase.js";
 import { generate, printGenerateHelp } from "./commands/generate.js";
 import { lint, printLintHelp } from "./commands/lint.js";
 import { migrate, printMigrateHelp } from "./commands/migrate.js";
@@ -58,6 +64,9 @@ Commands:
   doctor               Check project health
   collection create    Scaffold a new collection
   plugin create        Scaffold a new plugin
+  firebase setup       Interactive Firebase project setup wizard
+  firebase deploy-rules   Deploy Firestore/Storage security rules
+  firebase deploy-indexes Deploy Firestore composite indexes
 
 Options:
   --help               Show help for any command
@@ -159,7 +168,9 @@ function parseArgs(): void {
     generate({
       dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
       generators: genList,
+      hooks: args.includes("--hooks"),
       out: outIdx !== -1 ? args[outIdx + 1] : undefined,
+      sdk: args.includes("--sdk"),
     }).catch((err: unknown) => {
       console.error("Error:", err instanceof Error ? err.message : String(err));
       process.exit(1);
@@ -204,6 +215,21 @@ function parseArgs(): void {
     generate({
       dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
       generators: ["validation"],
+      out: outIdx !== -1 ? args[outIdx + 1] : undefined,
+    }).catch((err: unknown) => {
+      console.error("Error:", err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    });
+  } else if (cmd === "generate:hooks") {
+    if (hasHelp) {
+      printGenerateHelp();
+      return;
+    }
+    const dirIdx = args.indexOf("--dir");
+    const outIdx = args.indexOf("--out");
+    generate({
+      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+      generators: ["hooks"],
       out: outIdx !== -1 ? args[outIdx + 1] : undefined,
     }).catch((err: unknown) => {
       console.error("Error:", err instanceof Error ? err.message : String(err));
@@ -271,6 +297,38 @@ function parseArgs(): void {
         process.exit(1);
       },
     );
+  } else if (cmd === "firebase") {
+    if (hasHelp || !sub || sub === "--help") {
+      printFirebaseHelp();
+      return;
+    }
+    const dirIdx = args.indexOf("--dir");
+    const projectIdx = args.indexOf("--project");
+    const firebaseOpts = {
+      dir: dirIdx !== -1 ? args[dirIdx + 1] : undefined,
+      project: projectIdx !== -1 ? args[projectIdx + 1] : undefined,
+    };
+
+    if (sub === "setup") {
+      firebaseSetup(firebaseOpts).catch((err: unknown) => {
+        console.error("Error:", err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      });
+    } else if (sub === "deploy-rules") {
+      firebaseDeployRules(firebaseOpts).catch((err: unknown) => {
+        console.error("Error:", err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      });
+    } else if (sub === "deploy-indexes") {
+      firebaseDeployIndexes(firebaseOpts).catch((err: unknown) => {
+        console.error("Error:", err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      });
+    } else {
+      console.error(`Unknown firebase command: ${sub}`);
+      printFirebaseHelp();
+      process.exit(1);
+    }
   } else {
     console.error(`Unknown command: ${cmd} ${sub ?? ""}`);
     printMainHelp();
